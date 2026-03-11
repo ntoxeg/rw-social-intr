@@ -2404,7 +2404,148 @@ namespace SocialInteractions
         }
 
         /// <summary>
-        /// Generates a brief bio/backstory for the pawn using the LLM.
+        /// Builds a formatted dossier string from pawn data. Code-generated (not LLM),
+        /// so facts are guaranteed accurate. Generated fresh each time for current state.
+        /// </summary>
+        public static string BuildDossier(Pawn pawn)
+        {
+            if (pawn == null) return string.Empty;
+
+            var data = ExtractPawnData(pawn, "p", null);
+            var sb = new StringBuilder();
+
+            sb.AppendLine("=== DOSSIER ===");
+            sb.AppendLine(string.Format("Name: {0}", data.ContainsKey("p") ? data["p"] : pawn.LabelShort));
+            sb.AppendLine(string.Format("Sex: {0}  |  Age: {1}",
+                data.ContainsKey("p_sex") ? data["p_sex"] : "Unknown",
+                data.ContainsKey("p_age") ? data["p_age"] : "Unknown"));
+            sb.AppendLine(string.Format("Role: {0}", data.ContainsKey("p_title") ? data["p_title"] : "Unknown"));
+            sb.AppendLine(string.Format("Faction: {0}", data.ContainsKey("p_faction") ? data["p_faction"] : "Unknown"));
+
+            string ideology = data.ContainsKey("p_ideology_desc") ? data["p_ideology_desc"] : "None";
+            if (ideology != "None")
+                sb.AppendLine(string.Format("Ideology: {0}", ideology));
+
+            sb.AppendLine(string.Format("Traits: {0}", data.ContainsKey("p_traits") ? data["p_traits"] : "None"));
+            sb.AppendLine(string.Format("Skills: {0}", data.ContainsKey("p_proficiencies") ? data["p_proficiencies"] : "None"));
+
+            string noskills = data.ContainsKey("p_noskills") ? data["p_noskills"] : "None";
+            if (noskills != "None")
+                sb.AppendLine(string.Format("Incapable of: {0}", noskills));
+
+            string genes = data.ContainsKey("p_genes") ? data["p_genes"] : "None";
+            if (genes != "None")
+                sb.AppendLine(string.Format("Xenotype: {0}", genes));
+
+            string tech = data.ContainsKey("p_tech") ? data["p_tech"] : "None";
+            if (tech != "None")
+                sb.AppendLine(string.Format("Implants: {0}", tech));
+
+            string afflictions = data.ContainsKey("p_afflictions") ? data["p_afflictions"] : "None";
+            if (afflictions != "None")
+                sb.AppendLine(string.Format("Health: {0}", afflictions));
+
+            string family = data.ContainsKey("p_family") ? data["p_family"] : "None";
+            if (family != "None")
+                sb.AppendLine(string.Format("Family: {0}", family));
+
+            return sb.ToString().TrimEnd();
+        }
+
+        /// <summary>
+        /// Parses LLM bio response into personality and quirks sections.
+        /// Falls back gracefully if the LLM doesn't follow the expected format.
+        /// </summary>
+        private static string[] ParseBioResponse(string response)
+        {
+            string personality = "";
+            string quirks = "";
+
+            if (string.IsNullOrEmpty(response))
+                return new string[] { "", "" };
+
+            response = response.Trim();
+
+            // Find section markers (case-insensitive)
+            int personalityIdx = response.IndexOf("PERSONALITY:", StringComparison.OrdinalIgnoreCase);
+            int quirksIdx = response.IndexOf("QUIRKS:", StringComparison.OrdinalIgnoreCase);
+
+            // Try alternate headers the LLM might use
+            if (quirksIdx < 0)
+                quirksIdx = response.IndexOf("QUIRKS & VALUES:", StringComparison.OrdinalIgnoreCase);
+            if (quirksIdx < 0)
+                quirksIdx = response.IndexOf("QUIRKS AND VALUES:", StringComparison.OrdinalIgnoreCase);
+
+            if (personalityIdx >= 0 && quirksIdx > personalityIdx)
+            {
+                // Both found in expected order
+                int pStart = response.IndexOf('\n', personalityIdx);
+                if (pStart < 0) pStart = personalityIdx + "PERSONALITY:".Length;
+                else pStart += 1;
+
+                personality = response.Substring(pStart, quirksIdx - pStart).Trim();
+
+                int qStart = response.IndexOf('\n', quirksIdx);
+                if (qStart < 0) qStart = quirksIdx + "QUIRKS:".Length;
+                else qStart += 1;
+
+                quirks = response.Substring(qStart).Trim();
+            }
+            else if (personalityIdx >= 0)
+            {
+                // Only personality found
+                int pStart = response.IndexOf('\n', personalityIdx);
+                if (pStart < 0) pStart = personalityIdx + "PERSONALITY:".Length;
+                else pStart += 1;
+                personality = response.Substring(pStart).Trim();
+            }
+            else if (quirksIdx >= 0)
+            {
+                // Only quirks found
+                int qStart = response.IndexOf('\n', quirksIdx);
+                if (qStart < 0) qStart = quirksIdx + "QUIRKS:".Length;
+                else qStart += 1;
+                quirks = response.Substring(qStart).Trim();
+            }
+            else
+            {
+                // Fallback: no markers found. Treat entire response as personality.
+                personality = response;
+            }
+
+            // Clean up personality text
+            personality = personality.TrimStart('-', '*', '#', ' ', '\n');
+
+            // Clean up quirks: normalize bullet format
+            if (!string.IsNullOrEmpty(quirks))
+            {
+                var lines = quirks.Split(new[] { '\n', '\r' }, StringSplitOptions.RemoveEmptyEntries);
+                var cleanLines = new List<string>();
+                foreach (var line in lines)
+                {
+                    string cleaned = line.Trim();
+                    // Remove various bullet styles and normalize to "- "
+                    if (cleaned.StartsWith("\u2022 ")) cleaned = cleaned.Substring(2);
+                    else if (cleaned.StartsWith("* ")) cleaned = cleaned.Substring(2);
+                    else if (cleaned.StartsWith("- ")) cleaned = cleaned.Substring(2);
+                    else if (cleaned.Length > 2 && char.IsDigit(cleaned[0]) && (cleaned[1] == '.' || cleaned[1] == ')'))
+                        cleaned = cleaned.Substring(2);
+                    else if (cleaned.Length > 3 && char.IsDigit(cleaned[0]) && char.IsDigit(cleaned[1]) && (cleaned[2] == '.' || cleaned[2] == ')'))
+                        cleaned = cleaned.Substring(3);
+
+                    cleaned = cleaned.Trim();
+                    if (!string.IsNullOrEmpty(cleaned))
+                        cleanLines.Add("- " + cleaned);
+                }
+                quirks = string.Join("\n", cleanLines.ToArray());
+            }
+
+            return new string[] { personality, quirks };
+        }
+
+        /// <summary>
+        /// Generates a structured bio for the pawn using the LLM.
+        /// Returns personality + quirks text (dossier is generated separately by BuildDossier).
         /// </summary>
         public static async Task<string> GenerateBioAsync(Pawn pawn)
         {
@@ -2422,62 +2563,97 @@ namespace SocialInteractions
                 return null;
             }
 
-            // Base prompt instruction
-            string prompt = "Write a brief, compelling, and creative one paragraph backstory/biography for the following RimWorld character based on their traits and skills. Ensure it fits the brutal sci-fi setting of RimWorld.\n\n";
-
-            // Extract pawn data and append
+            // Extract pawn data
             var pawnData = ExtractPawnData(pawn, "pawn1", null);
 
-            prompt += string.Format("Name: {0}\n", pawnData.ContainsKey("pawn1") ? pawnData["pawn1"] : pawn.LabelShort);
-            prompt += string.Format("Sex: {0}\n", pawnData.ContainsKey("pawn1_sex") ? pawnData["pawn1_sex"] : pawn.gender.ToString());
-            prompt += string.Format("Age: {0}\n", pawnData.ContainsKey("pawn1_age") ? pawnData["pawn1_age"] : pawn.ageTracker.AgeBiologicalYears.ToString());
-            prompt += string.Format("Title/Role: {0}\n", pawnData.ContainsKey("pawn1_title") ? pawnData["pawn1_title"] : "Unknown");
-            prompt += string.Format("Faction: {0}\n", pawnData.ContainsKey("pawn1_faction") ? pawnData["pawn1_faction"] : "Unknown");
-            prompt += string.Format("Ideology: {0}\n", pawnData.ContainsKey("pawn1_ideology") ? pawnData["pawn1_ideology"] : "Unknown");
-            prompt += string.Format("Traits: {0}\n", pawnData.ContainsKey("pawn1_traits") ? pawnData["pawn1_traits"] : "None");
-            prompt += string.Format("Xenotype/Genes: {0}\n", pawnData.ContainsKey("pawn1_genes") ? pawnData["pawn1_genes"] : "None");
-            prompt += string.Format("Key Skills: {0}\n", pawnData.ContainsKey("pawn1_proficiencies") ? pawnData["pawn1_proficiencies"] : "None");
-            prompt += string.Format("Incapable of: {0}\n", pawnData.ContainsKey("pawn1_noskills") ? pawnData["pawn1_noskills"] : "None");
+            // Build the structured prompt with all available data points
+            var sb = new StringBuilder();
+            sb.AppendLine("Generate a character profile for the following RimWorld character. RimWorld is a brutal sci-fi colony survival game on a distant rimworld planet.");
+            sb.AppendLine();
+            sb.AppendLine("Character data:");
+            sb.AppendLine(string.Format("Name: {0}", pawnData.ContainsKey("pawn1") ? pawnData["pawn1"] : pawn.LabelShort));
+            sb.AppendLine(string.Format("Sex: {0}", pawnData.ContainsKey("pawn1_sex") ? pawnData["pawn1_sex"] : pawn.gender.ToString()));
+            sb.AppendLine(string.Format("Age: {0}", pawnData.ContainsKey("pawn1_age") ? pawnData["pawn1_age"] : pawn.ageTracker.AgeBiologicalYears.ToString()));
+            sb.AppendLine(string.Format("Role: {0}", pawnData.ContainsKey("pawn1_title") ? pawnData["pawn1_title"] : "Unknown"));
+            sb.AppendLine(string.Format("Faction: {0}", pawnData.ContainsKey("pawn1_faction") ? pawnData["pawn1_faction"] : "Unknown"));
+            sb.AppendLine(string.Format("Ideology: {0}", pawnData.ContainsKey("pawn1_ideology_desc") ? pawnData["pawn1_ideology_desc"] : "None"));
+            sb.AppendLine(string.Format("Traits: {0}", pawnData.ContainsKey("pawn1_traits") ? pawnData["pawn1_traits"] : "None"));
+            sb.AppendLine(string.Format("Xenotype/Genes: {0}", pawnData.ContainsKey("pawn1_genes") ? pawnData["pawn1_genes"] : "None"));
+            sb.AppendLine(string.Format("Key Skills: {0}", pawnData.ContainsKey("pawn1_proficiencies") ? pawnData["pawn1_proficiencies"] : "None"));
+            sb.AppendLine(string.Format("Incapable of: {0}", pawnData.ContainsKey("pawn1_noskills") ? pawnData["pawn1_noskills"] : "None"));
 
-            if (pawnData.ContainsKey("pawn1_family") && pawnData["pawn1_family"] != "None")
-            {
-                prompt += string.Format("Family: {0}\n", pawnData["pawn1_family"]);
-            }
+            // Include additional data points for richer personality generation
+            string family = pawnData.ContainsKey("pawn1_family") ? pawnData["pawn1_family"] : "None";
+            if (family != "None")
+                sb.AppendLine(string.Format("Family: {0}", family));
 
-            // Append API specific formatting
-            bool isLocalApi = Settings.llmApiType == LlmApiType.KoboldCpp || 
-                              Settings.llmApiType == LlmApiType.LMStudio || 
+            string tech = pawnData.ContainsKey("pawn1_tech") ? pawnData["pawn1_tech"] : "None";
+            if (tech != "None")
+                sb.AppendLine(string.Format("Implants/Bionics: {0}", tech));
+
+            string afflictions = pawnData.ContainsKey("pawn1_afflictions") ? pawnData["pawn1_afflictions"] : "None";
+            if (afflictions != "None")
+                sb.AppendLine(string.Format("Health Issues: {0}", afflictions));
+
+            string mood = pawnData.ContainsKey("pawn1_mood") ? pawnData["pawn1_mood"] : "N/A";
+            if (mood != "N/A")
+                sb.AppendLine(string.Format("Current Mood: {0}", mood));
+
+            string likes = pawnData.ContainsKey("pawn1_likes") ? pawnData["pawn1_likes"] : "None";
+            if (likes != "None")
+                sb.AppendLine(string.Format("What they enjoy: {0}", likes));
+
+            string dislikes = pawnData.ContainsKey("pawn1_dislikes") ? pawnData["pawn1_dislikes"] : "None";
+            if (dislikes != "None")
+                sb.AppendLine(string.Format("What bothers them: {0}", dislikes));
+
+            // Append section instructions
+            bool isLocalApi = Settings.llmApiType == LlmApiType.KoboldCpp ||
+                              Settings.llmApiType == LlmApiType.LMStudio ||
                               Settings.llmApiType == LlmApiType.Ollama;
             bool isTextCompletion = isLocalApi && !Settings.forceChatCompletion;
 
             if (isTextCompletion)
             {
-                prompt += "\n<start>\nBio:";
+                sb.AppendLine();
+                sb.AppendLine("Write two sections: PERSONALITY (a paragraph describing their personality and demeanor) and QUIRKS (3-5 bullet points of specific quirks, values, or habits).");
+                sb.Append("\n<start>\nPERSONALITY:\n");
             }
             else
             {
-                prompt += "\n\nFormat the response strictly as the biography text without any conversational fillers or markdown formatting around it.";
+                sb.AppendLine();
+                sb.AppendLine("Write exactly two sections with these exact headers:");
+                sb.AppendLine();
+                sb.AppendLine("PERSONALITY:");
+                sb.AppendLine("Write 3-5 sentences describing this character's personality, demeanor, and how their past shaped who they are. Weave in their traits, skills, and circumstances naturally. Interpret the data -- do not repeat it verbatim.");
+                sb.AppendLine();
+                sb.AppendLine("QUIRKS:");
+                sb.AppendLine("Write 3-5 bullet points (starting with \"- \") describing specific behavioral quirks, values, habits, or tendencies unique to this character.");
+                sb.AppendLine();
+                sb.AppendLine("Do not include any other sections, headers, or conversational text.");
             }
+
+            string prompt = sb.ToString();
 
             SLog.Message(string.Format("[SocialInteractions] Requesting Auto-Generate Bio for {0}", pawn.LabelShort));
 
             try
             {
                 string result = await GenerateTextWithApiClient(prompt);
-                // Clean up any common prefixes an LLM might add
-                if (!string.IsNullOrEmpty(result))
+                if (string.IsNullOrEmpty(result))
+                    return null;
+
+                // Parse the structured response into personality + quirks
+                string[] sections = ParseBioResponse(result);
+                string personality = sections[0];
+                string quirks = sections[1];
+
+                // Compose the display/storage format
+                if (!string.IsNullOrEmpty(quirks))
                 {
-                    result = result.Trim();
-                    if (result.StartsWith("Bio:", StringComparison.OrdinalIgnoreCase))
-                    {
-                        result = result.Substring(4).Trim();
-                    }
-                    else if (result.StartsWith("Biography:", StringComparison.OrdinalIgnoreCase))
-                    {
-                        result = result.Substring(10).Trim();
-                    }
+                    return personality + "\n\nQuirks & Values:\n" + quirks;
                 }
-                return result;
+                return personality;
             }
             catch (Exception ex)
             {

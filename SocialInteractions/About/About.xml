@@ -11,4 +11,5 @@
 	Supported APIs: koboldcpp, Ollama, LM Studio, OpenAI
   </description>
   <packageId>LuckyKo.SocialInteractions</packageId>
+  <modVersion>1.6.0</modVersion>
 </ModMetaData>

@@ -5,6 +5,19 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.6.0] - 2026-03-11
+
+### Changed
+- Redesigned auto-generate bio to produce a structured, multi-section character sheet
+  - Dossier section: code-generated factual summary (name, traits, skills, health, family, etc.) shown as a live read-only panel in the dialog
+  - Persona section: LLM-generated personality paragraph and quirks/values bullet points
+- Bio generation prompt now feeds additional pawn data (mood, afflictions, likes/dislikes, implants) for richer personality output
+- Robust response parser with fallback for local models that don't follow formatting instructions
+- Enlarged bio dialog window with distinct dossier and persona areas
+- Added .csproj build support (dotnet build) using NuGet reference assemblies
+
+### Fixed
+- Extra closing brace in InteractionWorker_ConvertIdeoAttempt_Patch.cs
 ## [1.5.8] - 2026-03-10
 
 ### Added
