@@ -1,0 +1,47 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>net48</TargetFramework>
+    <AssemblyName>SocialInteractions</AssemblyName>
+    <RootNamespace>SocialInteractions</RootNamespace>
+    <GenerateAssemblyInfo>false</GenerateAssemblyInfo>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <AppendRuntimeIdentifierToOutputPath>false</AppendRuntimeIdentifierToOutputPath>
+    <OutputPath>1.5\Assemblies\</OutputPath>
+    <LangVersion>latest</LangVersion>
+    <EnableDefaultCompileItems>true</EnableDefaultCompileItems>
+    <DebugType>portable</DebugType>
+  </PropertyGroup>
+
+  <!--
+    RimWorld reference assemblies from NuGet (no game install needed to compile).
+    Version mirrors the RimWorld game version.
+    See: https://github.com/krafs/RimRef
+  -->
+  <ItemGroup>
+    <PackageReference Include="Krafs.Rimworld.Ref" Version="1.6.4633" />
+    <PackageReference Include="Lib.Harmony" Version="2.3.3" ExcludeAssets="runtime" />
+  </ItemGroup>
+
+  <!-- Local Assembly-CSharp.dll (game assembly with mod-specific types) -->
+  <ItemGroup>
+    <Reference Include="Assembly-CSharp">
+      <HintPath>..\Assembly-CSharp.dll</HintPath>
+      <Private>false</Private>
+    </Reference>
+  </ItemGroup>
+
+  <!-- System.Net.Http from .NET Framework -->
+  <ItemGroup>
+    <Reference Include="System.Net.Http" />
+  </ItemGroup>
+
+  <!-- Exclude non-source directories from compilation -->
+  <ItemGroup>
+    <Compile Remove="1.5\**" />
+    <Compile Remove="Defs\**" />
+    <Compile Remove="Languages\**" />
+    <Compile Remove="About\**" />
+  </ItemGroup>
+
+</Project>

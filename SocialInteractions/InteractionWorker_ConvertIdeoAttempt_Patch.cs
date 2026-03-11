@@ -86,6 +86,5 @@ namespace SocialInteractions
             // Use the proper ideology conversion interaction def
             SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, InteractionDefOf.ConvertIdeoAttempt, subject);
         }
-        }
     }
 }
