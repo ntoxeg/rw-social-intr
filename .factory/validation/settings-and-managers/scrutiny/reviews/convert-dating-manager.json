@@ -1,0 +1,33 @@
+{
+  "featureId": "convert-dating-manager",
+  "reviewedAt": "2026-03-12T18:42:00.000Z",
+  "commitId": "7ec6551cc2b2f2d9c0eb99c3a0f45d3d2a07686a",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "DatingManager correctly converted from static class to GameComponent. Class declaration, constructor, static Current accessor with null-safe ?. operator, instance fields/methods, lock objects, and ExposeData with preserved Scribe keys all implemented correctly. All 19 caller files updated to DatingManager.Current.Method() pattern — grep confirms zero remaining direct static calls. One non-blocking issue: DateTracker_MapComponent.ExposeData() still calls DatingManager.Current.ExposeData(), causing double serialization now that DatingManager is a GameComponent (its ExposeData is called automatically by the engine). This may provide accidental backward save compatibility for pre-conversion saves but should be cleaned up.",
+    "issues": [
+      {
+        "file": "SocialInteractions/Dating/DateTracker_MapComponent.cs",
+        "line": 22,
+        "severity": "non_blocking",
+        "description": "Residual DatingManager.Current.ExposeData() call. Before the conversion, DatingManager was static and this MapComponent call was the ONLY way its data got serialized. Now that DatingManager is a GameComponent, the engine calls ExposeData() automatically at the game level. This line causes double serialization — 'dates' and 'dateCooldowns' are written to both the GameComponent and MapComponent XML sections. On load, the MapComponent call overwrites data already loaded by the GameComponent. For old saves (pre-conversion), this accidentally provides backward compatibility since the data only exists in the MapComponent section. Should be removed once save migration is considered, or replaced with a one-time migration."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "When converting a static class to GameComponent, any existing MapComponent that previously proxied the static class's ExposeData() must have that call REMOVED, since GameComponent.ExposeData() is called automatically by the engine. This cleanup step is not mentioned in the refactor-worker skill's 'class conversion' procedure or in AGENTS.md conventions.",
+      "evidence": "DateTracker_MapComponent.cs:22 still calls DatingManager.Current.ExposeData() — the worker mechanically converted the static call to an instance call via Current but didn't recognize the call should be removed entirely. Compare to ChildrenMisbehaviorTracker_MapComponent which has no ExposeData override at all (no prior static ExposeData to proxy)."
+    },
+    {
+      "area": "skills",
+      "observation": "Worker deviated from init.sh by running dotnet restore directly due to Windows path issues with bash scripts. Worker's suggestion of providing init.ps1 for Windows is reasonable.",
+      "evidence": "Handoff skillFeedback: followedProcedure=false, deviation at step 1.2 — 'Direct bash invocation of C:/.../.factory/init.sh failed in this Windows shell path context; manual restore replicated the script's intended behavior.'"
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "DatingManager conversion is correct and complete. All 10 validation criteria (VAL-GC-001 through VAL-GC-022) are satisfied: GameComponent inheritance, static Current accessor with null safety, no static mutable state, preserved Scribe keys ('dates', 'dateCooldowns'), instance lock objects, constructor with Game parameter, and all 19 callers updated. Build succeeds with 0 errors and 24 tests pass. One non-blocking issue: DateTracker_MapComponent.ExposeData() retains a now-redundant DatingManager.Current.ExposeData() call that causes double serialization. This should be cleaned up in a follow-up but does not break functionality."
+}

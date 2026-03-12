@@ -1,0 +1,33 @@
+{
+  "featureId": "decompose-settings",
+  "reviewedAt": "2026-03-12T18:39:00.000Z",
+  "commitId": "0af017d0d946ef3f547e84f6ac88124eeff11c4c",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "The decomposition of SocialInteractionsModSettings into 5 nested IExposable classes (ApiSettings, FeatureToggles, PromptSettings, DisplaySettings, GameplaySettings) is correctly implemented. All 134 Scribe keys are preserved exactly (verified by extracting keys from both old and new versions). Both enums (LlmApiType with 10 values, TtsApiType with 2 values) are preserved in original order. The top-level class retains ModSettings inheritance and version tracking. ExposeData() correctly delegates to all 5 nested classes. All 51 consumer files across Api/, Core/, Patches/, Jobs/, Speech/, Dating/, Interactions/, Negotiation/, Combat/, UI/, and Children/ directories are updated to use the nested Settings.Api.X / Settings.Features.X / Settings.Prompts.X / Settings.Display.X / Settings.Gameplay.X access pattern. No legacy direct field accesses remain. DoSettingsWindowContents compiles and correctly references nested settings. Build succeeded with 0 errors, all 24 tests pass.",
+    "issues": [
+      {
+        "file": "SocialInteractions/Core/SocialInteractionsSettings.cs",
+        "line": 133,
+        "severity": "non_blocking",
+        "description": "Pre-existing: openAiModelName field has no Scribe_Values.Look call in ApiSettings.ExposeData(). This was already missing before the refactoring (confirmed by checking the parent commit). Not introduced by this feature."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "Worker deviated from skill step 1.2 (Initialize Environment) because .factory/init.sh failed under Windows PowerShell path translation. Worker ran equivalent dotnet restore commands instead. The skill's procedure should document a Windows fallback for init.sh.",
+      "evidence": "Transcript shows bash invocation failed with 'No such file or directory'. Worker successfully used 'dotnet restore' for both projects as fallback. skillFeedback.followedProcedure=false with documented deviation."
+    },
+    {
+      "area": "conventions",
+      "observation": "AGENTS.md documents 'Preserve Scribe keys' convention which was correctly followed. The nested class pattern (Settings.Api.X etc.) is now an established convention that could be documented for future workers who need to reference settings.",
+      "evidence": "All 51 modified files use Settings.{Group}.{Field} pattern consistently. No legacy direct accesses remain."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. The decompose-settings feature is correctly implemented. SocialInteractionsModSettings is decomposed into 5 nested IExposable classes with all 134 Scribe keys preserved identically for save compatibility. Both enums retained in original order. All 51 consumer files updated to nested access pattern with zero legacy references remaining. Build succeeds with 0 errors, 24 tests pass. One pre-existing non-blocking issue noted (openAiModelName missing Scribe call, present before refactor)."
+}

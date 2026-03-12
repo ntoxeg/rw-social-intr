@@ -1,0 +1,39 @@
+{
+  "featureId": "convert-tts-manager",
+  "reviewedAt": "2026-03-12T18:40:00.000Z",
+  "commitId": "e0cbce7",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Clean conversion of TTSManager from static class to GameComponent. All 9 validation areas pass. The class declaration correctly inherits from GameComponent, the constructor accepts Game parameter, a static Current accessor with null-safe navigation is provided, all static mutable fields are converted to instance fields, the lock object is an instance readonly field, ExposeData is implemented (empty, appropriate since TTS has no persistent state), and all 11 call sites across 6 files are updated to use TTSManager.Current?.Method() pattern. Build succeeds with 0 errors. The pattern is consistent with the established ChatLogManager conversion.",
+    "issues": [
+      {
+        "file": "SocialInteractions/Core/SocialInteractionsSettings.cs",
+        "line": 814,
+        "severity": "non_blocking",
+        "description": "The expression `TTSManager.Current?.GetVoices().Count ?? 0` relies on GetVoices() never returning null. If GetVoices() returned null, `.Count` would throw NullReferenceException (the ?. only guards the first member access). At the time of this commit, GetVoices() returns VoiceAssignmentManager.AvailableVoices which is a static list and practically never null, so this is safe in practice. A later commit (fix-existing-gamecomponents) subsequently improved GetVoices() to guard against null. Non-blocking."
+      },
+      {
+        "file": "SocialInteractions/Speech/TTSManager.cs",
+        "line": 35,
+        "severity": "non_blocking",
+        "description": "Constructor `public TTSManager(Game game) { }` does not explicitly call `: base(game)`. This is consistent with the ChatLogManager pattern and the build succeeds (GameComponent has a parameterless constructor), so it works correctly. However, explicitly passing the game parameter to the base class would be more defensive. Non-blocking since it follows the established project pattern."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "Worker reported followedProcedure=false because .factory/init.sh failed under bash (dotnet not in PATH). Worker correctly fell back to running dotnet restore directly. The refactor-worker skill references init.sh but doesn't document a Windows fallback for when bash cannot resolve dotnet.",
+      "evidence": "Transcript shows 3 failed attempts to run init.sh (path resolution + dotnet not found in bash), then successful direct `dotnet restore` calls. skillFeedback.deviations confirms this. This same issue has likely affected other workers on this Windows environment."
+    },
+    {
+      "area": "conventions",
+      "observation": "AGENTS.md documents the Current accessor pattern as `Current.Game?.GetComponent<T>()` but within TTSManager (and ChatLogManager), the implementation must use `Verse.Current.Game?.GetComponent<T>()` to disambiguate from the class's own `Current` static property. The AGENTS.md pattern is technically ambiguous for classes that define their own `Current` accessor.",
+      "evidence": "TTSManager.cs:17 uses `Verse.Current.Game?.GetComponent<TTSManager>()` — correct disambiguation. AGENTS.md says `Current.Game?.GetComponent<T>()`."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "TTSManager conversion passes review. All validation areas (VAL-GC-006 through VAL-GC-022) are satisfied. The implementation follows the established GameComponent conversion pattern from ChatLogManager. 7 files changed with 56 insertions and 42 deletions. All 11 external call sites across 6 files correctly use the TTSManager.Current?.Method() pattern. Two non-blocking issues noted: a potential (but practically safe) null chain in GetVoices().Count, and constructor not explicitly calling base(game). Both are consistent with established project patterns."
+}

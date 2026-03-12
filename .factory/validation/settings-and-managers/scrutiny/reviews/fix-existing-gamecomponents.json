@@ -1,0 +1,39 @@
+{
+  "featureId": "fix-existing-gamecomponents",
+  "reviewedAt": "2026-03-12T18:40:00.000Z",
+  "commitId": "004b207534224d10c8681d187d8bb5aecaac82f8",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Implementation correctly converts all static mutable state in SpeechBubbleManager and VoiceAssignmentManager to instance fields, adds null-safe Current accessors, updates callers in TTSManager and SocialInteractions.cs, and leaves NegotiationManager untouched. All validation criteria are met. The lock object is now an instance field. All static methods that access mutable state route through Current with null guards. Build and 24 tests pass.",
+    "issues": [
+      {
+        "file": "SocialInteractions/Speech/SpeechBubbleManager.cs",
+        "line": 339,
+        "severity": "non_blocking",
+        "description": "IsConversationActive reads activeConversations.Contains() without taking queueLock, while all mutations to activeConversations happen under queueLock. This is a pre-existing thread-safety concern (not introduced by this change) but worth noting — HashSet.Contains is not thread-safe if concurrent writes are possible."
+      },
+      {
+        "file": "SocialInteractions/Speech/SpeechBubbleManager.cs",
+        "line": 200,
+        "severity": "non_blocking",
+        "description": "GameComponentTick() calls static EndConversation(convId) internally, which re-fetches Current from the game. Since GameComponentTick() IS the current instance, this is a minor inefficiency (double component lookup) but functionally correct and matches the codebase's established pattern."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "Worker could not execute .factory/init.sh on Windows (bash not available in PowerShell context). Worker ran dotnet restore directly as a workaround. skillFeedback.followedProcedure is false due to this deviation at step 1.2.",
+      "evidence": "Handoff skillFeedback.deviations[0]: 'Ran dotnet restore commands directly instead of executing .factory/init.sh' because 'The shell path invocation for init.sh failed in this Windows execution context'. Worker suggests adding a Windows-native init command in services.yaml."
+    },
+    {
+      "area": "services",
+      "observation": "services.yaml has no Windows-compatible init/restore command. Workers on Windows must manually translate init.sh steps. This is the second worker to encounter this issue.",
+      "evidence": "services.yaml only has dotnet commands without an explicit init entry. Worker's suggestedChanges: 'Add a Windows-native init command in services.yaml or worker docs to avoid bash-path issues on Win32 workers.'"
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. SpeechBubbleManager: all 9 static mutable fields (queueLock, speechBubbleQueue, pawnBubbleEndTimes, nextQueuedBubbleDisplayTime, pauseStartTime, currentConversationId, activeConversations, activeConversationStartTimes, pendingJobs) converted to instance fields. MakeCustomMote, MakeStandardMote, SpeakIfEnabled converted to instance methods. All 16+ static API methods now route through null-safe Current accessor. VoiceAssignmentManager: availableVoices converted to instance field, AvailableVoices/SetAvailableVoices are now instance members. TTSManager and SocialInteractions.cs callers updated. NegotiationManager confirmed as plain class (no GameComponent, no static). Two non-blocking code quality observations noted. 4 files changed, 167 insertions, 64 deletions. Build succeeds, 24 tests pass."
+}

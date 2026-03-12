@@ -1,0 +1,114 @@
+{
+  "milestone": "settings-and-managers",
+  "round": 1,
+  "status": "pass",
+  "validatorsRun": {
+    "test": {
+      "passed": true,
+      "command": "dotnet test SocialInteractions.Tests\\SocialInteractions.Tests.csproj --no-restore",
+      "exitCode": 0,
+      "details": "24 tests passed, 0 failed"
+    },
+    "build": {
+      "passed": true,
+      "command": "dotnet build SocialInteractions\\SocialInteractions.csproj -c Release",
+      "exitCode": 0,
+      "details": "Build succeeded. 0 Error(s), 1 Warning(s) (pre-existing CS0414 in ChildrenMisbehaviorManager.misbehaviorCheckInterval)"
+    }
+  },
+  "reviewsSummary": {
+    "total": 6,
+    "passed": 6,
+    "failed": 0,
+    "failedFeatures": []
+  },
+  "blockingIssues": [],
+  "nonBlockingIssues": [
+    {
+      "featureId": "decompose-settings",
+      "severity": "non_blocking",
+      "description": "Pre-existing: openAiModelName field has no Scribe_Values.Look call in ApiSettings.ExposeData(). Missing before refactoring — not introduced by this feature.",
+      "file": "SocialInteractions/Core/SocialInteractionsSettings.cs"
+    },
+    {
+      "featureId": "convert-chatlog-manager",
+      "severity": "non_blocking",
+      "description": "chatLog field is declared 'private readonly' on mutable List<T>. readonly prevents reassignment but not mutation. Minor style concern.",
+      "file": "SocialInteractions/UI/ChatLogManager.cs"
+    },
+    {
+      "featureId": "convert-tts-manager",
+      "severity": "non_blocking",
+      "description": "Constructor does not explicitly call : base(game). Consistent with established project pattern (GameComponent base class lacks Game constructor). Not a bug.",
+      "file": "SocialInteractions/Speech/TTSManager.cs"
+    },
+    {
+      "featureId": "convert-tts-manager",
+      "severity": "non_blocking",
+      "description": "TTSManager.Current?.GetVoices().Count potential null chain — practically safe since GetVoices() returns non-null list. Later commit (fix-existing-gamecomponents) added guards.",
+      "file": "SocialInteractions/Core/SocialInteractionsSettings.cs"
+    },
+    {
+      "featureId": "convert-children-misbehavior-manager",
+      "severity": "non_blocking",
+      "description": "Pre-existing: unused field misbehaviorCheckInterval (CS0414 warning). Was present before conversion.",
+      "file": "SocialInteractions/Children/ChildrenMisbehaviorManager.cs"
+    },
+    {
+      "featureId": "convert-dating-manager",
+      "severity": "non_blocking",
+      "description": "DateTracker_MapComponent.ExposeData() retains redundant DatingManager.Current.ExposeData() call causing double serialization. This was the only serialization path pre-conversion but is now redundant since GameComponent.ExposeData() is called automatically. Provides accidental backward compatibility for pre-conversion saves. Should be cleaned up eventually.",
+      "file": "SocialInteractions/Dating/DateTracker_MapComponent.cs"
+    },
+    {
+      "featureId": "fix-existing-gamecomponents",
+      "severity": "non_blocking",
+      "description": "Pre-existing: IsConversationActive reads activeConversations.Contains() without queueLock while mutations are locked. Thread-safety concern from original code.",
+      "file": "SocialInteractions/Speech/SpeechBubbleManager.cs"
+    },
+    {
+      "featureId": "fix-existing-gamecomponents",
+      "severity": "non_blocking",
+      "description": "GameComponentTick() calls static methods which re-fetch Current from the game — minor inefficiency (double component lookup) but functionally correct.",
+      "file": "SocialInteractions/Speech/SpeechBubbleManager.cs"
+    }
+  ],
+  "appliedUpdates": [],
+  "suggestedGuidanceUpdates": [
+    {
+      "target": "AGENTS.md",
+      "suggestion": "Update the 'Static Current accessors' convention to use fully-qualified 'Verse.Current.Game?.GetComponent<T>()' to disambiguate from the class's own 'Current' property. Current documentation says 'Current.Game?.GetComponent<T>()' which is ambiguous inside classes that define a 'Current' static property.",
+      "evidence": "Features convert-tts-manager and all subsequent GameComponent conversions use 'Verse.Current.Game?.GetComponent<T>()' for disambiguation. All 6 converted GameComponents follow this pattern.",
+      "isSystemic": true
+    },
+    {
+      "target": "AGENTS.md",
+      "suggestion": "Add convention: 'When converting a static class to GameComponent, remove any existing MapComponent.ExposeData() proxy calls that previously delegated to the static class. GameComponent.ExposeData() is called automatically by the engine. Leaving proxy calls causes double serialization.'",
+      "evidence": "convert-dating-manager left DateTracker_MapComponent.ExposeData() calling DatingManager.Current.ExposeData() — a residual from when DatingManager was static and the MapComponent was the only serialization entry point. Now causes double write of 'dates' and 'dateCooldowns' keys.",
+      "isSystemic": true
+    },
+    {
+      "target": "AGENTS.md",
+      "suggestion": "Document the nested settings access pattern: 'Settings fields are accessed via Settings.Api.X, Settings.Features.X, Settings.Prompts.X, Settings.Display.X, Settings.Gameplay.X. No direct field access on the top-level settings class.'",
+      "evidence": "decompose-settings updated 51 consumer files to use the nested pattern. All future workers touching settings need to know this convention.",
+      "isSystemic": true
+    },
+    {
+      "target": "skills",
+      "suggestion": "Add Windows fallback note to refactor-worker skill's 'Initialize Environment' step: 'On Windows, .factory/init.sh may fail. Run the equivalent dotnet restore commands directly: dotnet restore SocialInteractions\\SocialInteractions.csproj && dotnet restore SocialInteractions.Tests\\SocialInteractions.Tests.csproj'",
+      "evidence": "5 out of 6 workers in this milestone reported init.sh failing on Windows with path resolution or dotnet-not-in-PATH errors. All successfully used direct dotnet restore as fallback. This is a systemic issue affecting every Windows worker session.",
+      "isSystemic": true
+    }
+  ],
+  "rejectedObservations": [
+    {
+      "observation": "Worker suggestion to add init.ps1 for Windows",
+      "reason": "services.yaml already has explicit 'restore' command. The real issue is the skill referencing init.sh without documenting alternatives. Addressed in suggestedGuidanceUpdates for the skill."
+    },
+    {
+      "observation": "chatLogManager constructor gotcha already documented in architecture.md",
+      "reason": "already-documented: .factory/library/architecture.md already contains 'GameComponent Constructor Pattern' section explaining no : base(game) call."
+    }
+  ],
+  "previousRound": null
+}

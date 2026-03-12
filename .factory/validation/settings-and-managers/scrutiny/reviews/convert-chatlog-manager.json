@@ -1,0 +1,33 @@
+{
+  "featureId": "convert-chatlog-manager",
+  "reviewedAt": "2026-03-12T17:37:00.000Z",
+  "commitId": "3a82de4",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "ChatLogManager was correctly converted from a static class to a GameComponent. The class declaration, constructor, static Current accessor, instance fields/methods, ExposeData override, and all 7 call sites across 3 external files are properly updated. The implementation follows the project's established GameComponent conversion pattern including the constructor gotcha (no `: base(game)` call). No lock objects existed in the original class so VAL-GC-022 is trivially satisfied. The ExposeData() is a no-op which is correct since the chat log is transient state (cleared on game load via SpeechBubbleManager). Build succeeds and all 24 tests pass.",
+    "issues": [
+      {
+        "file": "SocialInteractions/UI/ChatLogManager.cs",
+        "line": 82,
+        "severity": "non_blocking",
+        "description": "The chatLog field is declared `private readonly` but List<T> is mutable — `readonly` only prevents reassignment, not mutation. This is fine for current usage but the `readonly` modifier may give a false sense of immutability to future readers. Minor style concern, not a bug."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The refactor-worker skill's Step 3 ('For class conversion') says to 'Convert static lock objects to instance fields' as a general step, but ChatLogManager had no lock objects. The worker correctly identified this and skipped the step. However, the skill procedure doesn't mention the Windows init.sh path resolution issue that caused the worker to deviate from the 'Initialize Environment' step in worker-base. The worker's skillFeedback.followedProcedure=false due to this Windows path issue, which is a justified deviation.",
+      "evidence": "Handoff skillFeedback.deviations[0]: 'Could not execute .factory/init.sh directly due shell path resolution in this Windows execution context'. Worker ran equivalent dotnet restore commands manually."
+    },
+    {
+      "area": "conventions",
+      "observation": "The worker correctly documented the GameComponent constructor pattern in architecture.md. This discovery benefits all subsequent manager conversion features. The convention is already captured in AGENTS.md under 'Static Current accessors' but the constructor gotcha detail was new knowledge.",
+      "evidence": ".factory/library/architecture.md now contains 'GameComponent Constructor Pattern' section explaining that `: base(game)` must not be called."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Pass. ChatLogManager correctly converted from static class to GameComponent with static Current accessor, instance methods/fields, empty constructor (no base call per project pattern), and ExposeData override. All 7 call sites across ChatLogTabWindow, SpeechBubbleManager (5 sites), and NegotiationManager updated to use ChatLogManager.Current?.Method() pattern with proper null-safety. Build succeeds, 24 tests pass. One non-blocking style observation about readonly on a mutable list. No blocking issues found."
+}

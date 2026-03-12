@@ -1,0 +1,22 @@
+{
+  "featureId": "convert-children-misbehavior-manager",
+  "reviewedAt": "2026-03-12T18:39:00.000Z",
+  "commitId": "3ae004f18bf7e4b0ea086bffc388d6218356baf7",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "ChildrenMisbehaviorManager correctly converted from static class to GameComponent. Class declaration changed to `public class ChildrenMisbehaviorManager : GameComponent` with proper Current accessor using null-conditional `Verse.Current.Game?.GetComponent<>()`. All 30+ static methods converted to instance methods, 2 static fields (`nextAllowedMisbehaviorTick`, `misbehaviorCheckInterval`) converted to instance fields. ExposeData override added (empty, appropriate since the Dictionary<Pawn, int> cooldown data is transient). All 4 caller sites updated correctly: ChildrenMisbehaviorTracker_MapComponent caches Current in a local variable with null guard, three patch/interaction files use `Current?.IsChild() == true` pattern for safe null handling. Constructor follows same pattern as other converted GameComponents (no explicit base call). No lock objects existed in this class. No remaining static mutable state. Build succeeds, 24 tests pass.",
+    "issues": [
+      {
+        "file": "SocialInteractions/Children/ChildrenMisbehaviorManager.cs",
+        "line": 44,
+        "severity": "non_blocking",
+        "description": "Field `misbehaviorCheckInterval` is assigned value 3000 but never read anywhere in the class, producing CS0414 warning. This was a pre-existing issue from the original static class (previously `private static int`). Could be made `const` or removed entirely."
+      }
+    ]
+  },
+  "sharedStateObservations": [],
+  "addressesFailureFrom": null,
+  "summary": "PASS. Clean conversion of ChildrenMisbehaviorManager from static class to GameComponent. All validation criteria met: GameComponent inheritance (VAL-GC-009), static Current accessor with null safety (VAL-GC-010, VAL-GC-021), no longer static class (VAL-GC-011), no static mutable state, ExposeData implemented (VAL-GC-019), Game parameter constructor (VAL-GC-020), no lock objects to convert (VAL-GC-022 — N/A, none existed), all 4 callers updated (VAL-GC-018). One non-blocking issue: unused field `misbehaviorCheckInterval` producing CS0414 warning (pre-existing). Worker followed the refactor-worker skill procedure correctly."
+}
