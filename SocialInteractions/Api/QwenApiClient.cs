@@ -95,11 +95,11 @@ namespace SocialInteractions.Api
             var request = new QwenApiRequest
             {
                 Model = _modelName,
-                Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
-                MaxTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
-                TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
-                TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
-                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null),
+                Temperature = temperature ?? SocialInteractions.Settings.Api.llmTemperature,
+                MaxTokens = maxLength ?? SocialInteractions.Settings.Api.llmMaxTokens,
+                TopP = topP ?? (SocialInteractions.Settings.Api.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.Api.llmTopP : null),
+                TopK = topK ?? (SocialInteractions.Settings.Api.llmTopK > 0 ? (int?)SocialInteractions.Settings.Api.llmTopK : null),
+                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.Api.llmRepetitionPenalty : null),
                 Stream = false,
                 Stop = BuildStopSequenceList(stopSequence)
             };

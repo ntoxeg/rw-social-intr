@@ -132,12 +132,12 @@ namespace SocialInteractions.Api
                 return stopSequence;
             }
 
-            if (SocialInteractions.Settings == null || string.IsNullOrEmpty(SocialInteractions.Settings.llmStoppingStrings))
+            if (SocialInteractions.Settings == null || string.IsNullOrEmpty(SocialInteractions.Settings.Prompts.llmStoppingStrings))
             {
                 return new List<string>();
             }
 
-            return new List<string>(SocialInteractions.Settings.llmStoppingStrings.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries));
+            return new List<string>(SocialInteractions.Settings.Prompts.llmStoppingStrings.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries));
         }
 
         protected static bool IsValidHeaderValue(string value)

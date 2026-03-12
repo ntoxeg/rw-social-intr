@@ -387,7 +387,7 @@ namespace SocialInteractions.Combat
     {
         public static void Postfix(Verb_MeleeAttack __instance, bool __result)
         {
-            if (__result && SocialInteractions.Settings.enableCombatTaunts && __instance.CasterIsPawn && __instance.CasterPawn.RaceProps.Humanlike && !ShamblerHelper.IsShambler(__instance.CasterPawn) && Rand.Value < SocialInteractions.Settings.meleeTauntProbability)
+            if (__result && SocialInteractions.Settings.Features.enableCombatTaunts && __instance.CasterIsPawn && __instance.CasterPawn.RaceProps.Humanlike && !ShamblerHelper.IsShambler(__instance.CasterPawn) && Rand.Value < SocialInteractions.Settings.Gameplay.meleeTauntProbability)
             {
                 string taunt = CombatTaunts.MeleeAttackingTaunts.RandomElement();
                 float duration = SocialInteractions.EstimateReadingTime(taunt);
@@ -401,7 +401,7 @@ namespace SocialInteractions.Combat
     {
         public static void Postfix(Verb_Shoot __instance, bool __result)
         {
-            if (__result && SocialInteractions.Settings.enableCombatTaunts && __instance.CasterIsPawn && __instance.CasterPawn.RaceProps.Humanlike && !ShamblerHelper.IsShambler(__instance.CasterPawn) && Rand.Value < SocialInteractions.Settings.shootTauntProbability)
+            if (__result && SocialInteractions.Settings.Features.enableCombatTaunts && __instance.CasterIsPawn && __instance.CasterPawn.RaceProps.Humanlike && !ShamblerHelper.IsShambler(__instance.CasterPawn) && Rand.Value < SocialInteractions.Settings.Gameplay.shootTauntProbability)
             {
                 Pawn casterPawn = __instance.CasterPawn;
                 string taunt = CombatTaunts.AttackingTaunts.RandomElement();
@@ -415,7 +415,7 @@ namespace SocialInteractions.Combat
     {
         public static void Postfix(Pawn_HealthTracker __instance, DamageInfo dinfo, float totalDamageDealt)
         {
-            if (!SocialInteractions.Settings.enableCombatTaunts) return;
+            if (!SocialInteractions.Settings.Features.enableCombatTaunts) return;
 
             Pawn pawn = (Pawn)AccessTools.Field(typeof(Pawn_HealthTracker), "pawn").GetValue(__instance);
 
@@ -425,7 +425,7 @@ namespace SocialInteractions.Combat
 
             if (dinfo.Instigator.HostileTo(pawn))
             {
-                if (Rand.Value < SocialInteractions.Settings.gettingHitComplaintProbability)
+                if (Rand.Value < SocialInteractions.Settings.Gameplay.gettingHitComplaintProbability)
                 {
                     string complaint = CombatTaunts.GettingHitComplaints.RandomElement();
                     float duration = SocialInteractions.EstimateReadingTime(complaint);
@@ -440,9 +440,9 @@ namespace SocialInteractions.Combat
     {
         public static void Postfix(Pawn_HealthTracker __instance)
         {
-            if (!SocialInteractions.Settings.enableCombatTaunts) return;
+            if (!SocialInteractions.Settings.Features.enableCombatTaunts) return;
             Pawn pawn = (Pawn)AccessTools.Field(typeof(Pawn_HealthTracker), "pawn").GetValue(__instance);
-            if (pawn.Spawned && pawn.RaceProps.Humanlike && !ShamblerHelper.IsShambler(pawn) && Rand.Value < SocialInteractions.Settings.downedCallForHelpProbability)
+            if (pawn.Spawned && pawn.RaceProps.Humanlike && !ShamblerHelper.IsShambler(pawn) && Rand.Value < SocialInteractions.Settings.Gameplay.downedCallForHelpProbability)
             {
                 string callForHelp = CombatTaunts.DownedCallsForHelp.RandomElement();
                 float duration = SocialInteractions.EstimateReadingTime(callForHelp);

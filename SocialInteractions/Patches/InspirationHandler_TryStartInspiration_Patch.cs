@@ -15,8 +15,8 @@ namespace SocialInteractions.Patches
         public static void Postfix(bool __result, InspirationHandler __instance, InspirationDef def)
         {
             // Check if feature and LLM interactions are enabled
-            if (!SocialInteractions.Settings.enableInspirationMonologue ||
-                !SocialInteractions.Settings.llmInteractionsEnabled)
+            if (!SocialInteractions.Settings.Features.enableInspirationMonologue ||
+                !SocialInteractions.Settings.Features.llmInteractionsEnabled)
             {
                 return;
             }

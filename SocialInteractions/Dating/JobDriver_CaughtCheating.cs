@@ -28,7 +28,7 @@ namespace SocialInteractions.Dating
         private int ticksLeft; // For bounce animation, initialize to 0 by default
 
         // Use the settings value as minimum duration
-        private int MinWaitDuration { get { return SocialInteractions.Settings.cheatingConfrontationTicks; } }
+        private int MinWaitDuration { get { return SocialInteractions.Settings.Gameplay.cheatingConfrontationTicks; } }
 
         public override Vector3 ForcedBodyOffset
         {
@@ -39,7 +39,7 @@ namespace SocialInteractions.Dating
                     return Vector3.zero;
                 }
 
-                int totalTicks = SocialInteractions.Settings.dateLovinTicks;
+                int totalTicks = SocialInteractions.Settings.Gameplay.dateLovinTicks;
 
                 // Make sure we don't divide by zero
                 if (totalTicks <= 0)
@@ -175,19 +175,19 @@ namespace SocialInteractions.Dating
                     SLog.Message(string.Format("[SocialInteractions] JobDriver_CaughtCheating: 3p wait toil initAction called for pawn {0}.", pawn.LabelShort));
 
                     // Start the bounce animation timer
-                    ticksLeft = SocialInteractions.Settings.dateLovinTicks;
+                    ticksLeft = SocialInteractions.Settings.Gameplay.dateLovinTicks;
 
                     // Reset the lovin timers for the other two pawns to sync up
                     var cheaterDriver = cheater.jobs.curDriver as JobDriver_DateLovin;
                     if (cheaterDriver != null)
                     {
-                        cheaterDriver.ticksLeft = SocialInteractions.Settings.dateLovinTicks;
+                        cheaterDriver.ticksLeft = SocialInteractions.Settings.Gameplay.dateLovinTicks;
                         SLog.Message(string.Format("[SocialInteractions] Reset lovin timer for cheater {0}.", cheater.LabelShort));
                     }
                     var partnerDriver = partner.jobs.curDriver as JobDriver_DateLovin;
                     if (partnerDriver != null)
                     {
-                        partnerDriver.ticksLeft = SocialInteractions.Settings.dateLovinTicks;
+                        partnerDriver.ticksLeft = SocialInteractions.Settings.Gameplay.dateLovinTicks;
                         SLog.Message(string.Format("[SocialInteractions] Reset lovin timer for partner {0}.", partner.LabelShort));
                     }
 

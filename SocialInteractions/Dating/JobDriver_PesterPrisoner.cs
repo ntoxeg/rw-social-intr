@@ -48,8 +48,8 @@ namespace SocialInteractions.Dating
             {
                 pesterStartTick = Find.TickManager.TicksGame;
                 int interval = Rand.RangeInclusive(
-                    SocialInteractions.Settings.pesterInsultIntervalMin,
-                    SocialInteractions.Settings.pesterInsultIntervalMax);
+                    SocialInteractions.Settings.Gameplay.pesterInsultIntervalMin,
+                    SocialInteractions.Settings.Gameplay.pesterInsultIntervalMax);
                 nextInsultTick = pesterStartTick + interval;
 
                 // Get the date partner
@@ -105,7 +105,7 @@ namespace SocialInteractions.Dating
             followAndPester.tickAction = () =>
             {
                 // Check if we should end (time expired)
-                if (Find.TickManager.TicksGame - pesterStartTick >= SocialInteractions.Settings.pesterPrisonerDuration)
+                if (Find.TickManager.TicksGame - pesterStartTick >= SocialInteractions.Settings.Gameplay.pesterPrisonerDuration)
                 {
                     SLog.Message(string.Format("[SocialInteractions] PesterPrisoner: {0} finished pestering duration. Moving to cleanup.", this.pawn.LabelShort));
                     this.ReadyForNextToil();
@@ -126,7 +126,7 @@ namespace SocialInteractions.Dating
                     JoyKindDef sadisticJoy = DefDatabase<JoyKindDef>.GetNamedSilentFail("Sadistic");
                     if (sadisticJoy == null)
                         sadisticJoy = JoyKindDefOf.Social; // Fallback to social
-                    this.pawn.needs.joy.GainJoy(SocialInteractions.Settings.pesterJoyGainRate, sadisticJoy);
+                    this.pawn.needs.joy.GainJoy(SocialInteractions.Settings.Gameplay.pesterJoyGainRate, sadisticJoy);
                 }
 
 
@@ -147,7 +147,7 @@ namespace SocialInteractions.Dating
                                     Need suppression = this.Target.needs.TryGetNeed(suppressionDef);
                                     if (suppression != null)
                                     {
-                                        suppression.CurLevel += SocialInteractions.Settings.pesterSuppressionAmount;
+                                        suppression.CurLevel += SocialInteractions.Settings.Gameplay.pesterSuppressionAmount;
                                     }
                                 }
                             }
@@ -156,8 +156,8 @@ namespace SocialInteractions.Dating
 
                     // Schedule next insult
                     int interval = Rand.RangeInclusive(
-                        SocialInteractions.Settings.pesterInsultIntervalMin,
-                        SocialInteractions.Settings.pesterInsultIntervalMax);
+                        SocialInteractions.Settings.Gameplay.pesterInsultIntervalMin,
+                        SocialInteractions.Settings.Gameplay.pesterInsultIntervalMax);
                     nextInsultTick = Find.TickManager.TicksGame + interval;
                 }
 

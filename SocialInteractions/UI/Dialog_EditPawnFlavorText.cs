@@ -127,8 +127,8 @@ namespace SocialInteractions.UI
             // Auto-Generate button
             Rect autoGenButtonRect = new Rect(currentX, btnY, btnWidth, ButtonHeight);
 
-            bool canGenerate = SocialInteractions.Settings.llmInteractionsEnabled &&
-                               !string.IsNullOrEmpty(SocialInteractions.Settings.llmApiUrl);
+            bool canGenerate = SocialInteractions.Settings.Features.llmInteractionsEnabled &&
+                               !string.IsNullOrEmpty(SocialInteractions.Settings.Api.llmApiUrl);
 
             string autoGenLabel = isGenerating ? "SocialInteractions_AutoGenerateBioGenerating".Translate() : "SocialInteractions_AutoGenerateBio".Translate();
 

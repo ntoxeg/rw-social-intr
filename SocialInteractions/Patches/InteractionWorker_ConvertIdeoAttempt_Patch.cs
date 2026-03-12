@@ -11,15 +11,15 @@ namespace SocialInteractions.Patches
     {
         public static void Postfix(InteractionWorker_ConvertIdeoAttempt __instance, Pawn initiator, Pawn recipient, List<RulePackDef> extraSentencePacks)
         {
-            if (SocialInteractions.Settings.verboseLogging)
+            if (SocialInteractions.Settings.Features.verboseLogging)
             {
                 SLog.Message(string.Format("[SocialInteractions] InteractionWorker_ConvertIdeoAttempt_Patch called. Initiator: {0}, Recipient: {1}",
                     initiator?.LabelShort ?? "null", recipient?.LabelShort ?? "null"));
             }
 
-            if (!SocialInteractions.Settings.enableIdeologyConversionInteractions || !SocialInteractions.Settings.llmInteractionsEnabled)
+            if (!SocialInteractions.Settings.Features.enableIdeologyConversionInteractions || !SocialInteractions.Settings.Features.llmInteractionsEnabled)
             {
-                if (SocialInteractions.Settings.verboseLogging)
+                if (SocialInteractions.Settings.Features.verboseLogging)
                 {
                     SLog.Message("[SocialInteractions] Conversion interaction disabled in settings.");
                 }
@@ -28,7 +28,7 @@ namespace SocialInteractions.Patches
 
             if (initiator == null || recipient == null || extraSentencePacks == null)
             {
-                if (SocialInteractions.Settings.verboseLogging)
+                if (SocialInteractions.Settings.Features.verboseLogging)
                 {
                     SLog.Message("[SocialInteractions] Initiator, recipient, or extraSentencePacks is null.");
                 }
@@ -54,7 +54,7 @@ namespace SocialInteractions.Patches
                 outcome = "fail_social_fight";
             }
 
-            if (SocialInteractions.Settings.verboseLogging)
+            if (SocialInteractions.Settings.Features.verboseLogging)
             {
                 SLog.Message(string.Format("[SocialInteractions] Conversion outcome: {0}", outcome));
             }

@@ -19,14 +19,14 @@ namespace SocialInteractions.Dating
         public override Job TryGiveJob(Pawn pawn)
         {
             // Basic validity checks
-            if (pawn == null || !SocialInteractions.Settings.enableDatingFeature ||
+            if (pawn == null || !SocialInteractions.Settings.Features.enableDatingFeature ||
                 DatingManager.IsOnDateCooldown(pawn))
                 return null;
 
             // Cooldown check to prevent spam
             int lastTick;
             if (lastAttemptTick.TryGetValue(pawn, out lastTick) &&
-                Find.TickManager.TicksGame - lastTick < SocialInteractions.Settings.goOnDateCooldownTicks)
+                Find.TickManager.TicksGame - lastTick < SocialInteractions.Settings.Gameplay.goOnDateCooldownTicks)
                 return null;
 
             lastAttemptTick[pawn] = Find.TickManager.TicksGame;
@@ -41,7 +41,7 @@ namespace SocialInteractions.Dating
                 return null;
 
             // Check joy threshold and various conditions that prevent dating
-            if (pawn.needs.joy.CurLevelPercentage > SocialInteractions.Settings.joyThresholdForDate ||
+            if (pawn.needs.joy.CurLevelPercentage > SocialInteractions.Settings.Gameplay.joyThresholdForDate ||
                 !pawn.Awake() || pawn.InBed() ||
                 (pawn.CurJob != null && pawn.CurJob.def == JobDefOf.LayDown) ||
                 pawn.Drafted)
@@ -109,11 +109,11 @@ namespace SocialInteractions.Dating
             // If they are already in a romantic relationship, use relationship-based scoring
             if (isLover || isFiance || isSpouse)
             {
-                float relationshipScore = isSpouse ? SocialInteractions.Settings.spouseDateWeight :
-                                          isFiance ? SocialInteractions.Settings.fianceDateWeight :
-                                                     SocialInteractions.Settings.loverDateWeight;
+                float relationshipScore = isSpouse ? SocialInteractions.Settings.Gameplay.spouseDateWeight :
+                                          isFiance ? SocialInteractions.Settings.Gameplay.fianceDateWeight :
+                                                     SocialInteractions.Settings.Gameplay.loverDateWeight;
                 int opinion = initiator.relations.OpinionOf(partner);
-                float opinionAdjustment = System.Math.Max(-2f, System.Math.Min(2f, opinion / SocialInteractions.Settings.opinionAdjustmentFactor));
+                float opinionAdjustment = System.Math.Max(-2f, System.Math.Min(2f, opinion / SocialInteractions.Settings.Gameplay.opinionAdjustmentFactor));
                 return relationshipScore + opinionAdjustment;
             }
 
@@ -122,7 +122,7 @@ namespace SocialInteractions.Dating
             if (baseOpinion <= 10)
                 return 0f;
 
-            float score = baseOpinion * SocialInteractions.Settings.nonRelatedPartnerWeightFactor;
+            float score = baseOpinion * SocialInteractions.Settings.Gameplay.nonRelatedPartnerWeightFactor;
 
             // Check if the initiator has an official romantic partner (spouse/fiance/lover)
             Pawn officialPartner = initiator.relations.GetFirstDirectRelationPawn(PawnRelationDefOf.Spouse);
@@ -137,11 +137,11 @@ namespace SocialInteractions.Dating
                 int opinionOfOfficialPartner = initiator.relations.OpinionOf(officialPartner);
                 int opinionDifference = baseOpinion - opinionOfOfficialPartner;
 
-                float cheatingPenalty = SocialInteractions.Settings.cheatingPenalty;
+                float cheatingPenalty = SocialInteractions.Settings.Gameplay.cheatingPenalty;
                 // Reduce penalty if potential partner is preferred (higher opinion)
                 if (opinionDifference > 0)
                 {
-                    float reductionFactor = System.Math.Max(0f, System.Math.Min(1f, opinionDifference / SocialInteractions.Settings.opinionDifferenceThreshold));
+                    float reductionFactor = System.Math.Max(0f, System.Math.Min(1f, opinionDifference / SocialInteractions.Settings.Gameplay.opinionDifferenceThreshold));
                     cheatingPenalty *= (1f - reductionFactor);
                 }
 

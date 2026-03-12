@@ -94,7 +94,7 @@ namespace SocialInteractions.Patches
     {
         public static void Postfix(JobGiver_RescueNearby __instance, ref Job __result, Pawn pawn)
         {
-            if (__result == null || !SocialInteractions.Settings.enableRescue)
+            if (__result == null || !SocialInteractions.Settings.Features.enableRescue)
             {
                 return;
             }
@@ -110,7 +110,7 @@ namespace SocialInteractions.Patches
     {
         public static void Postfix(JoyGiver_VisitSickPawn __instance, ref Job __result, Pawn pawn)
         {
-            if (__result == null || !SocialInteractions.Settings.enableVisitSickPawn)
+            if (__result == null || !SocialInteractions.Settings.Features.enableVisitSickPawn)
             {
                 return;
             }
@@ -135,7 +135,7 @@ namespace SocialInteractions.Patches
             // This overrides the game's default behavior of setting it to 9999999 if the partner already has a lovin' job.
             // We need to use reflection to access the private 'ticksLeft' field.
             __instance.GetType().GetField("ticksLeft", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance)
-                .SetValue(__instance, (int)(SocialInteractions.Settings.dateLovinTicks * UnityEngine.Mathf.Clamp(Rand.Range(0.1f, 1.1f), 0.1f, 2f)));
+                .SetValue(__instance, (int)(SocialInteractions.Settings.Gameplay.dateLovinTicks * UnityEngine.Mathf.Clamp(Rand.Range(0.1f, 1.1f), 0.1f, 2f)));
 
             // Symmetry breaking: only the pawn whose name comes first alphabetically will trigger the dialogue.
             if (initiator.Name.ToStringShort.CompareTo(partner.Name.ToStringShort) < 0)

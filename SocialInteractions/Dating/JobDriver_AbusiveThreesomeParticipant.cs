@@ -102,7 +102,7 @@ namespace SocialInteractions.Dating
                     return Vector3.zero;
                 }
 
-                int totalTicks = SocialInteractions.Settings.dateLovinTicks;
+                int totalTicks = SocialInteractions.Settings.Gameplay.dateLovinTicks;
                 if (totalTicks <= 0) return Vector3.zero;
 
                 float progress = 1.0f - ((float)abuserDriver.ticksLeft / totalTicks);

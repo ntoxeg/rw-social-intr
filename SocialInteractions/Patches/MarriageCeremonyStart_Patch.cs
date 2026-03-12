@@ -47,7 +47,7 @@ namespace SocialInteractions.Patches
             }
 
             // Check if LLM is busy and if we should prevent spam
-            if (SocialInteractions.Settings.preventSpam && SpeechBubbleManager.IsLlmCurrentlyBusy())
+            if (SocialInteractions.Settings.Features.preventSpam && SpeechBubbleManager.IsLlmCurrentlyBusy())
             {
                 return;
             }

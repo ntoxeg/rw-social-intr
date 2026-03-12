@@ -6,7 +6,7 @@ namespace SocialInteractions
     {
         public static void Message(string text)
         {
-            if (SocialInteractions.Settings != null && SocialInteractions.Settings.verboseLogging)
+            if (SocialInteractions.Settings != null && SocialInteractions.Settings.Features.verboseLogging)
             {
                 Verse.Log.Message(text);
             }

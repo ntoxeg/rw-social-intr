@@ -141,7 +141,7 @@ namespace SocialInteractions.Jobs
                                 return;
                             }
 
-                            if (string.IsNullOrEmpty(SocialInteractions.Settings.llmApiUrl))
+                            if (string.IsNullOrEmpty(SocialInteractions.Settings.Api.llmApiUrl))
                             {
                                 SLog.Error("LLM API URL is not set in mod settings. Cannot generate LLM response.");
                                 llmTaskComplete = true;

@@ -68,7 +68,7 @@ namespace SocialInteractions.Speech
             // Draw the text with the selected rendering style
             if (!string.IsNullOrEmpty(text))
             {
-                if (SocialInteractions.Settings.useBackgroundTextRendering)
+                if (SocialInteractions.Settings.Display.useBackgroundTextRendering)
                 {
                     DrawTextWithBackground(color);
                 }

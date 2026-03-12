@@ -47,7 +47,7 @@ namespace SocialInteractions.Children
             }
 
             float misbehaviorFactor = 0.3f; // Base factor
-            float parentImpactMultiplier = SocialInteractions.Settings.childrenMisbehaviorParentOpinionImpact;
+            float parentImpactMultiplier = SocialInteractions.Settings.Gameplay.childrenMisbehaviorParentOpinionImpact;
 
             // Factor in child's current mood
             float moodFactor = 0f;
@@ -178,7 +178,7 @@ namespace SocialInteractions.Children
             }
 
             // Check if children misbehavior is enabled in settings
-            if (!SocialInteractions.Settings.enableChildrenMisbehavior)
+            if (!SocialInteractions.Settings.Features.enableChildrenMisbehavior)
             {
                 return false;
             }
@@ -206,7 +206,7 @@ namespace SocialInteractions.Children
             float misbehaviorFactor = CalculateMisbehaviorFactor(child);
 
             // Apply base chance from settings
-            float baseChance = SocialInteractions.Settings.baseChildrenMisbehaviorChance;
+            float baseChance = SocialInteractions.Settings.Gameplay.baseChildrenMisbehaviorChance;
 
             // Calculate the total probability
             float totalChance = baseChance * misbehaviorFactor;

@@ -53,7 +53,7 @@ namespace SocialInteractions.Interactions
             }
 
             // Check if backstabbing is enabled in settings
-            if (!SocialInteractions.Settings.enableBackstabbing)
+            if (!SocialInteractions.Settings.Features.enableBackstabbing)
             {
                 // If backstabbing is disabled, initialize output parameters and return early
                 letterText = null;
@@ -251,7 +251,7 @@ namespace SocialInteractions.Interactions
             int recipientSocialSkill = recipient.skills != null ? recipient.skills.GetSkill(SkillDefOf.Social).Level : 0;
 
             // Base chance of success - use the settings value instead of hardcoded 0.3
-            float baseChance = SocialInteractions.Settings.baseBackstabbingChance; // Base chance from settings
+            float baseChance = SocialInteractions.Settings.Gameplay.baseBackstabbingChance; // Base chance from settings
 
             // Adjust for skill difference
             float skillDifference = (initiatorSocialSkill - recipientSocialSkill) * 0.05f; // 5% per skill difference

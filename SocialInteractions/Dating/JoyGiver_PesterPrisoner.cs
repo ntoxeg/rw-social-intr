@@ -19,7 +19,7 @@ namespace SocialInteractions.Dating
         public override Job TryGiveJob(Pawn pawn)
         {
             // Basic validity checks
-            if (pawn == null || !SocialInteractions.Settings.enablePesterPrisonerFeature)
+            if (pawn == null || !SocialInteractions.Settings.Features.enablePesterPrisonerFeature)
                 return null;
 
             // Cooldown check to prevent spam

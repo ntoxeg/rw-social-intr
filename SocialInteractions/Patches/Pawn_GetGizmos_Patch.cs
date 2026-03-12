@@ -21,7 +21,7 @@ namespace SocialInteractions.Patches
             // Only add the gizmo for colonists that are not downed, not drafted, and not in a mental state
             // Also only add it if the manual chat setting is enabled
             if (!__instance.IsColonistPlayerControlled || __instance.Downed || __instance.Drafted || __instance.InMentalState ||
-                !SocialInteractions.Settings.enableManualChat)
+                !SocialInteractions.Settings.Features.enableManualChat)
             {
                 return;
             }

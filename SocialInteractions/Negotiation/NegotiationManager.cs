@@ -774,12 +774,12 @@ namespace SocialInteractions.Negotiation
         private async Task<string> GetLLMResponse(string prompt)
         {
             var settings = SocialInteractions.Settings;
-            int? topK = settings.llmTopK > 0 ? (int?)settings.llmTopK : null;
-            float? topP = settings.llmTopP < 1.0f ? (float?)settings.llmTopP : null;
-            float? minP = settings.llmMinP > 0.0f ? (float?)settings.llmMinP : null;
-            float? repPen = settings.llmRepetitionPenalty != 1.0f ? (float?)settings.llmRepetitionPenalty : null;
+            int? topK = settings.Api.llmTopK > 0 ? (int?)settings.Api.llmTopK : null;
+            float? topP = settings.Api.llmTopP < 1.0f ? (float?)settings.Api.llmTopP : null;
+            float? minP = settings.Api.llmMinP > 0.0f ? (float?)settings.Api.llmMinP : null;
+            float? repPen = settings.Api.llmRepetitionPenalty != 1.0f ? (float?)settings.Api.llmRepetitionPenalty : null;
 
-            using (ILlmClient client = LlmClientFactory.Create(settings.llmApiType, settings))
+            using (ILlmClient client = LlmClientFactory.Create(settings.Api.llmApiType, settings))
             {
                 return await client.GenerateText(prompt, null, null, null, null, topK, topP, minP, repPen);
             }
@@ -973,7 +973,7 @@ namespace SocialInteractions.Negotiation
             }
 
             // Start staggered TTS dispatch
-            if (ttsBatch.Count > 0 && SocialInteractions.Settings.enableTTS && Current.Root != null)
+            if (ttsBatch.Count > 0 && SocialInteractions.Settings.Api.enableTTS && Current.Root != null)
             {
                 ((MonoBehaviour)Current.Root).StartCoroutine(ProcessTTSBatch(ttsBatch));
             }
@@ -983,7 +983,7 @@ namespace SocialInteractions.Negotiation
         {
             foreach (var line in batch)
             {
-                TTSManager.Speak(line.Text, line.Speaker, SocialInteractions.Settings.ttsSpeed, (int)SocialInteractions.Settings.ttsVolume);
+                TTSManager.Speak(line.Text, line.Speaker, SocialInteractions.Settings.Api.ttsSpeed, (int)SocialInteractions.Settings.Api.ttsVolume);
                 // Stagger requests by 200ms (realtime) to force FIFO processing on server/network
                 yield return new WaitForSecondsRealtime(0.5f);
             }
@@ -1276,7 +1276,7 @@ namespace SocialInteractions.Negotiation
             var comp = Current.Game.GetComponent<NegotiationCooldown_GameComponent>();
             if (comp == null) return;
 
-            float hours = SocialInteractions.Settings.negotiationCooldownHours;
+            float hours = SocialInteractions.Settings.Gameplay.negotiationCooldownHours;
             if (hours <= 0) return;
 
             if (raidContext != null)

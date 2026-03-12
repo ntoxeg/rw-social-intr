@@ -127,15 +127,15 @@ namespace SocialInteractions.Api
 
             request.GenerationConfig = new GeminiApiGenerationConfig
             {
-                MaxOutputTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
-                Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
-                TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
-                TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
-                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null),
+                MaxOutputTokens = maxLength ?? SocialInteractions.Settings.Api.llmMaxTokens,
+                Temperature = temperature ?? SocialInteractions.Settings.Api.llmTemperature,
+                TopP = topP ?? (SocialInteractions.Settings.Api.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.Api.llmTopP : null),
+                TopK = topK ?? (SocialInteractions.Settings.Api.llmTopK > 0 ? (int?)SocialInteractions.Settings.Api.llmTopK : null),
+                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.Api.llmRepetitionPenalty : null),
                 StopSequences = stopSequences
             };
 
-            if (SocialInteractions.Settings.disableLlmThinking)
+            if (SocialInteractions.Settings.Api.disableLlmThinking)
             {
                 request.GenerationConfig.ThinkingConfig = new GeminiApiThinkingConfig { ThinkingBudget = 0 };
             }
@@ -164,7 +164,7 @@ namespace SocialInteractions.Api
 
         protected override string BuildRequestUrl()
         {
-            string geminiModel = SocialInteractions.Settings.geminiModelName;
+            string geminiModel = SocialInteractions.Settings.Api.geminiModelName;
             if (string.IsNullOrEmpty(geminiModel))
             {
                 geminiModel = "gemini-2.5-flash";

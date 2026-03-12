@@ -124,18 +124,18 @@ namespace SocialInteractions.Api
             _modelName = modelName;
         }
 
-        private static bool UseChatCompletion => SocialInteractions.Settings != null && SocialInteractions.Settings.forceChatCompletion;
+        private static bool UseChatCompletion => SocialInteractions.Settings != null && SocialInteractions.Settings.Api.forceChatCompletion;
 
         protected override object BuildRequestBody(string prompt, int? maxLength, float? temperature, List<string> stopSequence, bool? enableXtcSampling, int? topK, float? topP, float? minP, float? repetitionPenalty)
         {
             var options = new OllamaApiOptions
             {
-                Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
-                TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
-                TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
-                MinP = minP ?? (SocialInteractions.Settings.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.llmMinP : null),
-                RepeatPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null),
-                NumPredict = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
+                Temperature = temperature ?? SocialInteractions.Settings.Api.llmTemperature,
+                TopK = topK ?? (SocialInteractions.Settings.Api.llmTopK > 0 ? (int?)SocialInteractions.Settings.Api.llmTopK : null),
+                TopP = topP ?? (SocialInteractions.Settings.Api.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.Api.llmTopP : null),
+                MinP = minP ?? (SocialInteractions.Settings.Api.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.Api.llmMinP : null),
+                RepeatPenalty = repetitionPenalty ?? (SocialInteractions.Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.Api.llmRepetitionPenalty : null),
+                NumPredict = maxLength ?? SocialInteractions.Settings.Api.llmMaxTokens,
                 Stop = BuildStopSequenceList(stopSequence)
             };
 

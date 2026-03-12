@@ -20,7 +20,7 @@ namespace SocialInteractions.Patches
             // Cast to Pawn to check if it's a child and misbehavior is enabled
             Pawn pawn = __instance as Pawn;
 
-            if (pawn != null && pawn.RaceProps.Humanlike && ChildrenMisbehaviorManager.IsChild(pawn) && SocialInteractions.Settings.enableChildrenMisbehavior)
+            if (pawn != null && pawn.RaceProps.Humanlike && ChildrenMisbehaviorManager.IsChild(pawn) && SocialInteractions.Settings.Features.enableChildrenMisbehavior)
             {
                 SLog.Message(string.Format("[SocialInteractions] Child {0} took damage of type {1}, amount {2}",
                     pawn.LabelShort, dinfo.Def.defName, dinfo.Amount));

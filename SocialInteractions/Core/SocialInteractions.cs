@@ -130,63 +130,63 @@ namespace SocialInteractions
         public static bool IsLlmInteractionEnabled(InteractionDef interactionDef)
         {
             //SLog.Message(string.Format("[SocialInteractions] IsLlmInteractionEnabled called for: {0}", interactionDef.defName));
-            if (!Settings.llmInteractionsEnabled) return false;
+            if (!Settings.Features.llmInteractionsEnabled) return false;
 
 
-            if (interactionDef == InteractionDefOf.Chitchat && Settings.enableChitchat) return true;
-            if (interactionDef == InteractionDefOf.DeepTalk && Settings.enableDeepTalk) return true;
-            if (interactionDef == InteractionDefOf.Insult && Settings.enableInsult) return true;
-            if (interactionDef == InteractionDefOf.RomanceAttempt && Settings.enableRomanceAttempt) return true;
-            if (interactionDef == InteractionDefOf.MarriageProposal && Settings.enableMarriageProposal) return true;
-            if (interactionDef == InteractionDefOf.Reassure && Settings.enableReassure) return true;
-            if (interactionDef == InteractionDefOf.DisturbingChat && Settings.enableDisturbingChat) return true;
-            if (interactionDef == InteractionDefOf.ConvertIdeoAttempt && Settings.enableIdeologyConversionInteractions) return true;
-            if (interactionDef == SI_InteractionDefOf.TendPatient && Settings.enableTendPatient) return true;
-            if (interactionDef == SI_InteractionDefOf.Lovin && Settings.enableLovin) return true;
-            if (interactionDef.defName == "GoOnDate" && Settings.enableDating) return true;
-            if (interactionDef == SI_InteractionDefOf.DateRejected && Settings.enableDating) return true;
-            if (interactionDef == SI_InteractionDefOf.DateAccepted && Settings.enableDating) return true;
-            if (interactionDef == SI_InteractionDefOf.DateLovin && Settings.enableDating && Settings.enableLovin) return true;
-            if (interactionDef == SI_InteractionDefOf.CaughtCheating && Settings.enableDating) return true;
-            if (interactionDef == SI_InteractionDefOf.ManualChat && Settings.enableManualChat) return true;
-            if (interactionDef == SI_InteractionDefOf.Badmouthing && Settings.enableDrama) return true;
-            if (interactionDef == SI_InteractionDefOf.EnhancedInsult && Settings.enableDrama) return true;
-            if (interactionDef == SI_InteractionDefOf.Admiration && Settings.enableDrama) return true;
-            if (interactionDef == SI_InteractionDefOf.Backstabbing && Settings.enableDrama) return true;
-            if (interactionDef == SI_InteractionDefOf.MakeUp && Settings.enableDrama) return true;
-            if (interactionDef == SI_InteractionDefOf.ChildAnnoying && Settings.enableChildrenMisbehavior) return true;
-            if (interactionDef == SI_InteractionDefOf.ChildPlayTag && Settings.enableChildrenMisbehavior) return true;
-            if (interactionDef.defName == "KindWords" && Settings.enableKindWordsInteractions) return true;
-            if (interactionDef.defName == "VRE_FlirtingAttempt" && Settings.enableFlirt) return true;
-            if (interactionDef.defName == "Slight" && Settings.enableSlight) return true;
-            if (interactionDef.defName == "IncestuousFlirt" && Settings.enableIncestuousFlirt) return true;
-            if (interactionDef.defName == "Rapport" && Settings.enableRapport) return true;
-            if (interactionDef == InteractionDefOf.RecruitAttempt && Settings.enableRecruitAttempt) return true;
-            if (interactionDef.defName == "ReduceResistance" && Settings.enableReduceResistance) return true;
-            if (interactionDef == InteractionDefOf.ReduceWill && Settings.enableReduceWill) return true;
-            if ((interactionDef.defName == "EnslaveAttempt" || (InteractionDefOf.EnslaveAttempt != null && interactionDef == InteractionDefOf.EnslaveAttempt)) && Settings.enableEnslaveAttempt) return true;
+            if (interactionDef == InteractionDefOf.Chitchat && Settings.Features.enableChitchat) return true;
+            if (interactionDef == InteractionDefOf.DeepTalk && Settings.Features.enableDeepTalk) return true;
+            if (interactionDef == InteractionDefOf.Insult && Settings.Features.enableInsult) return true;
+            if (interactionDef == InteractionDefOf.RomanceAttempt && Settings.Features.enableRomanceAttempt) return true;
+            if (interactionDef == InteractionDefOf.MarriageProposal && Settings.Features.enableMarriageProposal) return true;
+            if (interactionDef == InteractionDefOf.Reassure && Settings.Features.enableReassure) return true;
+            if (interactionDef == InteractionDefOf.DisturbingChat && Settings.Features.enableDisturbingChat) return true;
+            if (interactionDef == InteractionDefOf.ConvertIdeoAttempt && Settings.Features.enableIdeologyConversionInteractions) return true;
+            if (interactionDef == SI_InteractionDefOf.TendPatient && Settings.Features.enableTendPatient) return true;
+            if (interactionDef == SI_InteractionDefOf.Lovin && Settings.Features.enableLovin) return true;
+            if (interactionDef.defName == "GoOnDate" && Settings.Features.enableDating) return true;
+            if (interactionDef == SI_InteractionDefOf.DateRejected && Settings.Features.enableDating) return true;
+            if (interactionDef == SI_InteractionDefOf.DateAccepted && Settings.Features.enableDating) return true;
+            if (interactionDef == SI_InteractionDefOf.DateLovin && Settings.Features.enableDating && Settings.Features.enableLovin) return true;
+            if (interactionDef == SI_InteractionDefOf.CaughtCheating && Settings.Features.enableDating) return true;
+            if (interactionDef == SI_InteractionDefOf.ManualChat && Settings.Features.enableManualChat) return true;
+            if (interactionDef == SI_InteractionDefOf.Badmouthing && Settings.Features.enableDrama) return true;
+            if (interactionDef == SI_InteractionDefOf.EnhancedInsult && Settings.Features.enableDrama) return true;
+            if (interactionDef == SI_InteractionDefOf.Admiration && Settings.Features.enableDrama) return true;
+            if (interactionDef == SI_InteractionDefOf.Backstabbing && Settings.Features.enableDrama) return true;
+            if (interactionDef == SI_InteractionDefOf.MakeUp && Settings.Features.enableDrama) return true;
+            if (interactionDef == SI_InteractionDefOf.ChildAnnoying && Settings.Features.enableChildrenMisbehavior) return true;
+            if (interactionDef == SI_InteractionDefOf.ChildPlayTag && Settings.Features.enableChildrenMisbehavior) return true;
+            if (interactionDef.defName == "KindWords" && Settings.Features.enableKindWordsInteractions) return true;
+            if (interactionDef.defName == "VRE_FlirtingAttempt" && Settings.Features.enableFlirt) return true;
+            if (interactionDef.defName == "Slight" && Settings.Features.enableSlight) return true;
+            if (interactionDef.defName == "IncestuousFlirt" && Settings.Features.enableIncestuousFlirt) return true;
+            if (interactionDef.defName == "Rapport" && Settings.Features.enableRapport) return true;
+            if (interactionDef == InteractionDefOf.RecruitAttempt && Settings.Features.enableRecruitAttempt) return true;
+            if (interactionDef.defName == "ReduceResistance" && Settings.Features.enableReduceResistance) return true;
+            if (interactionDef == InteractionDefOf.ReduceWill && Settings.Features.enableReduceWill) return true;
+            if ((interactionDef.defName == "EnslaveAttempt" || (InteractionDefOf.EnslaveAttempt != null && interactionDef == InteractionDefOf.EnslaveAttempt)) && Settings.Features.enableEnslaveAttempt) return true;
             return false;
         }
 
         public static bool IsLlmJobEnabled(JobDriver jobDriver)
         {
-            if (!Settings.llmInteractionsEnabled) return false;
+            if (!Settings.Features.llmInteractionsEnabled) return false;
 
-            if (jobDriver is JobDriver_TendPatient && Settings.enableTendPatient) return true;
-            if (jobDriver is JobDriver_VisitSickPawn && Settings.enableVisitSickPawn) return true;
-            if (jobDriver is JobDriver_Lovin && Settings.enableLovin) return true;
+            if (jobDriver is JobDriver_TendPatient && Settings.Features.enableTendPatient) return true;
+            if (jobDriver is JobDriver_VisitSickPawn && Settings.Features.enableVisitSickPawn) return true;
+            if (jobDriver is JobDriver_Lovin && Settings.Features.enableLovin) return true;
 
             return false;
         }
 
         public static bool IsLlmMarriageCeremonyEnabled()
         {
-            return Settings.llmInteractionsEnabled && Settings.enableMarriageCeremony;
+            return Settings.Features.llmInteractionsEnabled && Settings.Features.enableMarriageCeremony;
         }
 
         public static bool IsLlmBreakupEnabled()
         {
-            return Settings.llmInteractionsEnabled && Settings.enableBreakups && Settings.useLlmForBreakups;
+            return Settings.Features.llmInteractionsEnabled && Settings.Features.enableBreakups && Settings.Features.useLlmForBreakups;
         }
 
         /// <summary>
@@ -202,10 +202,10 @@ namespace SocialInteractions
             string pawn2Name = recipient != null ? recipient.LabelShort : "Pawn2";
 
             // Determine if using text completion or chat completion API
-            bool isLocalApi = Settings.llmApiType == LlmApiType.KoboldCpp ||
-                              Settings.llmApiType == LlmApiType.LMStudio ||
-                              Settings.llmApiType == LlmApiType.Ollama;
-            bool isTextCompletion = isLocalApi && !Settings.forceChatCompletion;
+            bool isLocalApi = Settings.Api.llmApiType == LlmApiType.KoboldCpp ||
+                              Settings.Api.llmApiType == LlmApiType.LMStudio ||
+                              Settings.Api.llmApiType == LlmApiType.Ollama;
+            bool isTextCompletion = isLocalApi && !Settings.Api.forceChatCompletion;
 
             if (isTextCompletion)
             {
@@ -238,7 +238,7 @@ namespace SocialInteractions
                 subject = interactionDef != null ? interactionDef.label : "Custom Interaction"; // Default subject if interactionDef is null
             }
 
-            if (!Settings.llmInteractionsEnabled)
+            if (!Settings.Features.llmInteractionsEnabled)
             {
                 return null;
             }
@@ -263,13 +263,13 @@ namespace SocialInteractions
                 return null;
             }
 
-            if (string.IsNullOrEmpty(Settings.llmApiUrl) || string.IsNullOrEmpty(Settings.llmPromptTemplate))
+            if (string.IsNullOrEmpty(Settings.Api.llmApiUrl) || string.IsNullOrEmpty(Settings.Prompts.llmPromptTemplate))
             {
                 return null;
             }
 
             // Placeholder replacement (initial version, will expand later)
-            string prompt = Settings.llmPromptTemplate;
+            string prompt = Settings.Prompts.llmPromptTemplate;
             prompt = prompt.Replace("[topic]", "interaction");
             prompt = prompt.Replace("[subject]", subject ?? "");
 
@@ -344,18 +344,18 @@ namespace SocialInteractions
                 subject = "Thinking to themselves";
             }
 
-            if (!Settings.llmInteractionsEnabled)
+            if (!Settings.Features.llmInteractionsEnabled)
             {
                 return null;
             }
 
-            if (string.IsNullOrEmpty(Settings.llmApiUrl) || string.IsNullOrEmpty(Settings.llmMonologuePromptTemplate))
+            if (string.IsNullOrEmpty(Settings.Api.llmApiUrl) || string.IsNullOrEmpty(Settings.Prompts.llmMonologuePromptTemplate))
             {
                 return null;
             }
 
             // Placeholder replacement (initial version, will expand later)
-            string prompt = Settings.llmMonologuePromptTemplate;
+            string prompt = Settings.Prompts.llmMonologuePromptTemplate;
             prompt = prompt.Replace("[topic]", topic);
             prompt = prompt.Replace("[subject]", subject ?? "");
 
@@ -397,10 +397,10 @@ namespace SocialInteractions
 
             // Add API-specific ending for monologue
             string pawnName = pawn != null ? pawn.Name.ToStringShort : "Pawn";
-            bool isLocalApi = Settings.llmApiType == LlmApiType.KoboldCpp ||
-                              Settings.llmApiType == LlmApiType.LMStudio ||
-                              Settings.llmApiType == LlmApiType.Ollama;
-            bool isTextCompletion = isLocalApi && !Settings.forceChatCompletion;
+            bool isLocalApi = Settings.Api.llmApiType == LlmApiType.KoboldCpp ||
+                              Settings.Api.llmApiType == LlmApiType.LMStudio ||
+                              Settings.Api.llmApiType == LlmApiType.Ollama;
+            bool isTextCompletion = isLocalApi && !Settings.Api.forceChatCompletion;
 
             if (isTextCompletion)
             {
@@ -447,13 +447,13 @@ namespace SocialInteractions
             // Simple estimate: words per second from settings.
             int wordCount = text.Split(new string[] { " ", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries).Length;
             float estimatedTime = 0f;
-            if (SocialInteractions.Settings.wordsPerSecond <= 0)
+            if (SocialInteractions.Settings.Display.wordsPerSecond <= 0)
             {
                 estimatedTime = wordCount * 0.3f; // Fallback if setting is zero or negative
             }
             else
             {
-                estimatedTime = wordCount / SocialInteractions.Settings.wordsPerSecond; // Seconds
+                estimatedTime = wordCount / SocialInteractions.Settings.Display.wordsPerSecond; // Seconds
             }
             return estimatedTime;
         }
@@ -1322,7 +1322,7 @@ namespace SocialInteractions
         public static void HandleInteraction(Pawn initiator, Pawn recipient, InteractionDef interactionDef, string defaultText)
         {
             // If pawns stop on interaction, let the job-based system handle it
-            if (Settings.pawnsStopOnInteraction &&
+            if (Settings.Features.pawnsStopOnInteraction &&
                 (interactionDef == InteractionDefOf.Chitchat ||
                  interactionDef == InteractionDefOf.DeepTalk ||
                  interactionDef == InteractionDefOf.Insult ||
@@ -1399,7 +1399,7 @@ namespace SocialInteractions
             // We'll use the DateLovin interaction def for this
             // Only if lovin interactions are enabled in settings
             int conversationId = -1;
-            if (Settings.enableLovin)
+            if (Settings.Features.enableLovin)
             {
                 conversationId = HandleNonStoppingInteraction(spouse, cheater, SI_InteractionDefOf.DateLovin, subject, true, true);
             }
@@ -1448,8 +1448,8 @@ namespace SocialInteractions
         public static int HandleMonologue(Pawn pawn, string subject, bool skipSpamProtection = false, string topic = "monologue")
         {
             bool isCurrentlyBusy = SpeechBubbleManager.IsLlmCurrentlyBusy();
-            SLog.Message(string.Format("[SocialInteractions] HandleMonologue called for: {0}. preventSpam: {1}, isLlmBusy: {2}, skipSpamProtection: {3}, topic: {4}", pawn.LabelShort, Settings.preventSpam, isCurrentlyBusy, skipSpamProtection, topic));
-            if (!skipSpamProtection && Settings.preventSpam && isCurrentlyBusy)
+            SLog.Message(string.Format("[SocialInteractions] HandleMonologue called for: {0}. preventSpam: {1}, isLlmBusy: {2}, skipSpamProtection: {3}, topic: {4}", pawn.LabelShort, Settings.Features.preventSpam, isCurrentlyBusy, skipSpamProtection, topic));
+            if (!skipSpamProtection && Settings.Features.preventSpam && isCurrentlyBusy)
             {
                 // Show default bubble when LLM is busy and we're preventing spam
                 if (!string.IsNullOrEmpty(subject))
@@ -1519,7 +1519,7 @@ namespace SocialInteractions
                             // Split the response using multiple possible line break characters
                             string[] messages = llmResponse.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
                                 .Where(s => !string.IsNullOrWhiteSpace(s))
-                                .Take(Settings.llmMaxDialogueLines)
+                                .Take(Settings.Display.llmMaxDialogueLines)
                                 .ToArray();
                             if (messages.Any())
                             {
@@ -1535,7 +1535,7 @@ namespace SocialInteractions
                                     {
                                         // Format the message for a monologue
                                         string formattedMessage = SpeechBubbleManager.FormatMonologueMessage(rawMessage, pawn, true);
-                                        string wrappedMessage = SocialInteractions.WrapText(formattedMessage, SocialInteractions.Settings.wordsPerLineLimit);
+                                        string wrappedMessage = SocialInteractions.WrapText(formattedMessage, SocialInteractions.Settings.Display.wordsPerLineLimit);
 
                                         // Extract clean text for TTS (removing potential pawn name prefix)
                                         string ttsText = rawMessage;
@@ -1569,7 +1569,7 @@ namespace SocialInteractions
                                 string fallbackText = string.IsNullOrEmpty(subject)
                                     ? string.Format("{0} thinks to themselves.", pawn.Name.ToStringShort)
                                     : string.Format("{0} ponders about {1}", pawn.Name.ToStringShort, subject);
-                                string wrappedFallbackText = SocialInteractions.WrapText(fallbackText, SocialInteractions.Settings.wordsPerLineLimit);
+                                string wrappedFallbackText = SocialInteractions.WrapText(fallbackText, SocialInteractions.Settings.Display.wordsPerLineLimit);
                                 string ttsFallbackText = string.IsNullOrEmpty(subject) ? "Thinking to themselves." : string.Format("Ponders about {0}", subject);
                                 SpeechBubbleManager.EnqueueJob(() => SpeechBubbleManager.EnqueueMonologue(pawn, wrappedFallbackText, 2f, true, conversationId, null, false, subject, ttsFallbackText)); // Use monologue method
 
@@ -1586,7 +1586,7 @@ namespace SocialInteractions
                         string fallbackText = string.IsNullOrEmpty(subject)
                             ? string.Format("{0} thinks to themselves.", pawn.Name.ToStringShort)
                             : string.Format("{0} ponders about {1}", pawn.Name.ToStringShort, subject);
-                        string wrappedFallbackText = SocialInteractions.WrapText(fallbackText, SocialInteractions.Settings.wordsPerLineLimit);
+                        string wrappedFallbackText = SocialInteractions.WrapText(fallbackText, SocialInteractions.Settings.Display.wordsPerLineLimit);
 
                         // With ScheduleUnlock removed, the isLlmBusy flag will be managed by the queue state
                         // No need to schedule unlocks anymore
@@ -1602,7 +1602,7 @@ namespace SocialInteractions
                         string fallbackText = string.IsNullOrEmpty(subject)
                             ? string.Format("{0} thinks to themselves.", pawn.Name.ToStringShort)
                             : string.Format("{0} ponders about {1}", pawn.Name.ToStringShort, subject);
-                        string wrappedFallbackText = SocialInteractions.WrapText(fallbackText, SocialInteractions.Settings.wordsPerLineLimit);
+                        string wrappedFallbackText = SocialInteractions.WrapText(fallbackText, SocialInteractions.Settings.Display.wordsPerLineLimit);
                     }
                     catch (Exception fallbackEx)
                     {
@@ -1628,8 +1628,8 @@ namespace SocialInteractions
         {
             bool isCurrentlyBusy = SpeechBubbleManager.IsLlmCurrentlyBusy();
             string defName = interactionDef != null ? interactionDef.defName : "Custom";
-            SLog.Message(string.Format("[SocialInteractions] HandleNonStoppingInteraction called for: {0}. preventSpam: {1}, isLlmBusy: {2}, skipSpamProtection: {3}, clearQueueOnResponse: {4}", defName, Settings.preventSpam, isCurrentlyBusy, skipSpamProtection, clearQueueOnResponse));
-            if (!skipSpamProtection && Settings.preventSpam && isCurrentlyBusy)
+            SLog.Message(string.Format("[SocialInteractions] HandleNonStoppingInteraction called for: {0}. preventSpam: {1}, isLlmBusy: {2}, skipSpamProtection: {3}, clearQueueOnResponse: {4}", defName, Settings.Features.preventSpam, isCurrentlyBusy, skipSpamProtection, clearQueueOnResponse));
+            if (!skipSpamProtection && Settings.Features.preventSpam && isCurrentlyBusy)
             {
                 // Show default bubble when LLM is busy and we're preventing spam
                 if (!string.IsNullOrEmpty(subject))
@@ -1711,7 +1711,7 @@ namespace SocialInteractions
                             // Split the response using multiple possible line break characters
                             string[] messages = llmResponse.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries)
                                 .Where(s => !string.IsNullOrWhiteSpace(s))
-                                .Take(Settings.llmMaxDialogueLines)
+                                .Take(Settings.Display.llmMaxDialogueLines)
                                 .ToArray();
                             if (messages.Any())
                             {
@@ -1846,7 +1846,7 @@ namespace SocialInteractions
             // Always show a default bubble immediately
             SpeechBubbleManager.ShowDefaultBubble(initiator, interactionDef.label);
 
-            if (Settings.preventSpam && SpeechBubbleManager.IsLlmCurrentlyBusy()) return;
+            if (Settings.Features.preventSpam && SpeechBubbleManager.IsLlmCurrentlyBusy()) return;
 
             Task.Run(async () =>
             {
@@ -1873,7 +1873,7 @@ namespace SocialInteractions
                             // Split the response using multiple possible line break characters
                             string[] messages = llmResponse.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries)
                                 .Where(s => !string.IsNullOrWhiteSpace(s))
-                                .Take(Settings.llmMaxDialogueLines)
+                                .Take(Settings.Display.llmMaxDialogueLines)
                                 .ToArray();
                             if (messages.Any())
                             {
@@ -2123,10 +2123,10 @@ namespace SocialInteractions
             using (ILlmClient client = GetApiClient())
             {
                 // Prepare sampling parameters once
-                int? topK = Settings.llmTopK > 0 ? (int?)Settings.llmTopK : null;
-                float? topP = Settings.llmTopP < 1.0f ? (float?)Settings.llmTopP : null;
-                float? minP = Settings.llmMinP > 0.0f ? (float?)Settings.llmMinP : null;
-                float? repPen = Settings.llmRepetitionPenalty != 1.0f ? (float?)Settings.llmRepetitionPenalty : null;
+                int? topK = Settings.Api.llmTopK > 0 ? (int?)Settings.Api.llmTopK : null;
+                float? topP = Settings.Api.llmTopP < 1.0f ? (float?)Settings.Api.llmTopP : null;
+                float? minP = Settings.Api.llmMinP > 0.0f ? (float?)Settings.Api.llmMinP : null;
+                float? repPen = Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)Settings.Api.llmRepetitionPenalty : null;
 
                 return await client.GenerateText(prompt, null, null, null, null, topK, topP, minP, repPen);
             }
@@ -2249,7 +2249,7 @@ namespace SocialInteractions
             }
 
             // Check if TTS is enabled
-            if (!Settings.enableTTS)
+            if (!Settings.Api.enableTTS)
             {
                 Messages.Message("TTS must be enabled in settings to assign voices.", MessageTypeDefOf.RejectInput);
                 return;
@@ -2464,13 +2464,13 @@ namespace SocialInteractions
         {
             if (pawn == null) return null;
 
-            if (!Settings.llmInteractionsEnabled)
+            if (!Settings.Features.llmInteractionsEnabled)
             {
                 SLog.Warning("[SocialInteractions] GenerateBioAsync called but LLM interactions are disabled.");
                 return null;
             }
 
-            if (string.IsNullOrEmpty(Settings.llmApiUrl))
+            if (string.IsNullOrEmpty(Settings.Api.llmApiUrl))
             {
                 SLog.Warning("[SocialInteractions] GenerateBioAsync called but LLM API URL is not set.");
                 return null;
@@ -2521,10 +2521,10 @@ namespace SocialInteractions
                 sb.AppendLine(string.Format("What bothers them: {0}", dislikes));
 
             // Append section instructions
-            bool isLocalApi = Settings.llmApiType == LlmApiType.KoboldCpp ||
-                              Settings.llmApiType == LlmApiType.LMStudio ||
-                              Settings.llmApiType == LlmApiType.Ollama;
-            bool isTextCompletion = isLocalApi && !Settings.forceChatCompletion;
+            bool isLocalApi = Settings.Api.llmApiType == LlmApiType.KoboldCpp ||
+                              Settings.Api.llmApiType == LlmApiType.LMStudio ||
+                              Settings.Api.llmApiType == LlmApiType.Ollama;
+            bool isTextCompletion = isLocalApi && !Settings.Api.forceChatCompletion;
 
             if (isTextCompletion)
             {

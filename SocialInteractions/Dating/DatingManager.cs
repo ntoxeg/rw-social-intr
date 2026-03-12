@@ -143,7 +143,7 @@ namespace SocialInteractions.Dating
             // Add cooldown to prevent immediate re-invitation
             if (initiator != null && partner != null)
             {
-                int expiryTick = Find.TickManager.TicksGame + SocialInteractions.Settings.dateCooldownTicks;
+                int expiryTick = Find.TickManager.TicksGame + SocialInteractions.Settings.Gameplay.dateCooldownTicks;
                 dateCooldowns[initiator.thingIDNumber] = expiryTick;
                 dateCooldowns[partner.thingIDNumber] = expiryTick;
             }
@@ -180,7 +180,7 @@ namespace SocialInteractions.Dating
                 }
 
                 // Add cooldown for non-null pawns
-                int expiryTick = Find.TickManager.TicksGame + SocialInteractions.Settings.dateCooldownTicks;
+                int expiryTick = Find.TickManager.TicksGame + SocialInteractions.Settings.Gameplay.dateCooldownTicks;
                 if (date.Initiator != null)
                     dateCooldowns[date.Initiator.thingIDNumber] = expiryTick;
                 if (date.Partner != null)
@@ -787,7 +787,7 @@ namespace SocialInteractions.Dating
                     }
 
                     // Make post-lovin LLM call only if the date actually reached the lovin stage
-                    if (SocialInteractions.Settings.enableLovin && date.Initiator != null && date.Partner != null && date.ReachedLovinStage)
+                    if (SocialInteractions.Settings.Features.enableLovin && date.Initiator != null && date.Partner != null && date.ReachedLovinStage)
                     {
                         SocialInteractions.HandleNonStoppingInteraction(date.Initiator, date.Partner, SI_InteractionDefOf.DateLovin,
                             SpeechBubbleManager.GetPostDateLovinSubject(date.Initiator, date.Partner), true);
@@ -878,7 +878,7 @@ namespace SocialInteractions.Dating
                 if (date.Initiator != null && date.Initiator.Spawned && bed != null && bed.Spawned)
                 {
                     float distanceToBed = (date.Initiator.Position - bed.Position).LengthHorizontal;
-                    if (distanceToBed > SocialInteractions.Settings.maxDistanceToLovinSpot)
+                    if (distanceToBed > SocialInteractions.Settings.Gameplay.maxDistanceToLovinSpot)
                     {
                         // Bed is too far, use a random spot near the initiator instead
                         // Find a random valid position near the initiator (within 5 cells)
@@ -915,7 +915,7 @@ namespace SocialInteractions.Dating
 
                 // Start the LLM interaction for date lovin, skipping spam protection since we're already in a date
                 // Only if lovin interactions are enabled in settings
-                if (SocialInteractions.Settings.enableLovin)
+                if (SocialInteractions.Settings.Features.enableLovin)
                 {
                     SocialInteractions.HandleNonStoppingInteraction(date.Initiator, date.Partner, SI_InteractionDefOf.DateLovin, SpeechBubbleManager.GetDateLovinSubject(date.Initiator, date.Partner), true);
                 }
@@ -1179,7 +1179,7 @@ namespace SocialInteractions.Dating
             }
 
             // Social compatibility and probability check
-            float baseChance = SocialInteractions.Settings.baseLovinChance;
+            float baseChance = SocialInteractions.Settings.Gameplay.baseLovinChance;
             float initiatorMood = 1.0f;
             float partnerMood = 1.0f;
             if (initiator.needs != null && initiator.needs.mood != null)

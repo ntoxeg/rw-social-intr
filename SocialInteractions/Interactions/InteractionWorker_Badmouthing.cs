@@ -63,8 +63,8 @@ namespace SocialInteractions.Interactions
             int initiatorOpinionOfTarget = initiator.relations != null ? initiator.relations.OpinionOf(targetPawn) : 0;
 
             // Check if both initiator and recipient share a negative opinion of the target (gossip scenario)
-            bool sharedNegativeOpinion = initiatorOpinionOfTarget <= SocialInteractions.Settings.badmouthingLowOpinionThreshold &&
-                                        recipientOpinionOfTarget <= SocialInteractions.Settings.badmouthingLowOpinionThreshold;
+            bool sharedNegativeOpinion = initiatorOpinionOfTarget <= SocialInteractions.Settings.Gameplay.badmouthingLowOpinionThreshold &&
+                                        recipientOpinionOfTarget <= SocialInteractions.Settings.Gameplay.badmouthingLowOpinionThreshold;
 
             if (sharedNegativeOpinion)
             {
@@ -414,7 +414,7 @@ namespace SocialInteractions.Interactions
         private void TryTriggerBackstabbingOpportunity(Pawn initiator, Pawn recipient, Pawn targetPawn)
         {
             // Check if backstabbing is enabled in settings
-            if (!SocialInteractions.Settings.enableBackstabbing)
+            if (!SocialInteractions.Settings.Features.enableBackstabbing)
             {
                 return;
             }
@@ -494,7 +494,7 @@ namespace SocialInteractions.Interactions
         /// </summary>
         private float CalculateBackstabbingChance(Pawn initiator, Pawn targetAlly, Pawn originalTarget)
         {
-            float baseChance = SocialInteractions.Settings.baseBackstabbingChance; // Base chance from settings
+            float baseChance = SocialInteractions.Settings.Gameplay.baseBackstabbingChance; // Base chance from settings
 
             // Increase chance if the target ally has very high opinion of the original target
             int allyOpinionOfTarget = targetAlly.relations != null ? targetAlly.relations.OpinionOf(originalTarget) : 0;

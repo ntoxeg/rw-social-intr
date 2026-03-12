@@ -27,7 +27,7 @@ namespace SocialInteractions.Speech
         public override void FinalizeInit()
         {
             base.FinalizeInit();
-            if (SocialInteractions.Settings.enableTTS)
+            if (SocialInteractions.Settings.Api.enableTTS)
             {
                 TTSManager.FetchVoicesFromApi();
             }

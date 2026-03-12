@@ -113,7 +113,7 @@ namespace SocialInteractions.Speech
                             SpeakIfEnabled(bubble.ttsText, bubble.speaker);
                         }
 
-                        bool shouldShow = bubble.useCustomMote ? SocialInteractions.Settings.showLlmBubbles : SocialInteractions.Settings.showDefaultBubbles;
+                        bool shouldShow = bubble.useCustomMote ? SocialInteractions.Settings.Display.showLlmBubbles : SocialInteractions.Settings.Display.showDefaultBubbles;
                         if (bubble.speaker != null && bubble.speaker.Map != null && shouldShow)
                         {
                             if (bubble.useCustomMote)
@@ -361,7 +361,7 @@ namespace SocialInteractions.Speech
         {
             // Format the message with speaker name and rich text
             string formattedMessage = FormatLlmMessage(rawMessage, speaker, recipient, isHighPriority);
-            string wrappedMessage = SocialInteractions.WrapText(formattedMessage, SocialInteractions.Settings.wordsPerLineLimit);
+            string wrappedMessage = SocialInteractions.WrapText(formattedMessage, SocialInteractions.Settings.Display.wordsPerLineLimit);
 
             // Determine message type and color based on interaction type for proper chat log coloring
             MessageType messageType = MessageType.LLMChat; // Default
@@ -415,7 +415,7 @@ namespace SocialInteractions.Speech
         // Overload for fallback messages that applies basic formatting
         public static void Enqueue(Verse.Pawn speaker, string text, float duration, bool isFirstMessage, int conversationId)
         {
-            string wrappedMessage = SocialInteractions.WrapText(text, SocialInteractions.Settings.wordsPerLineLimit);
+            string wrappedMessage = SocialInteractions.WrapText(text, SocialInteractions.Settings.Display.wordsPerLineLimit);
             // Add to chat log with fallback text
             ChatLogManager.AddMessage(new ChatMessage(speaker, null, text, MessageType.LLMChat, conversationId, Color.grey, text, text));
             lock (queueLock)
@@ -458,10 +458,10 @@ namespace SocialInteractions.Speech
             duration = Math.Max(1f, duration);
             pawnBubbleEndTimes[speaker] = Time.time + duration; // Set bubbleEndTime for instant bubbles
             // No clearing of speechBubbleQueue here, as it's for instant display only
-            bool shouldShow = useCustomMote ? SocialInteractions.Settings.showLlmBubbles : true; // Combat taunts (standard motes) have their own toggle
+            bool shouldShow = useCustomMote ? SocialInteractions.Settings.Display.showLlmBubbles : true; // Combat taunts (standard motes) have their own toggle
             if (speaker != null && speaker.Map != null && shouldShow)
             {
-                string wrappedText = SocialInteractions.WrapText(text, SocialInteractions.Settings.wordsPerLineLimit);
+                string wrappedText = SocialInteractions.WrapText(text, SocialInteractions.Settings.Display.wordsPerLineLimit);
                 if (useCustomMote)
                 {
                     // Use custom mote for LLM-generated text
@@ -494,7 +494,7 @@ namespace SocialInteractions.Speech
         {
             // Format the message with speaker name and rich text
             string formattedMessage = FormatLlmMessage(rawMessage, speaker, recipient, isHighPriority);
-            string wrappedMessage = SocialInteractions.WrapText(formattedMessage, SocialInteractions.Settings.wordsPerLineLimit);
+            string wrappedMessage = SocialInteractions.WrapText(formattedMessage, SocialInteractions.Settings.Display.wordsPerLineLimit);
 
             // Trigger TTS
             SpeakIfEnabled(rawMessage, speaker);
@@ -512,7 +512,7 @@ namespace SocialInteractions.Speech
             duration = Math.Max(1f, duration);
             pawnBubbleEndTimes[speaker] = Time.time + duration; // Set bubbleEndTime for instant bubbles
             // No clearing of speechBubbleQueue here, as it's for instant display only
-            bool shouldShow = useCustomMote ? SocialInteractions.Settings.showLlmBubbles : true; // Combat taunts (standard motes) have their own toggle
+            bool shouldShow = useCustomMote ? SocialInteractions.Settings.Display.showLlmBubbles : true; // Combat taunts (standard motes) have their own toggle
             if (speaker != null && speaker.Map != null && shouldShow)
             {
                 if (useCustomMote)
@@ -547,9 +547,9 @@ namespace SocialInteractions.Speech
             }
             float duration = Math.Max(1f, SocialInteractions.EstimateReadingTime(text));
             pawnBubbleEndTimes[speaker] = Time.time + duration;
-            if (speaker != null && speaker.Map != null && SocialInteractions.Settings.showDefaultBubbles)
+            if (speaker != null && speaker.Map != null && SocialInteractions.Settings.Display.showDefaultBubbles)
             {
-                string wrappedText = SocialInteractions.WrapText(text, SocialInteractions.Settings.wordsPerLineLimit);
+                string wrappedText = SocialInteractions.WrapText(text, SocialInteractions.Settings.Display.wordsPerLineLimit);
                 // Use standard mote for default bubbles
                 MoteMaker.ThrowText(speaker.DrawPos, speaker.Map, wrappedText, new Color(0.75f, 0.75f, 0.75f));
             }
@@ -649,13 +649,13 @@ namespace SocialInteractions.Speech
             // Simple estimate: words per second from settings.
             int wordCount = text.Split(new string[] { " ", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries).Length;
             float estimatedTime = 0f;
-            if (SocialInteractions.Settings.wordsPerSecond <= 0)
+            if (SocialInteractions.Settings.Display.wordsPerSecond <= 0)
             {
                 estimatedTime = wordCount * 0.3f; // Fallback if setting is zero or negative
             }
             else
             {
-                estimatedTime = wordCount / SocialInteractions.Settings.wordsPerSecond; // Seconds
+                estimatedTime = wordCount / SocialInteractions.Settings.Display.wordsPerSecond; // Seconds
             }
             return estimatedTime;
         }
@@ -731,7 +731,7 @@ namespace SocialInteractions.Speech
 
         private static void SpeakIfEnabled(string text, Pawn speaker)
         {
-            if (SocialInteractions.Settings.enableTTS)
+            if (SocialInteractions.Settings.Api.enableTTS)
             {
                 string ttsText = text;
 
@@ -749,7 +749,7 @@ namespace SocialInteractions.Speech
                 // 4. Strip remaining rich text tags (like <color=...>)
                 string cleanText = Regex.Replace(ttsText, "<.*?>", string.Empty);
 
-                TTSManager.Speak(cleanText, speaker, SocialInteractions.Settings.ttsSpeed, (int)SocialInteractions.Settings.ttsVolume);
+                TTSManager.Speak(cleanText, speaker, SocialInteractions.Settings.Api.ttsSpeed, (int)SocialInteractions.Settings.Api.ttsVolume);
             }
         }
     }

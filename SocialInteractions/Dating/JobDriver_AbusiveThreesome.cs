@@ -97,7 +97,7 @@ namespace SocialInteractions.Dating
             Toil performAct = ToilMaker.MakeToil("PerformAct");
             performAct.initAction = () =>
             {
-                ticksLeft = SocialInteractions.Settings.dateLovinTicks;
+                ticksLeft = SocialInteractions.Settings.Gameplay.dateLovinTicks;
             };
             performAct.tickAction = () =>
             {
@@ -324,7 +324,7 @@ namespace SocialInteractions.Dating
                     return Vector3.zero;
                 }
 
-                int totalTicks = SocialInteractions.Settings.dateLovinTicks;
+                int totalTicks = SocialInteractions.Settings.Gameplay.dateLovinTicks;
                 if (totalTicks <= 0) return Vector3.zero;
 
                 float progress = 1.0f - ((float)ticksLeft / totalTicks);

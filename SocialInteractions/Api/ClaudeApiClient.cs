@@ -123,19 +123,19 @@ namespace SocialInteractions.Api
             var request = new ClaudeApiRequest
             {
                 Model = _modelName,
-                MaxTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
-                Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
-                TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
-                TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
-                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null),
+                MaxTokens = maxLength ?? SocialInteractions.Settings.Api.llmMaxTokens,
+                Temperature = temperature ?? SocialInteractions.Settings.Api.llmTemperature,
+                TopP = topP ?? (SocialInteractions.Settings.Api.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.Api.llmTopP : null),
+                TopK = topK ?? (SocialInteractions.Settings.Api.llmTopK > 0 ? (int?)SocialInteractions.Settings.Api.llmTopK : null),
+                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.Api.llmRepetitionPenalty : null),
                 System = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary. Do not include tags like <thinking> or explanations.",
                 StopSequences = BuildStopSequenceList(stopSequence)
             };
 
             request.Messages.Add(new ClaudeApiMessage { Role = "user", Content = prompt });
-            request.Thinking = SocialInteractions.Settings.disableLlmThinking
+            request.Thinking = SocialInteractions.Settings.Api.disableLlmThinking
                 ? new ClaudeApiThinking { Type = "disabled" }
-                : new ClaudeApiThinking { Type = "enabled", BudgetTokens = Math.Max(1024, SocialInteractions.Settings.llmMaxTokens) };
+                : new ClaudeApiThinking { Type = "enabled", BudgetTokens = Math.Max(1024, SocialInteractions.Settings.Api.llmMaxTokens) };
 
             return request;
         }

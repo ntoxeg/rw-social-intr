@@ -15,8 +15,8 @@ namespace SocialInteractions.Patches
         public static void Postfix(Thing thing, Pawn worker)
         {
             // Check if feature and LLM interactions are enabled
-            if (!SocialInteractions.Settings.enableMasterworkMonologue ||
-                !SocialInteractions.Settings.llmInteractionsEnabled)
+            if (!SocialInteractions.Settings.Features.enableMasterworkMonologue ||
+                !SocialInteractions.Settings.Features.llmInteractionsEnabled)
             {
                 return;
             }

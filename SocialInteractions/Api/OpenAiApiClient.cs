@@ -104,17 +104,17 @@ namespace SocialInteractions.Api
             var request = new OpenAiApiRequest
             {
                 Model = _modelName,
-                Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
-                MaxTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
+                Temperature = temperature ?? SocialInteractions.Settings.Api.llmTemperature,
+                MaxTokens = maxLength ?? SocialInteractions.Settings.Api.llmMaxTokens,
                 Stream = false,
                 Stop = BuildStopSequenceList(stopSequence),
-                TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
-                TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
-                MinP = minP ?? (SocialInteractions.Settings.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.llmMinP : null),
-                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null)
+                TopK = topK ?? (SocialInteractions.Settings.Api.llmTopK > 0 ? (int?)SocialInteractions.Settings.Api.llmTopK : null),
+                TopP = topP ?? (SocialInteractions.Settings.Api.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.Api.llmTopP : null),
+                MinP = minP ?? (SocialInteractions.Settings.Api.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.Api.llmMinP : null),
+                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.Api.llmRepetitionPenalty : null)
             };
 
-            if (enableXtcSampling ?? SocialInteractions.Settings.enableXtcSampling)
+            if (enableXtcSampling ?? SocialInteractions.Settings.Api.enableXtcSampling)
             {
                 request.XtcProbability = 0.5f;
                 request.XtcThreshold = 0.1f;

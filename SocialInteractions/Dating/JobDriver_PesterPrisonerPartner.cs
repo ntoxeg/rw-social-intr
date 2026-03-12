@@ -48,8 +48,8 @@ namespace SocialInteractions.Dating
             initialize.initAction = () =>
             {
                 int interval = Rand.RangeInclusive(
-                    SocialInteractions.Settings.pesterInsultIntervalMin,
-                    SocialInteractions.Settings.pesterInsultIntervalMax);
+                    SocialInteractions.Settings.Gameplay.pesterInsultIntervalMin,
+                    SocialInteractions.Settings.Gameplay.pesterInsultIntervalMax);
                 nextInsultTick = Find.TickManager.TicksGame + interval;
             };
             initialize.defaultCompleteMode = ToilCompleteMode.Instant;
@@ -100,7 +100,7 @@ namespace SocialInteractions.Dating
                     JoyKindDef sadisticJoy = DefDatabase<JoyKindDef>.GetNamedSilentFail("Sadistic");
                     if (sadisticJoy == null)
                         sadisticJoy = JoyKindDefOf.Social; // Fallback to social
-                    this.pawn.needs.joy.GainJoy(SocialInteractions.Settings.pesterJoyGainRate * 0.5f, sadisticJoy);
+                    this.pawn.needs.joy.GainJoy(SocialInteractions.Settings.Gameplay.pesterJoyGainRate * 0.5f, sadisticJoy);
                 }
 
 
@@ -121,7 +121,7 @@ namespace SocialInteractions.Dating
                                     Need suppression = this.Target.needs.TryGetNeed(suppressionDef);
                                     if (suppression != null)
                                     {
-                                        suppression.CurLevel += SocialInteractions.Settings.pesterSuppressionAmount;
+                                        suppression.CurLevel += SocialInteractions.Settings.Gameplay.pesterSuppressionAmount;
                                     }
                                 }
                             }
@@ -130,8 +130,8 @@ namespace SocialInteractions.Dating
 
                     // Schedule next insult
                     int interval = Rand.RangeInclusive(
-                        SocialInteractions.Settings.pesterInsultIntervalMin,
-                        SocialInteractions.Settings.pesterInsultIntervalMax);
+                        SocialInteractions.Settings.Gameplay.pesterInsultIntervalMin,
+                        SocialInteractions.Settings.Gameplay.pesterInsultIntervalMax);
                     nextInsultTick = Find.TickManager.TicksGame + interval;
                 }
 

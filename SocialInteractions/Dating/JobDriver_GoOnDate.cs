@@ -124,7 +124,7 @@ namespace SocialInteractions.Dating
                     return;
                 }
 
-                int maxDistance = SocialInteractions.Settings.maxDistanceForDate; // 50x50 tiles
+                int maxDistance = SocialInteractions.Settings.Gameplay.maxDistanceForDate; // 50x50 tiles
                 if ((Math.Abs(this.pawn.Position.x - recipient.Position.x) + Math.Abs(this.pawn.Position.z - recipient.Position.z)) > maxDistance)
                 {
                     this.EndJobWith(JobCondition.Incompletable);

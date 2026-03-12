@@ -17,10 +17,10 @@ namespace SocialInteractions.Patches
     {
         public static void Postfix(InteractionWorker __instance, Pawn initiator, Pawn recipient, List<RulePackDef> extraSentencePacks, string letterText, string letterLabel, LetterDef letterDef, LookTargets lookTargets)
         {
-            // SLog.Message(string.Format("[SocialInteractions] InteractionWorker_Interacted_Patch.Postfix called. pawnsStopOnInteraction: {0}", SocialInteractions.Settings.pawnsStopOnInteraction));
+            // SLog.Message(string.Format("[SocialInteractions] InteractionWorker_Interacted_Patch.Postfix called. pawnsStopOnInteraction: {0}", SocialInteractions.Settings.Features.pawnsStopOnInteraction));
 
             // Check if the recipient is a child and the interaction is an insult, and misbehavior is enabled
-            if (recipient != null && recipient.RaceProps.Humanlike && ChildrenMisbehaviorManager.IsChild(recipient) && SocialInteractions.Settings.enableChildrenMisbehavior)
+            if (recipient != null && recipient.RaceProps.Humanlike && ChildrenMisbehaviorManager.IsChild(recipient) && SocialInteractions.Settings.Features.enableChildrenMisbehavior)
             {
                 // Get the interaction definition from the __instance parameter
                 InteractionDef interactionDef = __instance.interaction;
@@ -40,7 +40,7 @@ namespace SocialInteractions.Patches
             }
 
             // Only handle interactions when pawns stop on interaction (stopping interactions)
-            if (SocialInteractions.Settings.pawnsStopOnInteraction)
+            if (SocialInteractions.Settings.Features.pawnsStopOnInteraction)
             {
                 // SLog.Message("[SocialInteractions] pawnsStopOnInteraction is true, proceeding with job creation.");
 
@@ -52,24 +52,24 @@ namespace SocialInteractions.Patches
                 {
                     // SLog.Message(string.Format("[SocialInteractions] Checking if interaction should be handled: {0}", interactionDef.defName));
 
-                    if ((interactionDef == InteractionDefOf.Chitchat && SocialInteractions.Settings.enableChitchat) ||
-                        (interactionDef == InteractionDefOf.RomanceAttempt && SocialInteractions.Settings.enableRomanceAttempt) ||
-                        (interactionDef == InteractionDefOf.DeepTalk && SocialInteractions.Settings.enableDeepTalk) ||
-                        (interactionDef == InteractionDefOf.Insult && SocialInteractions.Settings.enableInsult) ||
-                        (interactionDef == InteractionDefOf.MarriageProposal && SocialInteractions.Settings.enableMarriageProposal) ||
-                        (interactionDef == InteractionDefOf.Reassure && SocialInteractions.Settings.enableReassure) ||
-                        (interactionDef == InteractionDefOf.DisturbingChat && SocialInteractions.Settings.enableDisturbingChat) ||
-                        (interactionDef.defName == "KindWords" && SocialInteractions.Settings.enableKindWordsInteractions) ||
-                        (interactionDef == SI_InteractionDefOf.ChildAnnoying && SocialInteractions.Settings.enableChildrenMisbehavior) ||
-                        (interactionDef.defName == "Flirt" && SocialInteractions.Settings.enableFlirt) ||
-                        (interactionDef.defName == "VRE_FlirtingAttempt" && SocialInteractions.Settings.enableFlirt) ||
-                        (interactionDef.defName == "Slight" && SocialInteractions.Settings.enableSlight) ||
-                        (interactionDef.defName == "IncestuousFlirt" && SocialInteractions.Settings.enableIncestuousFlirt) ||
-                        (interactionDef.defName == "Rapport" && SocialInteractions.Settings.enableRapport) ||
-                        (interactionDef == InteractionDefOf.RecruitAttempt && SocialInteractions.Settings.enableRecruitAttempt) ||
-                        (interactionDef.defName == "ReduceResistance" && SocialInteractions.Settings.enableReduceResistance) ||
-                        (interactionDef == InteractionDefOf.ReduceWill && SocialInteractions.Settings.enableReduceWill) ||
-                        ((interactionDef.defName == "EnslaveAttempt" || (InteractionDefOf.EnslaveAttempt != null && interactionDef == InteractionDefOf.EnslaveAttempt)) && SocialInteractions.Settings.enableEnslaveAttempt))
+                    if ((interactionDef == InteractionDefOf.Chitchat && SocialInteractions.Settings.Features.enableChitchat) ||
+                        (interactionDef == InteractionDefOf.RomanceAttempt && SocialInteractions.Settings.Features.enableRomanceAttempt) ||
+                        (interactionDef == InteractionDefOf.DeepTalk && SocialInteractions.Settings.Features.enableDeepTalk) ||
+                        (interactionDef == InteractionDefOf.Insult && SocialInteractions.Settings.Features.enableInsult) ||
+                        (interactionDef == InteractionDefOf.MarriageProposal && SocialInteractions.Settings.Features.enableMarriageProposal) ||
+                        (interactionDef == InteractionDefOf.Reassure && SocialInteractions.Settings.Features.enableReassure) ||
+                        (interactionDef == InteractionDefOf.DisturbingChat && SocialInteractions.Settings.Features.enableDisturbingChat) ||
+                        (interactionDef.defName == "KindWords" && SocialInteractions.Settings.Features.enableKindWordsInteractions) ||
+                        (interactionDef == SI_InteractionDefOf.ChildAnnoying && SocialInteractions.Settings.Features.enableChildrenMisbehavior) ||
+                        (interactionDef.defName == "Flirt" && SocialInteractions.Settings.Features.enableFlirt) ||
+                        (interactionDef.defName == "VRE_FlirtingAttempt" && SocialInteractions.Settings.Features.enableFlirt) ||
+                        (interactionDef.defName == "Slight" && SocialInteractions.Settings.Features.enableSlight) ||
+                        (interactionDef.defName == "IncestuousFlirt" && SocialInteractions.Settings.Features.enableIncestuousFlirt) ||
+                        (interactionDef.defName == "Rapport" && SocialInteractions.Settings.Features.enableRapport) ||
+                        (interactionDef == InteractionDefOf.RecruitAttempt && SocialInteractions.Settings.Features.enableRecruitAttempt) ||
+                        (interactionDef.defName == "ReduceResistance" && SocialInteractions.Settings.Features.enableReduceResistance) ||
+                        (interactionDef == InteractionDefOf.ReduceWill && SocialInteractions.Settings.Features.enableReduceWill) ||
+                        ((interactionDef.defName == "EnslaveAttempt" || (InteractionDefOf.EnslaveAttempt != null && interactionDef == InteractionDefOf.EnslaveAttempt)) && SocialInteractions.Settings.Features.enableEnslaveAttempt))
                     {
                         // SLog.Message(string.Format("[SocialInteractions] Interaction {0} matches criteria, checking if LLM interaction is enabled.", interactionDef.defName));
 
@@ -102,7 +102,7 @@ namespace SocialInteractions.Patches
                             }
 
                             // Check if LLM is busy and if we should prevent spam
-                            if (SocialInteractions.Settings.preventSpam && SpeechBubbleManager.IsLlmCurrentlyBusy())
+                            if (SocialInteractions.Settings.Features.preventSpam && SpeechBubbleManager.IsLlmCurrentlyBusy())
                             {
                                 // SLog.Message(string.Format("[SocialInteractions] Interaction {0} - LLM is busy and preventSpam is true, showing default bubble without creating jobs.", interactionDef.defName));
                                 // Show default bubble when LLM is busy and we're preventing spam

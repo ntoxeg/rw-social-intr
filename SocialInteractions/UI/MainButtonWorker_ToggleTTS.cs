@@ -11,9 +11,9 @@ namespace SocialInteractions.UI
         public override void Activate()
         {
             // Toggle mute state
-            SocialInteractions.Settings.ttsMuted = !SocialInteractions.Settings.ttsMuted;
+            SocialInteractions.Settings.Api.ttsMuted = !SocialInteractions.Settings.Api.ttsMuted;
 
-            if (SocialInteractions.Settings.ttsMuted)
+            if (SocialInteractions.Settings.Api.ttsMuted)
             {
                 SocialInteractions.StopTtsPlayback();
                 Messages.Message("TTS Muted", MessageTypeDefOf.NeutralEvent, false);
@@ -31,7 +31,7 @@ namespace SocialInteractions.UI
             // MainButtons usually rely on the def.iconPath fetching a texture and MainButtonWorker.DoButton drawing it.
             // Since we override DoButton completely and our def has a placeholder icon, we should draw our own background.
 
-            if (SocialInteractions.Settings.ttsMuted)
+            if (SocialInteractions.Settings.Api.ttsMuted)
             {
                 // Muted state: Red background
                 Widgets.DrawRectFast(rect, new Color(0.6f, 0.2f, 0.2f));
@@ -55,7 +55,7 @@ namespace SocialInteractions.UI
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleCenter;
 
-            string label = SocialInteractions.Settings.ttsMuted ? "TTS: OFF" : "TTS: ON";
+            string label = SocialInteractions.Settings.Api.ttsMuted ? "TTS: OFF" : "TTS: ON";
             Widgets.Label(rect, label);
 
             Text.Anchor = TextAnchor.UpperLeft;

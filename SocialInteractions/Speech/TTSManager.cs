@@ -47,7 +47,7 @@ namespace SocialInteractions.Speech
         public static void Speak(string text, Pawn speaker, float speed = 1.0f, int volume = 100)
         {
             if (string.IsNullOrEmpty(text)) return;
-            if (!SocialInteractions.Settings.enableTTS || SocialInteractions.Settings.ttsMuted) return;
+            if (!SocialInteractions.Settings.Api.enableTTS || SocialInteractions.Settings.Api.ttsMuted) return;
 
             string voiceName = "alloy";
             if (speaker != null && Current.Game != null)
@@ -95,13 +95,13 @@ namespace SocialInteractions.Speech
 
         public static void FetchVoicesFromApi()
         {
-            if (string.IsNullOrEmpty(SocialInteractions.Settings.ttsApiUrl)) return;
+            if (string.IsNullOrEmpty(SocialInteractions.Settings.Api.ttsApiUrl)) return;
 
             // Try to deduce the voices endpoint
-            string speechUrl = SocialInteractions.Settings.ttsApiUrl;
+            string speechUrl = SocialInteractions.Settings.Api.ttsApiUrl;
             string voicesUrl = speechUrl;
 
-            if (SocialInteractions.Settings.ttsApiType == TtsApiType.Player2)
+            if (SocialInteractions.Settings.Api.ttsApiType == TtsApiType.Player2)
             {
                 if (speechUrl.Contains("/speak"))
                 {
@@ -129,7 +129,7 @@ namespace SocialInteractions.Speech
 
         private static IEnumerator FetchVoicesCoroutine(string url)
         {
-            string apiKey = SocialInteractions.Settings.ttsApiKey;
+            string apiKey = SocialInteractions.Settings.Api.ttsApiKey;
             var request = UnityWebRequest.Get(url);
             if (!string.IsNullOrEmpty(apiKey))
             {
@@ -196,7 +196,7 @@ namespace SocialInteractions.Speech
         private static void ParseVoiceArray(string arrayContent, ref List<string> voices)
         {
             // For Player2, we need to extract objects with "id" and "name"
-            if (SocialInteractions.Settings.ttsApiType == TtsApiType.Player2)
+            if (SocialInteractions.Settings.Api.ttsApiType == TtsApiType.Player2)
             {
                 // Simple object parsing: find each { ... } block
                 var objectMatches = System.Text.RegularExpressions.Regex.Matches(arrayContent, @"\{([^{}]+)\}");
@@ -247,7 +247,7 @@ namespace SocialInteractions.Speech
 
         private static void SpeakWithApi(string text, string voiceName, int requestId)
         {
-            if (string.IsNullOrEmpty(SocialInteractions.Settings.ttsApiUrl))
+            if (string.IsNullOrEmpty(SocialInteractions.Settings.Api.ttsApiUrl))
             {
                 SLog.Warning("[SocialInteractions] TTSManager: TTS API URL is empty.");
                 // Mark request as failed/done to prevent blocking
@@ -275,18 +275,18 @@ namespace SocialInteractions.Speech
             AudioClip clip = null;
             bool success = false;
 
-            string url = SocialInteractions.Settings.ttsApiUrl;
-            string apiKey = SocialInteractions.Settings.ttsApiKey;
-            string model = SocialInteractions.Settings.ttsModel;
+            string url = SocialInteractions.Settings.Api.ttsApiUrl;
+            string apiKey = SocialInteractions.Settings.Api.ttsApiKey;
+            string model = SocialInteractions.Settings.Api.ttsModel;
             string voice = !string.IsNullOrEmpty(voiceName) ? voiceName : "alloy";
-            float speed = Mathf.Clamp(SocialInteractions.Settings.ttsSpeed, 0.25f, 4.0f);
+            float speed = Mathf.Clamp(SocialInteractions.Settings.Api.ttsSpeed, 0.25f, 4.0f);
 
             string json = "";
-            if (SocialInteractions.Settings.ttsApiType == TtsApiType.Player2)
+            if (SocialInteractions.Settings.Api.ttsApiType == TtsApiType.Player2)
             {
                 // Player2 format: {"text": "...", "voice_ids": ["..."], "speed": 1.0, "audio_format": "wav", "play_in_app": false}
                 // Note: using play_in_app: false to routing audio back to mod.
-                string internalPlaybackStr = SocialInteractions.Settings.ttsInternalPlayback ? "true" : "false";
+                string internalPlaybackStr = SocialInteractions.Settings.Api.ttsInternalPlayback ? "true" : "false";
 
                 // Lookup UUID if possible, otherwise use name as fallback
                 string voiceId = voice;
@@ -320,7 +320,7 @@ namespace SocialInteractions.Speech
                 new { Type = AudioType.OGGVORBIS, Name = "OGG" }
             };
 
-            if (SocialInteractions.Settings.ttsApiType == TtsApiType.Player2)
+            if (SocialInteractions.Settings.Api.ttsApiType == TtsApiType.Player2)
             {
                 // Player2 returns a JSON wrapper with base64 data
                 using (UnityWebRequest request = UnityWebRequest.Put(url, json))
@@ -523,7 +523,7 @@ namespace SocialInteractions.Speech
                 audioSource.clip = entry.clip;
                 // entry.volume is now 1.0f by default from ProcessPlaybackBuffer
                 // We apply the settings volume here so it reacts to slider changes in real-time
-                audioSource.volume = entry.volume * (SocialInteractions.Settings.ttsVolume / 100f);
+                audioSource.volume = entry.volume * (SocialInteractions.Settings.Api.ttsVolume / 100f);
                 audioSource.Play();
 
                 // SLog.Message("[TTS Debug] Started playback of clip. Duration: " + entry.clip.length);

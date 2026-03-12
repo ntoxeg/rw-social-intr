@@ -241,7 +241,7 @@ namespace SocialInteractions.Dating
                     return;
                 }
 
-                ticksLeft = SocialInteractions.Settings.dateLovinTicks;
+                ticksLeft = SocialInteractions.Settings.Gameplay.dateLovinTicks;
                 // Don't add the SI_Naked hediff here - wait until the pawns actually start the lovin activity
             };
             lovinToil.tickAction = delegate
@@ -289,7 +289,7 @@ namespace SocialInteractions.Dating
 
                 // Add the SI_Naked hediff when the lovin activity actually starts (first tick)
                 // Only add it once
-                if (ticksLeft == SocialInteractions.Settings.dateLovinTicks)
+                if (ticksLeft == SocialInteractions.Settings.Gameplay.dateLovinTicks)
                 {
                     // Add null checks before adding hediff
                     if (initiator != null && initiator.health != null)
@@ -456,7 +456,7 @@ namespace SocialInteractions.Dating
                     return Vector3.zero;
                 }
 
-                int totalTicks = SocialInteractions.Settings.dateLovinTicks;
+                int totalTicks = SocialInteractions.Settings.Gameplay.dateLovinTicks;
 
                 // Make sure we don't divide by zero
                 if (totalTicks <= 0)

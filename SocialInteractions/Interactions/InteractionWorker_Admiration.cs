@@ -386,7 +386,7 @@ namespace SocialInteractions.Interactions
             if (Rand.Value < successChance)
             {
                 // Success! Apply a positive thought to increase the recipient's opinion of the initiator
-                int opinionIncrease = (int)SocialInteractions.Settings.admirationOpinionIncreaseOnSuccess;
+                int opinionIncrease = (int)SocialInteractions.Settings.Gameplay.admirationOpinionIncreaseOnSuccess;
                 ApplyOpinionChangeThought(recipient, initiator, opinionIncrease);
 
                 string outcome = string.Format("success! {0}'s social skill (level {1}) helped increase {2}'s opinion by {3} points",
@@ -400,9 +400,9 @@ namespace SocialInteractions.Interactions
             {
                 // Failure - the admiration didn't land as well, maybe a small impact or none
                 // Possibly apply a slightly negative thought if the admiration felt forced or awkward
-                if (Rand.Value < SocialInteractions.Settings.admirationNegativeImpactChance) // Chance of slight negative impact if poorly executed
+                if (Rand.Value < SocialInteractions.Settings.Gameplay.admirationNegativeImpactChance) // Chance of slight negative impact if poorly executed
                 {
-                    int opinionChange = (int)SocialInteractions.Settings.admirationOpinionDecreaseOnFail; // Small negative impact
+                    int opinionChange = (int)SocialInteractions.Settings.Gameplay.admirationOpinionDecreaseOnFail; // Small negative impact
                     ApplyOpinionChangeThought(recipient, initiator, opinionChange);
 
                     string outcome = string.Format("failure! {0}'s attempt to increase {1}'s opinion failed and may have had slight negative impact of {2} points",

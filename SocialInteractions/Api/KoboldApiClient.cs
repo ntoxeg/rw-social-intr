@@ -121,7 +121,7 @@ namespace SocialInteractions.Api
             _apiKey = apiKey != null ? apiKey.Trim() : null;
         }
 
-        private static bool UseChatCompletion => SocialInteractions.Settings != null && SocialInteractions.Settings.forceChatCompletion;
+        private static bool UseChatCompletion => SocialInteractions.Settings != null && SocialInteractions.Settings.Api.forceChatCompletion;
 
         protected override object BuildRequestBody(string prompt, int? maxLength, float? temperature, List<string> stopSequence, bool? enableXtcSampling, int? topK, float? topP, float? minP, float? repetitionPenalty)
         {
@@ -129,13 +129,13 @@ namespace SocialInteractions.Api
             {
                 var chatRequest = new KoboldChatRequest
                 {
-                    MaxTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
-                    Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
+                    MaxTokens = maxLength ?? SocialInteractions.Settings.Api.llmMaxTokens,
+                    Temperature = temperature ?? SocialInteractions.Settings.Api.llmTemperature,
                     Stop = BuildStopSequenceList(stopSequence),
-                    TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
-                    TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
-                    MinP = minP ?? (SocialInteractions.Settings.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.llmMinP : null),
-                    RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null)
+                    TopK = topK ?? (SocialInteractions.Settings.Api.llmTopK > 0 ? (int?)SocialInteractions.Settings.Api.llmTopK : null),
+                    TopP = topP ?? (SocialInteractions.Settings.Api.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.Api.llmTopP : null),
+                    MinP = minP ?? (SocialInteractions.Settings.Api.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.Api.llmMinP : null),
+                    RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.Api.llmRepetitionPenalty : null)
                 };
 
                 chatRequest.Messages.Add(new KoboldChatMessage { Role = "system", Content = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary." });
@@ -146,17 +146,17 @@ namespace SocialInteractions.Api
             var request = new KoboldApiRequest
             {
                 Prompt = prompt,
-                MaxLength = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
-                Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
+                MaxLength = maxLength ?? SocialInteractions.Settings.Api.llmMaxTokens,
+                Temperature = temperature ?? SocialInteractions.Settings.Api.llmTemperature,
                 StopSequence = BuildStopSequenceList(stopSequence),
-                TopK = topK ?? SocialInteractions.Settings.llmTopK,
-                TopP = topP ?? SocialInteractions.Settings.llmTopP,
-                MinP = minP ?? SocialInteractions.Settings.llmMinP,
-                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null),
+                TopK = topK ?? SocialInteractions.Settings.Api.llmTopK,
+                TopP = topP ?? SocialInteractions.Settings.Api.llmTopP,
+                MinP = minP ?? SocialInteractions.Settings.Api.llmMinP,
+                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.Api.llmRepetitionPenalty : null),
                 SamplerOrder = new[] { 6, 0, 1, 3, 4, 2, 5 }
             };
 
-            if (enableXtcSampling ?? SocialInteractions.Settings.enableXtcSampling)
+            if (enableXtcSampling ?? SocialInteractions.Settings.Api.enableXtcSampling)
             {
                 request.XtcProbability = 0.5f;
                 request.XtcThreshold = 0.1f;

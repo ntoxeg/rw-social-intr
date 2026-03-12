@@ -27,7 +27,7 @@ namespace SocialInteractions.Patches
             Pawn initiator = (Pawn)AccessTools.Field(typeof(Pawn_InteractionsTracker), "pawn").GetValue(__instance);
 
             // Early check: if drama feature is not enabled, skip everything else
-            if (!SocialInteractions.Settings.enableDrama)
+            if (!SocialInteractions.Settings.Features.enableDrama)
             {
                 return;
             }
@@ -161,12 +161,12 @@ namespace SocialInteractions.Patches
             bool hasAttractionToRecipient = HasAttractionToTarget(initiator, recipient);
 
             // Base chance for admiration from settings
-            float admirationChance = SocialInteractions.Settings.baseAdmirationChance;
+            float admirationChance = SocialInteractions.Settings.Gameplay.baseAdmirationChance;
 
             // Increase chance if there's a strong attraction (shared traits, valued skills, etc.)
             if (hasAttractionToRecipient)
             {
-                admirationChance *= SocialInteractions.Settings.admirationAttractionMultiplier;
+                admirationChance *= SocialInteractions.Settings.Gameplay.admirationAttractionMultiplier;
             }
 
             // Consider the relationship between initiator and recipient
@@ -177,7 +177,7 @@ namespace SocialInteractions.Patches
                 // Higher opinion increases chance of admiration
                 if (opinionOfRecipient > 20) // Positive opinion above threshold
                 {
-                    admirationChance *= SocialInteractions.Settings.admirationPositiveOpinionMultiplier;
+                    admirationChance *= SocialInteractions.Settings.Gameplay.admirationPositiveOpinionMultiplier;
                 }
             }
 
@@ -409,12 +409,12 @@ namespace SocialInteractions.Patches
             }
 
             // Check if the initiator has traits that encourage badmouthing
-            float badmouthingChance = SocialInteractions.Settings.baseBadmouthingChance; // Base chance from settings
+            float badmouthingChance = SocialInteractions.Settings.Gameplay.baseBadmouthingChance; // Base chance from settings
             bool encouragesBadmouthing = HasTraitThatEncouragesBadmouthing(initiator);
 
             if (encouragesBadmouthing)
             {
-                badmouthingChance = SocialInteractions.Settings.traitEncouragedBadmouthingChance; // Chance for trait-encouraged pawns from settings
+                badmouthingChance = SocialInteractions.Settings.Gameplay.traitEncouragedBadmouthingChance; // Chance for trait-encouraged pawns from settings
             }
 
             // Additional chance based on relationship factors
@@ -430,9 +430,9 @@ namespace SocialInteractions.Patches
                     opinionOfLeastFavorite = initiator.relations.OpinionOf(leastFavoritePawn);
                 }
 
-                if (opinionOfLeastFavorite < SocialInteractions.Settings.badmouthingLowOpinionThreshold) // Significantly negative opinion based on settings
+                if (opinionOfLeastFavorite < SocialInteractions.Settings.Gameplay.badmouthingLowOpinionThreshold) // Significantly negative opinion based on settings
                 {
-                    badmouthingChance += SocialInteractions.Settings.badOpinionAdditionalChance; // Additional chance from settings
+                    badmouthingChance += SocialInteractions.Settings.Gameplay.badOpinionAdditionalChance; // Additional chance from settings
                 }
             }
 
@@ -677,7 +677,7 @@ namespace SocialInteractions.Patches
             }
 
             // Base chance for enhanced chitchat insults from settings
-            float insultChance = SocialInteractions.Settings.baseEnhancedChitchatInsultChance;
+            float insultChance = SocialInteractions.Settings.Gameplay.baseEnhancedChitchatInsultChance;
 
             // Modify chance based on mood using settings
             if (initiator.needs != null && initiator.needs.mood != null)
@@ -686,11 +686,11 @@ namespace SocialInteractions.Patches
                 // Lower mood increases chance of negative comments in conversation
                 if (mood < 0.4f) // Below 40% mood
                 {
-                    insultChance *= SocialInteractions.Settings.enhancedChitchatInsultMoodMultiplierBad;
+                    insultChance *= SocialInteractions.Settings.Gameplay.enhancedChitchatInsultMoodMultiplierBad;
                 }
                 else if (mood > 0.8f) // Above 80% mood
                 {
-                    insultChance *= SocialInteractions.Settings.enhancedChitchatInsultMoodMultiplierGood;
+                    insultChance *= SocialInteractions.Settings.Gameplay.enhancedChitchatInsultMoodMultiplierGood;
                 }
             }
 
@@ -701,18 +701,18 @@ namespace SocialInteractions.Patches
                 // Lower opinion of recipient increases chance of negative comments
                 if (opinionOfRecipient < -20) // Significantly negative opinion
                 {
-                    insultChance *= SocialInteractions.Settings.enhancedChitchatInsultOpinionMultiplierVeryNegative;
+                    insultChance *= SocialInteractions.Settings.Gameplay.enhancedChitchatInsultOpinionMultiplierVeryNegative;
                 }
                 else if (opinionOfRecipient > 30) // Significantly positive opinion
                 {
-                    insultChance *= SocialInteractions.Settings.enhancedChitchatInsultOpinionMultiplierVeryPositive;
+                    insultChance *= SocialInteractions.Settings.Gameplay.enhancedChitchatInsultOpinionMultiplierVeryPositive;
                 }
             }
 
             // Modify chance based on traits that encourage negative interactions using settings
             if (HasTraitThatEncouragesBadmouthing(initiator))
             {
-                insultChance *= SocialInteractions.Settings.enhancedChitchatInsultTraitMultiplier;
+                insultChance *= SocialInteractions.Settings.Gameplay.enhancedChitchatInsultTraitMultiplier;
             }
 
             // Modify chance based on relationship differences
@@ -773,7 +773,7 @@ namespace SocialInteractions.Patches
 
             // Return a factor greater than 1.0 if there are significant opinion differences
             // This makes it more likely to have negative comments when pawns have very different opinions
-            return 1.0f + (averageDifference * SocialInteractions.Settings.enhancedChitchatInsultOpinionDifferenceMultiplier); // Scale the impact using settings
+            return 1.0f + (averageDifference * SocialInteractions.Settings.Gameplay.enhancedChitchatInsultOpinionDifferenceMultiplier); // Scale the impact using settings
         }
 
         /// <summary>
@@ -838,7 +838,7 @@ namespace SocialInteractions.Patches
             bool hasKindnessTrait = HasTraitThatEncouragesKindness(initiator);
 
             // Calculate base chance for make-up attempts
-            float makeUpChance = SocialInteractions.Settings.baseMakeUpChance;
+            float makeUpChance = SocialInteractions.Settings.Gameplay.baseMakeUpChance;
 
             // Increase chance if the initiator has kindness-related traits
             if (hasKindnessTrait)
@@ -855,12 +855,12 @@ namespace SocialInteractions.Patches
                 // they might be more motivated to make amends
                 if (opinionOfRecipient > 10)
                 {
-                    makeUpChance *= SocialInteractions.Settings.makeUpPositiveOpinionMultiplier;
+                    makeUpChance *= SocialInteractions.Settings.Gameplay.makeUpPositiveOpinionMultiplier;
                 }
                 // If initiator has a very negative opinion, chance might be lower
                 else if (opinionOfRecipient < -20)
                 {
-                    makeUpChance *= SocialInteractions.Settings.makeUpNegativeOpinionMultiplier;
+                    makeUpChance *= SocialInteractions.Settings.Gameplay.makeUpNegativeOpinionMultiplier;
                 }
             }
 

@@ -230,7 +230,7 @@ namespace SocialInteractions.Dating
                 // Pathing Logic - Continuously update path to follow the initiator
                 try
                 {
-                    if (this.pawn.IsHashIntervalTick(SocialInteractions.Settings.jobCheckIntervalTicks))
+                    if (this.pawn.IsHashIntervalTick(SocialInteractions.Settings.Gameplay.jobCheckIntervalTicks))
                     {
                         // Check if pawn or pather is null before accessing
                         if (this.pawn.pather == null)

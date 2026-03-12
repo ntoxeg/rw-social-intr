@@ -39,9 +39,9 @@ namespace SocialInteractions.Jobs
                 if (target != null)
                 {
                     // Check if negotiation mode is enabled and target is humanlike (animals can't negotiate)
-                    if (SocialInteractions.Settings.enableManualChat &&
-                        SocialInteractions.Settings.llmInteractionsEnabled &&
-                        SocialInteractions.Settings.enableInteractiveNegotiation &&
+                    if (SocialInteractions.Settings.Features.enableManualChat &&
+                        SocialInteractions.Settings.Features.llmInteractionsEnabled &&
+                        SocialInteractions.Settings.Features.enableInteractiveNegotiation &&
                         target.RaceProps.Humanlike)
                     {
                         // Open negotation dialog
@@ -51,7 +51,7 @@ namespace SocialInteractions.Jobs
                         Dialog_PawnNegotiation dialog = new Dialog_PawnNegotiation(pawn, target);
                         Find.WindowStack.Add(dialog);
                     }
-                    else if (SocialInteractions.Settings.enableManualChat && SocialInteractions.Settings.llmInteractionsEnabled)
+                    else if (SocialInteractions.Settings.Features.enableManualChat && SocialInteractions.Settings.Features.llmInteractionsEnabled)
                     {
                         // Determine subject based on context
                         string subject = "Having a casual chat";
