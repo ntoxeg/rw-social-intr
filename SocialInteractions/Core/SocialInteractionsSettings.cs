@@ -924,17 +924,7 @@ Current event: [pawn1] [subject]
                     }
 
                     // Manage Player2 health heartbeat when switching API type
-                    if (apiTypeValues[i] == LlmApiType.Player2)
-                    {
-                        if (!string.IsNullOrEmpty(SocialInteractions.Settings.player2GameClientId))
-                        {
-                            Player2ApiClient.StartHealthHeartbeat(SocialInteractions.Settings.llmApiUrl, SocialInteractions.Settings.player2GameClientId);
-                        }
-                    }
-                    else
-                    {
-                        Player2ApiClient.StopHealthHeartbeat();
-                    }
+                    LlmClientFactory.UpdatePlayer2Heartbeat(SocialInteractions.Settings);
                 }
             }
 

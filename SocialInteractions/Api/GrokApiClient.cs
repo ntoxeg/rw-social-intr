@@ -77,201 +77,91 @@ namespace SocialInteractions.Api
         public object Usage { get; set; } // We won't use this directly, but it's in the API response
     }
 
-    public class GrokApiClient : IDisposable
+    public class GrokApiClient : LlmClientBase
     {
-        private static readonly HttpClient SharedHttpClient = new HttpClient();
-        private readonly HttpClient _httpClient;
-        private readonly string _apiUrl;
         private readonly string _modelName;
         private readonly string _apiKey;
-        private bool _disposed = false;
 
-        public GrokApiClient(string apiUrl, string modelName, string apiKey)
+        public override string Name => "Grok";
+
+        public GrokApiClient(string apiUrl, string modelName, string apiKey) : base(apiUrl)
         {
-            _apiUrl = apiUrl;
             _modelName = modelName;
-            // Trim whitespace which can cause header issues
-            _apiKey = (apiKey != null) ? apiKey.Trim() : null;
-            _httpClient = SharedHttpClient;
+            _apiKey = apiKey != null ? apiKey.Trim() : null;
+        }
 
-            // Clear any existing default request headers
-            _httpClient.DefaultRequestHeaders.Clear();
+        protected override object BuildRequestBody(string prompt, int? maxLength, float? temperature, List<string> stopSequence, bool? enableXtcSampling, int? topK, float? topP, float? minP, float? repetitionPenalty)
+        {
+            var stopList = BuildStopSequenceList(stopSequence);
+            if (stopList.Count == 0)
+            {
+                stopList = null;
+            }
 
-            // Add required headers for Grok API
+            var request = new GrokApiRequest
+            {
+                Model = _modelName,
+                Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
+                MaxTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
+                TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
+                TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
+                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null),
+                Stream = false,
+                Stop = stopList
+            };
+
+            request.Messages.Add(new GrokApiMessage
+            {
+                Role = "system",
+                Content = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary. Do not include tags like <thinking> or explanations."
+            });
+            request.Messages.Add(new GrokApiMessage { Role = "user", Content = prompt });
+
+            return request;
+        }
+
+        protected override HttpRequestMessage CreateRequestMessage(string requestUrl, HttpContent content)
+        {
+            var request = base.CreateRequestMessage(requestUrl, content);
             if (!string.IsNullOrEmpty(_apiKey))
             {
-                try
+                if (IsValidHeaderValue(_apiKey))
                 {
-                    // Validate that the API key doesn't contain invalid characters
-                    if (IsValidHeaderValue(_apiKey))
-                    {
-                        // Grok API uses Authorization header with Bearer token
-                        _httpClient.DefaultRequestHeaders.Add("Authorization", string.Format("Bearer {0}", _apiKey));
-                    }
-                    else
-                    {
-                        SLog.Warning("[SocialInteractions] Invalid API key format for Grok, skipping Authorization header.");
-                    }
+                    request.Headers.TryAddWithoutValidation("Authorization", string.Format("Bearer {0}", _apiKey));
                 }
-                catch (Exception ex)
+                else
                 {
-                    SLog.Warning(string.Format("[SocialInteractions] Failed to add Authorization header for Grok. Error: {0}", ex.Message));
+                    SLog.Warning("[SocialInteractions] Invalid API key format for Grok, skipping Authorization header.");
                 }
             }
 
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "SocialInteractionsMod/1.0");
+            return request;
         }
 
-        // Helper method to validate HTTP header values
-        private bool IsValidHeaderValue(string value)
+        protected override string BuildRequestUrl()
         {
-            if (string.IsNullOrEmpty(value))
-                return false;
-
-            // Check for control characters
-            foreach (char c in value)
+            string fullUrl = ApiUrl.TrimEnd('/');
+            if (!fullUrl.EndsWith("/v1/chat/completions"))
             {
-                if (char.IsControl(c))
-                    return false;
+                if (!fullUrl.EndsWith("/v1"))
+                {
+                    fullUrl = fullUrl + "/v1";
+                }
+                fullUrl = fullUrl + "/chat/completions";
             }
 
-            return true;
+            return fullUrl;
         }
 
-        public async Task<string> GenerateText(string prompt, int? maxLength = null, float? temperature = null, List<string> stopSequence = null, bool? enableXtcSampling = null, int? topK = null, float? topP = null, float? minP = null, float? repetitionPenalty = null)
+        protected override string ExtractText(string responseBody)
         {
-            if (_disposed)
-                throw new ObjectDisposedException("GrokApiClient");
-
-            try
+            GrokApiResponse apiResponse = DeserializeJson<GrokApiResponse>(responseBody);
+            if (apiResponse != null && apiResponse.Choices != null && apiResponse.Choices.Length > 0 && apiResponse.Choices[0].Message != null)
             {
-                var stopList = stopSequence ?? new List<string>(SocialInteractions.Settings.llmStoppingStrings.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries));
-                if (stopList.Count == 0)
-                {
-                    stopList = null;
-                }
-
-                var request = new GrokApiRequest
-                {
-                    Model = _modelName,
-                    Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
-                    MaxTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
-                    TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
-                    TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
-                    RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null),
-                    Stream = false,
-                    Stop = stopList
-                };
-
-                // Add system message to guide response format
-                request.Messages.Add(new GrokApiMessage
-                {
-                    Role = "system",
-                    Content = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary. Do not include tags like <thinking> or explanations."
-                });
-
-                // Add the prompt as a user message
-                request.Messages.Add(new GrokApiMessage
-                {
-                    Role = "user",
-                    Content = prompt
-                });
-
-                // Convert to JSON
-                DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(GrokApiRequest));
-                MemoryStream stream = new MemoryStream();
-                serializer.WriteObject(stream, request);
-                stream.Position = 0;
-                StreamReader reader = new StreamReader(stream);
-                string jsonContent = reader.ReadToEnd();
-
-                // Log the request for debugging
-                SLog.Message(string.Format("[SocialInteractions] Grok API Request: {0}", jsonContent));
-
-                var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-                // Set the content type for this specific request
-                httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-
-                // Use the correct Grok API endpoint
-                string fullUrl = _apiUrl.TrimEnd('/');
-
-                // For Grok API, if the URL doesn't already contain the chat endpoint, append it
-                if (!fullUrl.EndsWith("/v1/chat/completions"))
-                {
-                    if (!fullUrl.EndsWith("/v1"))
-                    {
-                        fullUrl = fullUrl + "/v1";
-                    }
-                    fullUrl = fullUrl + "/chat/completions";
-                }
-
-                var response = await _httpClient.PostAsync(fullUrl, httpContent);
-
-                // Log the response status code for debugging
-                SLog.Message(string.Format("[SocialInteractions] Grok API Response Status: {0}", response.StatusCode));
-
-                response.EnsureSuccessStatusCode(); // Throws an exception if the HTTP response status is an error code
-
-                var responseBody = await response.Content.ReadAsStringAsync();
-
-                // Log the response body for debugging
-                SLog.Message(string.Format("[SocialInteractions] Grok API Response Body: {0}", responseBody));
-
-                DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(GrokApiResponse));
-                MemoryStream responseStream = new MemoryStream(Encoding.UTF8.GetBytes(responseBody));
-                GrokApiResponse apiResponse = (GrokApiResponse)deserializer.ReadObject(responseStream);
-
-                if (apiResponse != null && apiResponse.Choices != null && apiResponse.Choices.Length > 0)
-                {
-                    return CleanChatResponse(apiResponse.Choices[0].Message.Content);
-                }
-                return null;
+                return CleanChatResponse(apiResponse.Choices[0].Message.Content);
             }
-            catch (HttpRequestException ex)
-            {
-                SLog.Warning(string.Format("[SocialInteractions] GrokApiClient: HTTP request failed: {0}", ex.Message));
-                return null;
-            }
-            catch (Exception ex)
-            {
-                SLog.Warning(string.Format("[SocialInteractions] GrokApiClient: Unexpected error during text generation: {0}", ex.Message));
-                return null;
-            }
-        }
 
-        private string CleanChatResponse(string response)
-        {
-            if (string.IsNullOrEmpty(response))
-                return response;
-
-            // Remove thinking blocks with various tag formats
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"<thinking>.*?</thinking>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"<think>.*?</think>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"\[thinking\].*?\[/thinking\]", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-            // Trim whitespace
-            response = response.Trim();
-
-            return response;
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposed)
-            {
-                if (disposing)
-                {
-                    // We don't dispose the shared HttpClient as it's shared
-                    // Only dispose if we had a custom HttpClient
-                }
-                _disposed = true;
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            return null;
         }
     }
 }

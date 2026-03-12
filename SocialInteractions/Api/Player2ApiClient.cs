@@ -82,28 +82,25 @@ namespace SocialInteractions.Api
         public object Usage { get; set; }
     }
 
-    public class Player2ApiClient : IDisposable
+    public class Player2ApiClient : LlmClientBase
     {
-        private static readonly HttpClient SharedHttpClient = new HttpClient();
-        private readonly HttpClient _httpClient;
-        private readonly string _apiUrl;
+        private static readonly HttpClient HealthHttpClient = new HttpClient();
         private readonly string _modelName;
         private readonly string _apiKey;
         private readonly string _gameClientId;
-        private bool _disposed = false;
+
+        public override string Name => "Player2";
 
         // Health heartbeat timer for Player2 usage tracking
         private static Timer _healthTimer;
         private static string _healthBaseUrl;
         private static string _healthGameClientId;
 
-        public Player2ApiClient(string apiUrl, string modelName, string apiKey, string gameClientId = null)
+        public Player2ApiClient(string apiUrl, string modelName, string apiKey, string gameClientId = null) : base(apiUrl)
         {
-            _apiUrl = apiUrl;
             _modelName = modelName;
             _apiKey = (apiKey != null) ? apiKey.Trim() : null;
             _gameClientId = (gameClientId != null) ? gameClientId.Trim() : null;
-            _httpClient = SharedHttpClient;
         }
 
         /// <summary>
@@ -155,7 +152,7 @@ namespace SocialInteractions.Api
                     }
                     request.Headers.Add("User-Agent", "SocialInteractionsMod/1.0");
 
-                    var response = await SharedHttpClient.SendAsync(request);
+                    var response = await HealthHttpClient.SendAsync(request);
                     SLog.Message(string.Format("[SocialInteractions] Player2 health heartbeat: {0}", response.StatusCode));
                 }
             }
@@ -165,125 +162,77 @@ namespace SocialInteractions.Api
             }
         }
 
-        private bool IsValidHeaderValue(string value)
+        protected override object BuildRequestBody(string prompt, int? maxLength, float? temperature, List<string> stopSequence, bool? enableXtcSampling, int? topK, float? topP, float? minP, float? repetitionPenalty)
         {
-            if (string.IsNullOrEmpty(value))
-                return false;
-
-            foreach (char c in value)
+            var request = new Player2ApiRequest
             {
-                if (char.IsControl(c))
-                    return false;
-            }
+                Model = _modelName,
+                Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
+                MaxTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
+                Stream = false,
+                Stop = BuildStopSequenceList(stopSequence),
+                TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
+                TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
+                MinP = minP ?? (SocialInteractions.Settings.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.llmMinP : null),
+                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null)
+            };
 
-            return true;
+            request.Messages.Add(new Player2ApiMessage
+            {
+                Role = "system",
+                Content = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary. Do not include tags like <thinking> or explanations."
+            });
+            request.Messages.Add(new Player2ApiMessage { Role = "user", Content = prompt });
+
+            return request;
         }
 
-        public async Task<string> GenerateText(string prompt, int? maxLength = null, float? temperature = null, List<string> stopSequence = null, bool? enableXtcSampling = null, int? topK = null, float? topP = null, float? minP = null, float? repetitionPenalty = null)
+        protected override string BuildRequestUrl()
         {
-            if (_disposed)
-                throw new ObjectDisposedException("Player2ApiClient");
-
-            try
+            string fullUrl = ApiUrl.TrimEnd('/');
+            if (!fullUrl.EndsWith("/v1/chat/completions"))
             {
-                var request = new Player2ApiRequest
+                if (!fullUrl.EndsWith("/v1"))
                 {
-                    Model = _modelName,
-                    Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
-                    MaxTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
-                    Stream = false,
-                    Stop = stopSequence ?? new List<string>(SocialInteractions.Settings.llmStoppingStrings.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)),
-
-                    TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
-                    TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
-                    MinP = minP ?? (SocialInteractions.Settings.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.llmMinP : null),
-                    RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null)
-                };
-
-                request.Messages.Add(new Player2ApiMessage
-                {
-                    Role = "system",
-                    Content = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary. Do not include tags like <thinking> or explanations."
-                });
-
-                request.Messages.Add(new Player2ApiMessage
-                {
-                    Role = "user",
-                    Content = prompt
-                });
-
-                DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(Player2ApiRequest));
-                MemoryStream stream = new MemoryStream();
-                using (var writer = new StreamWriter(stream, new UTF8Encoding(false)))
-                {
-                    serializer.WriteObject(writer.BaseStream, request);
-                    writer.Flush();
+                    fullUrl = fullUrl + "/v1";
                 }
-                string jsonContent = Encoding.UTF8.GetString(stream.ToArray());
-
-                // Sanitize the JSON content to ensure it's clean for the server
-                jsonContent = SanitizeJsonString(jsonContent);
-
-                SLog.Message(string.Format("[SocialInteractions] Player2 API Request: {0}", jsonContent));
-
-                var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                string fullUrl = _apiUrl.TrimEnd('/');
-                if (!fullUrl.EndsWith("/v1/chat/completions"))
-                {
-                    if (!fullUrl.EndsWith("/v1"))
-                    {
-                        fullUrl = fullUrl + "/v1";
-                    }
-                    fullUrl = fullUrl + "/chat/completions";
-                }
-
-                using (var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, fullUrl))
-                {
-                    httpRequestMessage.Content = httpContent;
-                    httpRequestMessage.Headers.Add("User-Agent", "SocialInteractionsMod/1.0");
-
-                    if (!string.IsNullOrEmpty(_apiKey))
-                    {
-                        httpRequestMessage.Headers.Add("Authorization", string.Format("Bearer {0}", _apiKey));
-                    }
-                    if (!string.IsNullOrEmpty(_gameClientId))
-                    {
-                        httpRequestMessage.Headers.Add("player2-game-key", _gameClientId);
-                    }
-
-                    var response = await _httpClient.SendAsync(httpRequestMessage);
-                    var responseBody = await response.Content.ReadAsStringAsync();
-
-                    if (!response.IsSuccessStatusCode)
-                    {
-                        SLog.Warning(string.Format("[SocialInteractions] Player2 API Error (Status {0}): {1}", response.StatusCode, responseBody));
-                        return null;
-                    }
-
-                    SLog.Message(string.Format("[SocialInteractions] Player2 API Response Body: {0}", responseBody));
-
-                    DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(Player2ApiResponse));
-                    MemoryStream responseStream = new MemoryStream(Encoding.UTF8.GetBytes(responseBody));
-                    Player2ApiResponse apiResponse = (Player2ApiResponse)deserializer.ReadObject(responseStream);
-
-                    if (apiResponse != null && apiResponse.Choices != null && apiResponse.Choices.Length > 0)
-                    {
-                        return CleanChatResponse(apiResponse.Choices[0].Message.Content);
-                    }
-                    return null;
-                }
+                fullUrl = fullUrl + "/chat/completions";
             }
-            catch (HttpRequestException ex)
+
+            return fullUrl;
+        }
+
+        protected override HttpRequestMessage CreateRequestMessage(string requestUrl, HttpContent content)
+        {
+            var request = base.CreateRequestMessage(requestUrl, content);
+
+            if (!string.IsNullOrEmpty(_apiKey) && IsValidHeaderValue(_apiKey))
             {
-                SLog.Warning(string.Format("[SocialInteractions] Player2ApiClient: HTTP request failed: {0}", ex.Message));
-                return null;
+                request.Headers.TryAddWithoutValidation("Authorization", string.Format("Bearer {0}", _apiKey));
             }
-            catch (Exception ex)
+
+            if (!string.IsNullOrEmpty(_gameClientId))
             {
-                SLog.Warning(string.Format("[SocialInteractions] Player2ApiClient: Unexpected error during text generation: {0}", ex.Message));
-                return null;
+                request.Headers.TryAddWithoutValidation("player2-game-key", _gameClientId);
             }
+
+            return request;
+        }
+
+        protected override string PrepareRequestJson(string requestJson)
+        {
+            return SanitizeJsonString(requestJson);
+        }
+
+        protected override string ExtractText(string responseBody)
+        {
+            Player2ApiResponse apiResponse = DeserializeJson<Player2ApiResponse>(responseBody);
+            if (apiResponse != null && apiResponse.Choices != null && apiResponse.Choices.Length > 0 && apiResponse.Choices[0].Message != null)
+            {
+                return CleanChatResponse(apiResponse.Choices[0].Message.Content);
+            }
+
+            return null;
         }
 
         private string SanitizeJsonString(string json)
@@ -315,35 +264,5 @@ namespace SocialInteractions.Api
             return json;
         }
 
-        private string CleanChatResponse(string response)
-        {
-            if (string.IsNullOrEmpty(response))
-                return response;
-
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"<thinking>.*?</thinking>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"<think>.*?</think>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"\[thinking\].*?\[/thinking\]", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-            response = response.Trim();
-
-            return response;
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposed)
-            {
-                if (disposing)
-                {
-                }
-                _disposed = true;
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
     }
 }

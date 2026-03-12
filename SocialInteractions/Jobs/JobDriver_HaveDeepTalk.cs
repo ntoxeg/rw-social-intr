@@ -124,7 +124,7 @@ namespace SocialInteractions.Jobs
 
                     Task.Run(async () =>
                     {
-                        KoboldApiClient client = null;
+                        ILlmClient client = null;
                         try
                         {
                             if (recipientForTask == null)
@@ -158,7 +158,7 @@ namespace SocialInteractions.Jobs
                             string prompt = SocialInteractions.GenerateDeepTalkPrompt(pawn, recipientForTask, interactionDefForTask, subjectForTask);
                             if (!string.IsNullOrEmpty(prompt))
                             {
-                                client = new KoboldApiClient(SocialInteractions.Settings.llmApiUrl, SocialInteractions.Settings.llmApiKey);
+                                client = LlmClientFactory.Create(SocialInteractions.Settings);
                                 llmResponse = await client.GenerateText(prompt);
 
                                 if (llmResponse == null)

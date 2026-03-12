@@ -127,37 +127,26 @@ namespace SocialInteractions.Api
         public LMStudioChatMessage Message { get; set; }
     }
 
-    public class LMStudioApiClient : IDisposable
+    public class LMStudioApiClient : LlmClientBase
     {
-        private static readonly HttpClient SharedHttpClient = new HttpClient();
-        private readonly HttpClient _httpClient;
-        private readonly string _apiUrl;
         private readonly string _modelName;
-        private bool _disposed = false;
 
-        public LMStudioApiClient(string apiUrl, string modelName)
+        public override string Name => "LMStudio";
+
+        public LMStudioApiClient(string apiUrl, string modelName) : base(apiUrl)
         {
-            _apiUrl = apiUrl;
             _modelName = modelName;
-            _httpClient = SharedHttpClient;
         }
 
-        public async Task<string> GenerateText(string prompt, int? maxLength = null, float? temperature = null, List<string> stopSequence = null, bool? enableXtcSampling = null, int? topK = null, float? topP = null, float? minP = null, float? repetitionPenalty = null)
+        private static bool UseChatCompletion => SocialInteractions.Settings != null && SocialInteractions.Settings.forceChatCompletion;
+
+        protected override object BuildRequestBody(string prompt, int? maxLength, float? temperature, List<string> stopSequence, bool? enableXtcSampling, int? topK, float? topP, float? minP, float? repetitionPenalty)
         {
-            if (_disposed)
-                throw new ObjectDisposedException("LMStudioApiClient");
-
-            try
+            if (UseChatCompletion)
             {
-                if (SocialInteractions.Settings.forceChatCompletion)
-                {
-                    return await GenerateChatText(prompt, maxLength, temperature, stopSequence, topK, topP, minP, repetitionPenalty);
-                }
-
-                var request = new LMStudioCompletionRequest
+                var chatRequest = new LMStudioChatRequest
                 {
                     Model = _modelName,
-                    Prompt = prompt,
                     Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
                     MaxTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
                     TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
@@ -165,61 +154,18 @@ namespace SocialInteractions.Api
                     MinP = minP ?? (SocialInteractions.Settings.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.llmMinP : null),
                     RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null),
                     Stream = false,
-                    Stop = stopSequence ?? new List<string>(SocialInteractions.Settings.llmStoppingStrings.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
+                    Stop = BuildStopSequenceList(stopSequence)
                 };
 
-                // Convert to JSON
-                DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(LMStudioCompletionRequest));
-                MemoryStream stream = new MemoryStream();
-                serializer.WriteObject(stream, request);
-                stream.Position = 0;
-                StreamReader reader = new StreamReader(stream);
-                string jsonContent = reader.ReadToEnd();
-
-                // Log the request for debugging
-                SLog.Message(string.Format("[SocialInteractions] LMStudio API Request: {0}", jsonContent));
-
-                var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                var response = await _httpClient.PostAsync(_apiUrl.TrimEnd('/') + "/v1/completions", httpContent);
-
-                // Log the response status code for debugging
-                SLog.Message(string.Format("[SocialInteractions] LMStudio API Response Status: {0}", response.StatusCode));
-
-                response.EnsureSuccessStatusCode(); // Throws an exception if the HTTP response status is an error code
-
-                var responseBody = await response.Content.ReadAsStringAsync();
-
-                // Log the response body for debugging
-                SLog.Message(string.Format("[SocialInteractions] LMStudio API Response Body: {0}", responseBody));
-
-                DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(LMStudioCompletionResponse));
-                MemoryStream responseStream = new MemoryStream(Encoding.UTF8.GetBytes(responseBody));
-                LMStudioCompletionResponse apiResponse = (LMStudioCompletionResponse)deserializer.ReadObject(responseStream);
-
-                if (apiResponse != null && apiResponse.Choices != null && apiResponse.Choices.Length > 0)
-                {
-                    return CleanChatResponse(apiResponse.Choices[0].Text);
-                }
-                return null;
+                chatRequest.Messages.Add(new LMStudioChatMessage { Role = "system", Content = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary." });
+                chatRequest.Messages.Add(new LMStudioChatMessage { Role = "user", Content = prompt });
+                return chatRequest;
             }
-            catch (HttpRequestException ex)
-            {
-                SLog.Warning(string.Format("[SocialInteractions] LMStudioApiClient: HTTP request failed: {0}", ex.Message));
-                return null;
-            }
-            catch (Exception ex)
-            {
-                SLog.Warning(string.Format("[SocialInteractions] LMStudioApiClient: Unexpected error during text generation: {0}", ex.Message));
-                return null;
-            }
-        }
 
-        private async Task<string> GenerateChatText(string prompt, int? maxLength = null, float? temperature = null, List<string> stopSequence = null, int? topK = null, float? topP = null, float? minP = null, float? repetitionPenalty = null)
-        {
-            var request = new LMStudioChatRequest
+            return new LMStudioCompletionRequest
             {
                 Model = _modelName,
+                Prompt = prompt,
                 Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
                 MaxTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
                 TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
@@ -227,69 +173,37 @@ namespace SocialInteractions.Api
                 MinP = minP ?? (SocialInteractions.Settings.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.llmMinP : null),
                 RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null),
                 Stream = false,
-                Stop = stopSequence ?? new List<string>(SocialInteractions.Settings.llmStoppingStrings.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
+                Stop = BuildStopSequenceList(stopSequence)
             };
+        }
 
-            request.Messages.Add(new LMStudioChatMessage { Role = "system", Content = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary." });
-            request.Messages.Add(new LMStudioChatMessage { Role = "user", Content = prompt });
+        protected override string BuildRequestUrl()
+        {
+            return UseChatCompletion
+                ? ApiUrl.TrimEnd('/') + "/v1/chat/completions"
+                : ApiUrl.TrimEnd('/') + "/v1/completions";
+        }
 
-            DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(LMStudioChatRequest));
-            MemoryStream stream = new MemoryStream();
-            serializer.WriteObject(stream, request);
-            stream.Position = 0;
-            StreamReader reader = new StreamReader(stream);
-            string jsonContent = reader.ReadToEnd();
-
-            var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync(_apiUrl.TrimEnd('/') + "/v1/chat/completions", httpContent);
-            response.EnsureSuccessStatusCode();
-
-            var responseBody = await response.Content.ReadAsStringAsync();
-            DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(LMStudioChatResponse));
-            using (var responseStream = new MemoryStream(Encoding.UTF8.GetBytes(responseBody)))
+        protected override string ExtractText(string responseBody)
+        {
+            if (UseChatCompletion)
             {
-                var apiResponse = (LMStudioChatResponse)deserializer.ReadObject(responseStream);
-                if (apiResponse != null && apiResponse.Choices != null && apiResponse.Choices.Length > 0)
+                LMStudioChatResponse chatResponse = DeserializeJson<LMStudioChatResponse>(responseBody);
+                if (chatResponse != null && chatResponse.Choices != null && chatResponse.Choices.Length > 0 && chatResponse.Choices[0].Message != null)
                 {
-                    return CleanChatResponse(apiResponse.Choices[0].Message.Content);
+                    return CleanChatResponse(chatResponse.Choices[0].Message.Content);
                 }
+
+                return null;
             }
+
+            LMStudioCompletionResponse completionResponse = DeserializeJson<LMStudioCompletionResponse>(responseBody);
+            if (completionResponse != null && completionResponse.Choices != null && completionResponse.Choices.Length > 0)
+            {
+                return CleanChatResponse(completionResponse.Choices[0].Text);
+            }
+
             return null;
-        }
-
-        private string CleanChatResponse(string response)
-        {
-            if (string.IsNullOrEmpty(response))
-                return response;
-
-            // Remove thinking blocks with various tag formats
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"<thinking>.*?</thinking>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"<think>.*?</think>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"\[thinking\].*?\[/thinking\]", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-            // Trim whitespace
-            response = response.Trim();
-
-            return response;
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposed)
-            {
-                if (disposing)
-                {
-                    // We don't dispose the shared HttpClient as it's shared
-                    // Only dispose if we had a custom HttpClient
-                }
-                _disposed = true;
-            }
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
         }
     }
 }

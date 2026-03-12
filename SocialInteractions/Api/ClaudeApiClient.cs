@@ -105,209 +105,85 @@ namespace SocialInteractions.Api
         public object Usage { get; set; } // Usage information with input/output tokens
     }
 
-    public class ClaudeApiClient : IDisposable
+    public class ClaudeApiClient : LlmClientBase
     {
-        private static readonly HttpClient SharedHttpClient = new HttpClient();
-        private readonly HttpClient _httpClient;
-        private readonly string _apiUrl;
         private readonly string _modelName;
         private readonly string _apiKey;
-        private bool _disposed = false;
 
-        public ClaudeApiClient(string apiUrl, string modelName, string apiKey)
+        public override string Name => "Claude";
+
+        public ClaudeApiClient(string apiUrl, string modelName, string apiKey) : base(apiUrl)
         {
-            _apiUrl = apiUrl;
             _modelName = modelName;
-            // Trim whitespace which can cause header issues
-            _apiKey = (apiKey != null) ? apiKey.Trim() : null;
-            _httpClient = SharedHttpClient;
+            _apiKey = apiKey != null ? apiKey.Trim() : null;
+        }
 
-            // Clear any existing default request headers
-            _httpClient.DefaultRequestHeaders.Clear();
+        protected override object BuildRequestBody(string prompt, int? maxLength, float? temperature, List<string> stopSequence, bool? enableXtcSampling, int? topK, float? topP, float? minP, float? repetitionPenalty)
+        {
+            var request = new ClaudeApiRequest
+            {
+                Model = _modelName,
+                MaxTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
+                Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
+                TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
+                TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
+                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null),
+                System = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary. Do not include tags like <thinking> or explanations.",
+                StopSequences = BuildStopSequenceList(stopSequence)
+            };
 
-            // Add required headers for Claude API
+            request.Messages.Add(new ClaudeApiMessage { Role = "user", Content = prompt });
+            request.Thinking = SocialInteractions.Settings.disableLlmThinking
+                ? new ClaudeApiThinking { Type = "disabled" }
+                : new ClaudeApiThinking { Type = "enabled", BudgetTokens = Math.Max(1024, SocialInteractions.Settings.llmMaxTokens) };
+
+            return request;
+        }
+
+        protected override HttpRequestMessage CreateRequestMessage(string requestUrl, HttpContent content)
+        {
+            var request = base.CreateRequestMessage(requestUrl, content);
+            request.Headers.TryAddWithoutValidation("anthropic-version", "2023-06-01");
+
             if (!string.IsNullOrEmpty(_apiKey))
             {
-                try
+                if (IsValidHeaderValue(_apiKey))
                 {
-                    // Validate that the API key doesn't contain invalid characters
-                    if (IsValidHeaderValue(_apiKey))
-                    {
-                        // Claude API uses x-api-key header (not Authorization)
-                        _httpClient.DefaultRequestHeaders.Add("x-api-key", _apiKey);
-                    }
-                    else
-                    {
-                        SLog.Warning("[SocialInteractions] Invalid API key format for Claude, skipping x-api-key header.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    SLog.Warning(string.Format("[SocialInteractions] Failed to add x-api-key header for Claude. Error: {0}", ex.Message));
-                }
-            }
-
-            // Add required Claude-specific headers
-            _httpClient.DefaultRequestHeaders.Add("anthropic-version", "2023-06-01");
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "SocialInteractionsMod/1.0");
-        }
-
-        // Helper method to validate HTTP header values
-        private bool IsValidHeaderValue(string value)
-        {
-            if (string.IsNullOrEmpty(value))
-                return false;
-
-            // Check for control characters
-            foreach (char c in value)
-            {
-                if (char.IsControl(c))
-                    return false;
-            }
-
-            return true;
-        }
-
-        public async Task<string> GenerateText(string prompt, int? maxLength = null, float? temperature = null, List<string> stopSequence = null, bool? enableXtcSampling = null, int? topK = null, float? topP = null, float? minP = null, float? repetitionPenalty = null)
-        {
-            if (_disposed)
-                throw new ObjectDisposedException("ClaudeApiClient");
-
-            try
-            {
-                var request = new ClaudeApiRequest
-                {
-                    Model = _modelName,
-                    MaxTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
-                    Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
-                    TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
-                    TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
-                    RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null),
-                    System = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary. Do not include tags like <thinking> or explanations.",
-                    StopSequences = stopSequence ?? new List<string>(SocialInteractions.Settings.llmStoppingStrings.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
-                };
-
-                // Add the prompt as a user message
-                request.Messages.Add(new ClaudeApiMessage
-                {
-                    Role = "user",
-                    Content = prompt
-                });
-
-                if (SocialInteractions.Settings.disableLlmThinking)
-                {
-                    request.Thinking = new ClaudeApiThinking
-                    {
-                        Type = "disabled"
-                    };
+                    request.Headers.TryAddWithoutValidation("x-api-key", _apiKey);
                 }
                 else
                 {
-                    // By default, if the model supports it, enable it with a reasonable budget
-                    request.Thinking = new ClaudeApiThinking
-                    {
-                        Type = "enabled",
-                        BudgetTokens = Math.Max(1024, SocialInteractions.Settings.llmMaxTokens)
-                    };
+                    SLog.Warning("[SocialInteractions] Invalid API key format for Claude, skipping x-api-key header.");
                 }
-
-                // Convert to JSON
-                DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(ClaudeApiRequest));
-                MemoryStream stream = new MemoryStream();
-                serializer.WriteObject(stream, request);
-                stream.Position = 0;
-                StreamReader reader = new StreamReader(stream);
-                string jsonContent = reader.ReadToEnd();
-
-                // Log the request for debugging
-                SLog.Message(string.Format("[SocialInteractions] Claude API Request: {0}", jsonContent));
-
-                var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-                // Set the content type for this specific request
-                httpContent.Headers.ContentType = new MediaTypeHeaderValue("application/json");
-
-                // Use the correct Claude API endpoint
-                string fullUrl = _apiUrl.TrimEnd('/');
-
-                // For Claude API, if the URL doesn't already contain the messages endpoint, append it
-                if (!fullUrl.EndsWith("/v1/messages"))
-                {
-                    if (!fullUrl.EndsWith("/v1"))
-                    {
-                        fullUrl = fullUrl + "/v1";
-                    }
-                    fullUrl = fullUrl + "/messages";
-                }
-
-                var response = await _httpClient.PostAsync(fullUrl, httpContent);
-
-                // Log the response status code for debugging
-                SLog.Message(string.Format("[SocialInteractions] Claude API Response Status: {0}", response.StatusCode));
-
-                response.EnsureSuccessStatusCode(); // Throws an exception if the HTTP response status is an error code
-
-                var responseBody = await response.Content.ReadAsStringAsync();
-
-                // Log the response body for debugging
-                SLog.Message(string.Format("[SocialInteractions] Claude API Response Body: {0}", responseBody));
-
-                DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(ClaudeApiResponse));
-                MemoryStream responseStream = new MemoryStream(Encoding.UTF8.GetBytes(responseBody));
-                ClaudeApiResponse apiResponse = (ClaudeApiResponse)deserializer.ReadObject(responseStream);
-
-                if (apiResponse != null && apiResponse.Content != null && apiResponse.Content.Count > 0)
-                {
-                    // Extract text from the first content block
-                    var firstBlock = apiResponse.Content[0];
-                    return firstBlock != null ? CleanChatResponse(firstBlock.Text) : null;
-                }
-                return null;
             }
-            catch (HttpRequestException ex)
-            {
-                SLog.Warning(string.Format("[SocialInteractions] ClaudeApiClient: HTTP request failed: {0}", ex.Message));
-                return null;
-            }
-            catch (Exception ex)
-            {
-                SLog.Warning(string.Format("[SocialInteractions] ClaudeApiClient: Unexpected error during text generation: {0}", ex.Message));
-                return null;
-            }
+
+            return request;
         }
 
-        private string CleanChatResponse(string response)
+        protected override string BuildRequestUrl()
         {
-            if (string.IsNullOrEmpty(response))
-                return response;
-
-            // Remove thinking blocks with various tag formats
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"<thinking>.*?</thinking>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"<think>.*?</think>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"\[thinking\].*?\[/thinking\]", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-            // Trim whitespace
-            response = response.Trim();
-
-            return response;
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposed)
+            string fullUrl = ApiUrl.TrimEnd('/');
+            if (!fullUrl.EndsWith("/v1/messages"))
             {
-                if (disposing)
+                if (!fullUrl.EndsWith("/v1"))
                 {
-                    // We don't dispose the shared HttpClient as it's shared
-                    // Only dispose if we had a custom HttpClient
+                    fullUrl = fullUrl + "/v1";
                 }
-                _disposed = true;
+                fullUrl = fullUrl + "/messages";
             }
+
+            return fullUrl;
         }
 
-        public void Dispose()
+        protected override string ExtractText(string responseBody)
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            ClaudeApiResponse apiResponse = DeserializeJson<ClaudeApiResponse>(responseBody);
+            if (apiResponse != null && apiResponse.Content != null && apiResponse.Content.Count > 0 && apiResponse.Content[0] != null)
+            {
+                return CleanChatResponse(apiResponse.Content[0].Text);
+            }
+
+            return null;
         }
     }
 }

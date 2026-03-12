@@ -48,12 +48,7 @@ namespace SocialInteractions
             TTSManager.Initialize();
 
             // Start Player2 health heartbeat if configured
-            if (Settings != null && Settings.llmInteractionsEnabled &&
-                Settings.llmApiType == LlmApiType.Player2 &&
-                !string.IsNullOrEmpty(Settings.player2GameClientId))
-            {
-                Player2ApiClient.StartHealthHeartbeat(Settings.llmApiUrl, Settings.player2GameClientId);
-            }
+            LlmClientFactory.UpdatePlayer2Heartbeat(Settings, true);
 
             // Log that patches were applied
             SLog.Message("[SocialInteractions] Harmony patches applied");
@@ -1855,7 +1850,6 @@ namespace SocialInteractions
 
             Task.Run(async () =>
             {
-                KoboldApiClient client = null;
                 try
                 {
                     string prompt = GenerateDeepTalkPrompt(initiator, recipient, interactionDef, subject);
@@ -1937,13 +1931,6 @@ namespace SocialInteractions
                     catch (Exception fallbackEx)
                     {
                         Log.Error(string.Format("Error in HandleJobGiverInteraction fallback: {0} {1}", fallbackEx.Message, fallbackEx.StackTrace));
-                    }
-                }
-                finally
-                {
-                    if (client != null)
-                    {
-                        client.Dispose();
                     }
                 }
             });
@@ -2120,49 +2107,10 @@ namespace SocialInteractions
         /// <summary>
         /// Gets the appropriate API client based on the selected API type
         /// </summary>
-        /// <returns>IDisposable client instance</returns>
-        private static IDisposable GetApiClient()
+        /// <returns>LLM client instance</returns>
+        private static ILlmClient GetApiClient()
         {
-            if (Settings.llmApiType == LlmApiType.Ollama)
-            {
-                return new OllamaApiClient(Settings.llmApiUrl, Settings.ollamaModelName);
-            }
-            else if (Settings.llmApiType == LlmApiType.OpenAI)
-            {
-                return new OpenAiApiClient(Settings.llmApiUrl, Settings.openAiModelName, Settings.llmApiKey);
-            }
-            else if (Settings.llmApiType == LlmApiType.LMStudio)
-            {
-                return new LMStudioApiClient(Settings.llmApiUrl, Settings.lmStudioModelName);
-            }
-            else if (Settings.llmApiType == LlmApiType.Gemini)
-            {
-                return new GeminiApiClient(Settings.llmApiUrl, Settings.llmApiKey);
-            }
-            else if (Settings.llmApiType == LlmApiType.Qwen)
-            {
-                return new QwenApiClient(Settings.llmApiUrl, Settings.qwenModelName, Settings.llmApiKey);
-            }
-            else if (Settings.llmApiType == LlmApiType.Deepseek)
-            {
-                return new DeepseekApiClient(Settings.llmApiUrl, Settings.deepseekModelName, Settings.llmApiKey);
-            }
-            else if (Settings.llmApiType == LlmApiType.Grok)
-            {
-                return new GrokApiClient(Settings.llmApiUrl, Settings.grokModelName, Settings.llmApiKey);
-            }
-            else if (Settings.llmApiType == LlmApiType.Claude)
-            {
-                return new ClaudeApiClient(Settings.llmApiUrl, Settings.claudeModelName, Settings.llmApiKey);
-            }
-            else if (Settings.llmApiType == LlmApiType.Player2)
-            {
-                return new Player2ApiClient(Settings.llmApiUrl, Settings.player2ModelName, Settings.llmApiKey, Settings.player2GameClientId);
-            }
-            else
-            {
-                return new KoboldApiClient(Settings.llmApiUrl, Settings.llmApiKey);
-            }
+            return LlmClientFactory.Create(Settings);
         }
 
         /// <summary>
@@ -2172,8 +2120,7 @@ namespace SocialInteractions
         /// <returns>The generated text response</returns>
         private static async Task<string> GenerateTextWithApiClient(string prompt)
         {
-            IDisposable client = null;
-            try
+            using (ILlmClient client = GetApiClient())
             {
                 // Prepare sampling parameters once
                 int? topK = Settings.llmTopK > 0 ? (int?)Settings.llmTopK : null;
@@ -2181,105 +2128,8 @@ namespace SocialInteractions
                 float? minP = Settings.llmMinP > 0.0f ? (float?)Settings.llmMinP : null;
                 float? repPen = Settings.llmRepetitionPenalty != 1.0f ? (float?)Settings.llmRepetitionPenalty : null;
 
-                if (Settings.llmApiType == LlmApiType.Ollama)
-                {
-                    client = new OllamaApiClient(Settings.llmApiUrl, Settings.ollamaModelName);
-                    OllamaApiClient ollamaClient = client as OllamaApiClient;
-                    if (ollamaClient != null)
-                    {
-                        return await ollamaClient.GenerateText(prompt, null, null, null, null, topK, topP, minP, repPen);
-                    }
-                }
-                else if (Settings.llmApiType == LlmApiType.LMStudio)
-                {
-                    client = new LMStudioApiClient(Settings.llmApiUrl, Settings.lmStudioModelName);
-                    LMStudioApiClient lmStudioClient = client as LMStudioApiClient;
-                    if (lmStudioClient != null)
-                    {
-                        return await lmStudioClient.GenerateText(prompt, null, null, null, null, topK, topP, minP, repPen);
-                    }
-                }
-                else if (Settings.llmApiType == LlmApiType.OpenAI)
-                {
-                    client = new OpenAiApiClient(Settings.llmApiUrl, Settings.openAiModelName, Settings.llmApiKey);
-                    OpenAiApiClient openAiClient = client as OpenAiApiClient;
-                    if (openAiClient != null)
-                    {
-                        return await openAiClient.GenerateText(prompt, null, null, null, null, topK, topP, minP, repPen);
-                    }
-                }
-                else if (Settings.llmApiType == LlmApiType.Gemini)
-                {
-                    client = new GeminiApiClient(Settings.llmApiUrl, Settings.llmApiKey);
-                    GeminiApiClient geminiClient = client as GeminiApiClient;
-                    if (geminiClient != null)
-                    {
-                        return await geminiClient.GenerateText(prompt, null, null, null, null, topK, topP, minP, repPen);
-                    }
-                }
-                else if (Settings.llmApiType == LlmApiType.Qwen)
-                {
-                    client = new QwenApiClient(Settings.llmApiUrl, Settings.qwenModelName, Settings.llmApiKey);
-                    QwenApiClient qwenClient = client as QwenApiClient;
-                    if (qwenClient != null)
-                    {
-                        return await qwenClient.GenerateText(prompt, null, null, null, null, topK, topP, minP, repPen);
-                    }
-                }
-                else if (Settings.llmApiType == LlmApiType.Deepseek)
-                {
-                    client = new DeepseekApiClient(Settings.llmApiUrl, Settings.deepseekModelName, Settings.llmApiKey);
-                    DeepseekApiClient deepseekClient = client as DeepseekApiClient;
-                    if (deepseekClient != null)
-                    {
-                        return await deepseekClient.GenerateText(prompt, null, null, null, null, topK, topP, minP, repPen);
-                    }
-                }
-                else if (Settings.llmApiType == LlmApiType.Grok)
-                {
-                    client = new GrokApiClient(Settings.llmApiUrl, Settings.grokModelName, Settings.llmApiKey);
-                    GrokApiClient grokClient = client as GrokApiClient;
-                    if (grokClient != null)
-                    {
-                        return await grokClient.GenerateText(prompt, null, null, null, null, topK, topP, minP, repPen);
-                    }
-                }
-                else if (Settings.llmApiType == LlmApiType.Claude)
-                {
-                    client = new ClaudeApiClient(Settings.llmApiUrl, Settings.claudeModelName, Settings.llmApiKey);
-                    ClaudeApiClient claudeClient = client as ClaudeApiClient;
-                    if (claudeClient != null)
-                    {
-                        return await claudeClient.GenerateText(prompt, null, null, null, null, topK, topP, minP, repPen);
-                    }
-                }
-                else if (Settings.llmApiType == LlmApiType.Player2)
-                {
-                    client = new Player2ApiClient(Settings.llmApiUrl, Settings.player2ModelName, Settings.llmApiKey, Settings.player2GameClientId);
-                    Player2ApiClient player2Client = client as Player2ApiClient;
-                    if (player2Client != null)
-                    {
-                        return await player2Client.GenerateText(prompt, null, null, null, null, topK, topP, minP, repPen);
-                    }
-                }
-                else
-                {
-                    client = new KoboldApiClient(Settings.llmApiUrl, Settings.llmApiKey);
-                    KoboldApiClient koboldClient = client as KoboldApiClient;
-                    if (koboldClient != null)
-                    {
-                        return await koboldClient.GenerateText(prompt, null, null, null, null, topK, topP, minP, repPen);
-                    }
-                }
+                return await client.GenerateText(prompt, null, null, null, null, topK, topP, minP, repPen);
             }
-            finally
-            {
-                if (client != null)
-                {
-                    client.Dispose();
-                }
-            }
-            return null;
         }
 
         /// <summary>

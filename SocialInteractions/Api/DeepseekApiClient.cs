@@ -88,209 +88,84 @@ namespace SocialInteractions.Api
         public object Usage { get; set; } // We won't use this directly, but it's in the API response
     }
 
-    public class DeepseekApiClient : IDisposable
+    public class DeepseekApiClient : LlmClientBase
     {
-        private static readonly HttpClient SharedHttpClient = new HttpClient();
-        private readonly HttpClient _httpClient;
-        private readonly string _apiUrl;
         private readonly string _modelName;
         private readonly string _apiKey;
-        private bool _disposed = false;
 
-        public DeepseekApiClient(string apiUrl, string modelName, string apiKey)
+        public override string Name => "Deepseek";
+
+        public DeepseekApiClient(string apiUrl, string modelName, string apiKey) : base(apiUrl)
         {
-            _apiUrl = apiUrl;
             _modelName = modelName;
-            // Trim whitespace which can cause header issues
-            _apiKey = (apiKey != null) ? apiKey.Trim() : null;
-            _httpClient = SharedHttpClient;
+            _apiKey = apiKey != null ? apiKey.Trim() : null;
+        }
 
-            // Clear any existing default request headers
-            _httpClient.DefaultRequestHeaders.Clear();
+        protected override object BuildRequestBody(string prompt, int? maxLength, float? temperature, List<string> stopSequence, bool? enableXtcSampling, int? topK, float? topP, float? minP, float? repetitionPenalty)
+        {
+            var request = new DeepseekApiRequest
+            {
+                Model = _modelName,
+                Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
+                MaxTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
+                TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
+                TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
+                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null),
+                Stream = false,
+                Stop = BuildStopSequenceList(stopSequence)
+            };
 
-            // Add required headers for Deepseek API
+            request.Messages.Add(new DeepseekApiMessage
+            {
+                Role = "system",
+                Content = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary. Do not include tags like <thinking> or explanations."
+            });
+            request.Messages.Add(new DeepseekApiMessage { Role = "user", Content = prompt });
+
+            request.Thinking = SocialInteractions.Settings.disableLlmThinking
+                ? new DeepseekApiThinking { Type = "disabled" }
+                : new DeepseekApiThinking { Type = "enabled", BudgetTokens = Math.Max(1024, SocialInteractions.Settings.llmMaxTokens) };
+
+            return request;
+        }
+
+        protected override HttpRequestMessage CreateRequestMessage(string requestUrl, HttpContent content)
+        {
+            var request = base.CreateRequestMessage(requestUrl, content);
             if (!string.IsNullOrEmpty(_apiKey))
             {
-                try
+                if (IsValidHeaderValue(_apiKey))
                 {
-                    // Validate that the API key doesn't contain invalid characters
-                    if (IsValidHeaderValue(_apiKey))
-                    {
-                        // Deepseek API uses Authorization header with Bearer token
-                        _httpClient.DefaultRequestHeaders.Add("Authorization", string.Format("Bearer {0}", _apiKey));
-                    }
-                    else
-                    {
-                        SLog.Warning("[SocialInteractions] Invalid API key format for Deepseek, skipping Authorization header.");
-                    }
-                }
-                catch (Exception ex)
-                {
-                    SLog.Warning(string.Format("[SocialInteractions] Failed to add Authorization header for Deepseek. Error: {0}", ex.Message));
-                }
-            }
-
-            _httpClient.DefaultRequestHeaders.Add("User-Agent", "SocialInteractionsMod/1.0");
-        }
-
-        // Helper method to validate HTTP header values
-        private bool IsValidHeaderValue(string value)
-        {
-            if (string.IsNullOrEmpty(value))
-                return false;
-
-            // Check for control characters
-            foreach (char c in value)
-            {
-                if (char.IsControl(c))
-                    return false;
-            }
-
-            return true;
-        }
-
-        public async Task<string> GenerateText(string prompt, int? maxLength = null, float? temperature = null, List<string> stopSequence = null, bool? enableXtcSampling = null, int? topK = null, float? topP = null, float? minP = null, float? repetitionPenalty = null)
-        {
-            if (_disposed)
-                throw new ObjectDisposedException("DeepseekApiClient");
-
-            try
-            {
-                var request = new DeepseekApiRequest
-                {
-                    Model = _modelName,
-                    Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
-                    MaxTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
-                    TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
-                    TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
-                    RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null),
-                    Stream = false,
-                    Stop = stopSequence ?? new List<string>(SocialInteractions.Settings.llmStoppingStrings.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
-                };
-
-                // Add system message to guide response format
-                request.Messages.Add(new DeepseekApiMessage
-                {
-                    Role = "system",
-                    Content = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary. Do not include tags like <thinking> or explanations."
-                });
-
-                // Add the prompt as a user message
-                request.Messages.Add(new DeepseekApiMessage
-                {
-                    Role = "user",
-                    Content = prompt
-                });
-
-                if (SocialInteractions.Settings.disableLlmThinking)
-                {
-                    request.Thinking = new DeepseekApiThinking
-                    {
-                        Type = "disabled"
-                    };
+                    request.Headers.TryAddWithoutValidation("Authorization", string.Format("Bearer {0}", _apiKey));
                 }
                 else
                 {
-                    // By default, if the model supports it, enable it with a reasonable budget
-                    request.Thinking = new DeepseekApiThinking
-                    {
-                        Type = "enabled",
-                        BudgetTokens = Math.Max(1024, SocialInteractions.Settings.llmMaxTokens)
-                    };
+                    SLog.Warning("[SocialInteractions] Invalid API key format for Deepseek, skipping Authorization header.");
                 }
-
-                // Convert to JSON
-                DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(DeepseekApiRequest));
-                MemoryStream stream = new MemoryStream();
-                serializer.WriteObject(stream, request);
-                stream.Position = 0;
-                StreamReader reader = new StreamReader(stream);
-                string jsonContent = reader.ReadToEnd();
-
-                // Log the request for debugging
-                SLog.Message(string.Format("[SocialInteractions] Deepseek API Request: {0}", jsonContent));
-
-                var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-                // Set the content type for this specific request
-                httpContent.Headers.ContentType = new System.Net.Http.Headers.MediaTypeHeaderValue("application/json");
-
-                // Use the correct Deepseek API endpoint
-                string fullUrl = _apiUrl.TrimEnd('/');
-
-                // For Deepseek, if the URL doesn't already contain the chat endpoint, append it
-                // Deepseek API doesn't use /v1 prefix like OpenAI, just uses /chat/completions
-                if (!fullUrl.EndsWith("/chat/completions"))
-                {
-                    fullUrl = fullUrl + "/chat/completions";
-                }
-
-                var response = await _httpClient.PostAsync(fullUrl, httpContent);
-
-                // Log the response status code for debugging
-                SLog.Message(string.Format("[SocialInteractions] Deepseek API Response Status: {0}", response.StatusCode));
-
-                response.EnsureSuccessStatusCode(); // Throws an exception if the HTTP response status is an error code
-
-                var responseBody = await response.Content.ReadAsStringAsync();
-
-                // Log the response body for debugging
-                SLog.Message(string.Format("[SocialInteractions] Deepseek API Response Body: {0}", responseBody));
-
-                DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(DeepseekApiResponse));
-                MemoryStream responseStream = new MemoryStream(Encoding.UTF8.GetBytes(responseBody));
-                DeepseekApiResponse apiResponse = (DeepseekApiResponse)deserializer.ReadObject(responseStream);
-
-                if (apiResponse != null && apiResponse.Choices != null && apiResponse.Choices.Length > 0)
-                {
-                    return CleanChatResponse(apiResponse.Choices[0].Message.Content);
-                }
-                return null;
             }
-            catch (HttpRequestException ex)
-            {
-                SLog.Warning(string.Format("[SocialInteractions] DeepseekApiClient: HTTP request failed: {0}", ex.Message));
-                return null;
-            }
-            catch (Exception ex)
-            {
-                SLog.Warning(string.Format("[SocialInteractions] DeepseekApiClient: Unexpected error during text generation: {0}", ex.Message));
-                return null;
-            }
+
+            return request;
         }
 
-        private string CleanChatResponse(string response)
+        protected override string BuildRequestUrl()
         {
-            if (string.IsNullOrEmpty(response))
-                return response;
-
-            // Remove thinking blocks with various tag formats
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"<thinking>.*?</thinking>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"<think>.*?</think>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"\[thinking\].*?\[/thinking\]", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-            // Trim whitespace
-            response = response.Trim();
-
-            return response;
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposed)
+            string fullUrl = ApiUrl.TrimEnd('/');
+            if (!fullUrl.EndsWith("/chat/completions"))
             {
-                if (disposing)
-                {
-                    // We don't dispose the shared HttpClient as it's shared
-                    // Only dispose if we had a custom HttpClient
-                }
-                _disposed = true;
+                fullUrl = fullUrl + "/chat/completions";
             }
+            return fullUrl;
         }
 
-        public void Dispose()
+        protected override string ExtractText(string responseBody)
         {
-            Dispose(true);
-            GC.SuppressFinalize(this);
+            DeepseekApiResponse apiResponse = DeserializeJson<DeepseekApiResponse>(responseBody);
+            if (apiResponse != null && apiResponse.Choices != null && apiResponse.Choices.Length > 0 && apiResponse.Choices[0].Message != null)
+            {
+                return CleanChatResponse(apiResponse.Choices[0].Message.Content);
+            }
+
+            return null;
         }
     }
 }

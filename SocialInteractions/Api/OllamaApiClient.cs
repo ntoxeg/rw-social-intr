@@ -113,164 +113,85 @@ namespace SocialInteractions.Api
         public bool Done { get; set; }
     }
 
-    public class OllamaApiClient : IDisposable
+    public class OllamaApiClient : LlmClientBase
     {
-        private static readonly HttpClient SharedHttpClient = new HttpClient();
-        private readonly HttpClient _httpClient;
-        private readonly string _apiUrl;
         private readonly string _modelName;
-        private bool _disposed = false;
 
-        public OllamaApiClient(string apiUrl, string modelName)
+        public override string Name => "Ollama";
+
+        public OllamaApiClient(string apiUrl, string modelName) : base(apiUrl)
         {
-            _apiUrl = apiUrl;
             _modelName = modelName;
-            _httpClient = SharedHttpClient;
         }
 
-        public async Task<string> GenerateText(string prompt, int? maxLength = null, float? temperature = null, List<string> stopSequence = null, bool? enableXtcSampling = null, int? topK = null, float? topP = null, float? minP = null, float? repetitionPenalty = null)
+        private static bool UseChatCompletion => SocialInteractions.Settings != null && SocialInteractions.Settings.forceChatCompletion;
+
+        protected override object BuildRequestBody(string prompt, int? maxLength, float? temperature, List<string> stopSequence, bool? enableXtcSampling, int? topK, float? topP, float? minP, float? repetitionPenalty)
         {
-            if (_disposed)
-                throw new ObjectDisposedException("OllamaApiClient");
-
-            try
+            var options = new OllamaApiOptions
             {
-                if (SocialInteractions.Settings.forceChatCompletion)
-                {
-                    return await GenerateChatText(prompt, maxLength, temperature, stopSequence, topK, topP, minP, repetitionPenalty);
-                }
+                Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
+                TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
+                TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
+                MinP = minP ?? (SocialInteractions.Settings.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.llmMinP : null),
+                RepeatPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null),
+                NumPredict = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
+                Stop = BuildStopSequenceList(stopSequence)
+            };
 
-                var request = new OllamaApiRequest
+            if (UseChatCompletion)
+            {
+                var chatRequest = new OllamaChatRequest
                 {
                     Model = _modelName,
-                    Prompt = prompt,
                     Stream = false,
-                    Options = new OllamaApiOptions
+                    Options = options,
+                    Messages = new List<OllamaChatMessage>
                     {
-                        Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
-                        TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
-                        TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
-                        MinP = minP ?? (SocialInteractions.Settings.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.llmMinP : null),
-                        RepeatPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null),
-                        NumPredict = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
-                        Stop = stopSequence ?? new List<string>(SocialInteractions.Settings.llmStoppingStrings.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
+                        new OllamaChatMessage { Role = "system", Content = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary." },
+                        new OllamaChatMessage { Role = "user", Content = prompt }
                     }
                 };
 
-                // Convert to JSON
-                DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(OllamaApiRequest));
-                MemoryStream stream = new MemoryStream();
-                serializer.WriteObject(stream, request);
-                stream.Position = 0;
-                StreamReader reader = new StreamReader(stream);
-                string jsonContent = reader.ReadToEnd();
-
-                var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-
-                var response = await _httpClient.PostAsync(_apiUrl + "/api/generate", httpContent);
-                response.EnsureSuccessStatusCode(); // Throws an exception if the HTTP response status is an error code
-
-                var responseBody = await response.Content.ReadAsStringAsync();
-
-                DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(OllamaApiResponse));
-                MemoryStream responseStream = new MemoryStream(Encoding.UTF8.GetBytes(responseBody));
-                OllamaApiResponse apiResponse = (OllamaApiResponse)deserializer.ReadObject(responseStream);
-
-                if (apiResponse != null && !string.IsNullOrEmpty(apiResponse.Response))
-                {
-                    return CleanChatResponse(apiResponse.Response);
-                }
-                return null;
+                return chatRequest;
             }
-            catch (HttpRequestException ex)
-            {
-                SLog.Warning(string.Format("[SocialInteractions] OllamaApiClient: HTTP request failed: {0}", ex.Message));
-                return null;
-            }
-            catch (Exception ex)
-            {
-                SLog.Warning(string.Format("[SocialInteractions] OllamaApiClient: Unexpected error during text generation: {0}", ex.Message));
-                return null;
-            }
-        }
 
-        private async Task<string> GenerateChatText(string prompt, int? maxLength = null, float? temperature = null, List<string> stopSequence = null, int? topK = null, float? topP = null, float? minP = null, float? repetitionPenalty = null)
-        {
-            var request = new OllamaChatRequest
+            return new OllamaApiRequest
             {
                 Model = _modelName,
+                Prompt = prompt,
                 Stream = false,
-                Messages = new List<OllamaChatMessage>
-                {
-                    new OllamaChatMessage { Role = "system", Content = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary." },
-                    new OllamaChatMessage { Role = "user", Content = prompt }
-                },
-                Options = new OllamaApiOptions
-                {
-                    Temperature = temperature ?? SocialInteractions.Settings.llmTemperature,
-                    TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
-                    TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
-                    MinP = minP ?? (SocialInteractions.Settings.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.llmMinP : null),
-                    RepeatPenalty = repetitionPenalty ?? (SocialInteractions.Settings.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.llmRepetitionPenalty : null),
-                    NumPredict = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
-                    Stop = stopSequence ?? new List<string>(SocialInteractions.Settings.llmStoppingStrings.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries))
-                }
+                Options = options
             };
+        }
 
-            DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(OllamaChatRequest));
-            MemoryStream stream = new MemoryStream();
-            serializer.WriteObject(stream, request);
-            stream.Position = 0;
-            StreamReader reader = new StreamReader(stream);
-            string jsonContent = reader.ReadToEnd();
+        protected override string BuildRequestUrl()
+        {
+            return UseChatCompletion
+                ? ApiUrl.TrimEnd('/') + "/api/chat"
+                : ApiUrl.TrimEnd('/') + "/api/generate";
+        }
 
-            var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
-            var response = await _httpClient.PostAsync(_apiUrl.TrimEnd('/') + "/api/chat", httpContent);
-            response.EnsureSuccessStatusCode();
-
-            var responseBody = await response.Content.ReadAsStringAsync();
-            DataContractJsonSerializer deserializer = new DataContractJsonSerializer(typeof(OllamaChatResponse));
-            using (var responseStream = new MemoryStream(Encoding.UTF8.GetBytes(responseBody)))
+        protected override string ExtractText(string responseBody)
+        {
+            if (UseChatCompletion)
             {
-                var apiResponse = (OllamaChatResponse)deserializer.ReadObject(responseStream);
-                if (apiResponse != null && apiResponse.Message != null)
+                OllamaChatResponse chatResponse = DeserializeJson<OllamaChatResponse>(responseBody);
+                if (chatResponse != null && chatResponse.Message != null)
                 {
-                    return CleanChatResponse(apiResponse.Message.Content);
+                    return CleanChatResponse(chatResponse.Message.Content);
                 }
+
+                return null;
             }
-            return null;
-        }
 
-        private string CleanChatResponse(string response)
-        {
-            if (string.IsNullOrEmpty(response))
-                return response;
-
-            // Remove thinking blocks with various tag formats
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"<thinking>.*?</thinking>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"<think>.*?</think>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            response = System.Text.RegularExpressions.Regex.Replace(response, @"\[thinking\].*?\[/thinking\]", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-
-            // Trim whitespace
-            response = response.Trim();
-
-            return response;
-        }
-
-        public void Dispose()
-        {
-            Dispose(true);
-            GC.SuppressFinalize(this);
-        }
-
-        protected virtual void Dispose(bool disposing)
-        {
-            if (!_disposed)
+            OllamaApiResponse apiResponse = DeserializeJson<OllamaApiResponse>(responseBody);
+            if (apiResponse != null && !string.IsNullOrEmpty(apiResponse.Response))
             {
-                // Note: We don't dispose the shared HttpClient as it's shared
-                // In a more sophisticated implementation, we might use HttpClientFactory
-                _disposed = true;
+                return CleanChatResponse(apiResponse.Response);
             }
+
+            return null;
         }
     }
 }
