@@ -20,7 +20,7 @@ namespace SocialInteractions.Dating
         {
             // Basic validity checks
             if (pawn == null || !SocialInteractions.Settings.Features.enableDatingFeature ||
-                DatingManager.IsOnDateCooldown(pawn))
+                DatingManager.Current.IsOnDateCooldown(pawn))
                 return null;
 
             // Cooldown check to prevent spam
@@ -32,7 +32,7 @@ namespace SocialInteractions.Dating
             lastAttemptTick[pawn] = Find.TickManager.TicksGame;
 
             // Check if pawn is already on a date or has a date job
-            if (DatingManager.IsOnDate(pawn) ||
+            if (DatingManager.Current.IsOnDate(pawn) ||
                 (pawn.jobs != null && pawn.jobs.curJob != null && pawn.jobs.curJob.def == SI_JobDefOf.GoOnDate))
                 return null;
 
@@ -52,7 +52,7 @@ namespace SocialInteractions.Dating
             if (partner == null || !SocialInteractionUtility.CanInitiateInteraction(pawn) ||
                 !SocialInteractionUtility.CanReceiveInteraction(partner) ||
                 !pawn.CanReserve(partner) || !partner.CanReserve(pawn) ||
-                DatingManager.IsOnDate(pawn) || DatingManager.IsOnDate(partner) ||
+                DatingManager.Current.IsOnDate(pawn) || DatingManager.Current.IsOnDate(partner) ||
                 IsPartnerBeingTargeted(partner))
                 return null;
 
@@ -71,8 +71,8 @@ namespace SocialInteractions.Dating
                 p != null && p != pawn && p.Faction != null && p.Faction.IsPlayer &&
                 p.IsColonist && !p.IsPrisoner && !p.Downed &&
                 p.Awake() && !p.InBed() && !p.Drafted &&
-                !p.InMentalState && !DatingManager.IsOnDate(p) &&
-                !DatingManager.IsOnDateCooldown(p) &&
+                !p.InMentalState && !DatingManager.Current.IsOnDate(p) &&
+                !DatingManager.Current.IsOnDateCooldown(p) &&
                 pawn.CanReserveAndReach(p, PathEndMode.InteractionCell, Danger.None)).ToList();
 
             List<KeyValuePair<Pawn, float>> potentialPartners = new List<KeyValuePair<Pawn, float>>();

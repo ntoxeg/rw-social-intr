@@ -53,9 +53,9 @@ namespace SocialInteractions.Dating
 
             // Check if the pawn is on a date in the Lovin stage
             // If so, they should not be doing other jobs
-            if (DatingManager.IsOnDate(pawn))
+            if (DatingManager.Current.IsOnDate(pawn))
             {
-                Date date = DatingManager.GetDateWith(pawn);
+                Date date = DatingManager.Current.GetDateWith(pawn);
                 if (date != null && date.Stage == DateStage.Lovin)
                 {
                     // Allow the DateLovin job to start
@@ -150,11 +150,11 @@ namespace SocialInteractions.Dating
 
                 // Re-validate the recipient before asking for the date
                 // Check if the recipient is still valid for dating
-                if (recipient.Downed || !recipient.Awake() || recipient.InMentalState || recipient.Drafted || DatingManager.IsOnDate(recipient))
+                if (recipient.Downed || !recipient.Awake() || recipient.InMentalState || recipient.Drafted || DatingManager.Current.IsOnDate(recipient))
                 {
                     SLog.Message(string.Format("[SocialInteractions] JobDriver_GoOnDate: Recipient {0} is no longer available (Downed/Drafted/OnDate), cancelling.", recipient.LabelShort));
                     Find.PlayLog.Add(new PlayLogEntry_Interaction(DefDatabase<InteractionDef>.GetNamed("DateRejected"), this.pawn, this.Partner, null));
-                    DatingManager.RejectDate(this.pawn, this.Partner);
+                    DatingManager.Current.RejectDate(this.pawn, this.Partner);
                     SocialInteractions.HandleNonStoppingInteraction(this.pawn, this.Partner, SI_InteractionDefOf.DateRejected, SpeechBubbleManager.GetDateRejectionSubject(this.pawn, this.Partner));
                     this.EndJobWith(JobCondition.Incompletable);
                     return;
@@ -194,13 +194,13 @@ namespace SocialInteractions.Dating
                 if (accepted)
                 {
                     Find.PlayLog.Add(new PlayLogEntry_Interaction(DefDatabase<InteractionDef>.GetNamed("DateAccepted"), this.pawn, this.Partner, null));
-                    DatingManager.StartDate(this.pawn, this.Partner);
+                    DatingManager.Current.StartDate(this.pawn, this.Partner);
                     Messages.Message(string.Format("{0} and {1} are now going on a date.", this.pawn.Name.ToStringShort, this.Partner.Name.ToStringShort), new LookTargets(this.pawn, this.Partner), MessageTypeDefOf.PositiveEvent);
                 }
                 else
                 {
                     Find.PlayLog.Add(new PlayLogEntry_Interaction(DefDatabase<InteractionDef>.GetNamed("DateRejected"), this.pawn, this.Partner, null));
-                    DatingManager.RejectDate(this.pawn, this.Partner);
+                    DatingManager.Current.RejectDate(this.pawn, this.Partner);
                     SocialInteractions.HandleNonStoppingInteraction(this.pawn, this.Partner, SI_InteractionDefOf.DateRejected, SpeechBubbleManager.GetDateRejectionSubject(this.pawn, this.Partner));
                     this.EndJobWith(JobCondition.Incompletable);
                 }

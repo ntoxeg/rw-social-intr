@@ -86,7 +86,7 @@ namespace SocialInteractions.Patches
                             string prompt = SocialInteractions.GenerateDeepTalkPrompt(initiator, recipient, interactionDef, subject);
 
                             // Check if either pawn is on a date OR doing a specialized activity.
-                            bool eitherOnDate = DatingManager.IsOnDate(initiator) || (recipient != null && DatingManager.IsOnDate(recipient));
+                            bool eitherOnDate = DatingManager.Current.IsOnDate(initiator) || (recipient != null && DatingManager.Current.IsOnDate(recipient));
 
                             bool eitherDoingSpecializedJob = (initiator.CurJobDef != null && (initiator.CurJobDef.defName == "PesterPrisoner" || initiator.CurJobDef.defName == "PesterPrisonerPartner" || initiator.CurJobDef.defName == "AbusiveThreesome" || initiator.CurJobDef.defName == "AbusiveThreesomeParticipant" || initiator.CurJobDef.defName == "SocialRelaxDate" || initiator.CurJobDef.defName == "DateLovin")) ||
                                                              (recipient != null && recipient.CurJobDef != null && (recipient.CurJobDef.defName == "PesterPrisoner" || recipient.CurJobDef.defName == "PesterPrisonerPartner" || recipient.CurJobDef.defName == "AbusiveThreesome" || recipient.CurJobDef.defName == "AbusiveThreesomeParticipant" || recipient.CurJobDef.defName == "SocialRelaxDate" || recipient.CurJobDef.defName == "DateLovin"));

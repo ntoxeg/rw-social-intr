@@ -1367,7 +1367,7 @@ namespace SocialInteractions
             }
             else
             {
-                Pawn foundPartner = DatingManager.GetPartnerOfDateWith(recipient);
+                Pawn foundPartner = DatingManager.Current.GetPartnerOfDateWith(recipient);
                 if (foundPartner != null)
                 {
                     subject = string.Format("{0} caught {1} cheating with {2}",

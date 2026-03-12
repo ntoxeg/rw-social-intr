@@ -202,7 +202,7 @@ namespace SocialInteractions.Dating
                     partner = FindPartner();
                 }
 
-                bool isOnDate = DatingManager.IsOnDate(this.pawn);
+                bool isOnDate = DatingManager.Current.IsOnDate(this.pawn);
                 SLog.Message(string.Format("[SocialInteractions] PesterPrisoner finish: Checking escalation. Partner: {0}, IsOnDate: {1}",
                     (partner != null ? partner.LabelShort : "NULL"), isOnDate));
 
@@ -221,13 +221,13 @@ namespace SocialInteractions.Dating
         private Pawn FindPartner()
         {
             // Only join if we are on a date
-            if (!DatingManager.IsOnDate(this.pawn))
+            if (!DatingManager.Current.IsOnDate(this.pawn))
             {
                 SLog.Message(string.Format("[SocialInteractions] FindPartner: {0} is not on a date (hediff check).", this.pawn.LabelShort));
                 return null;
             }
 
-            Pawn datePartner = DatingManager.GetPartnerOfDateWith(this.pawn);
+            Pawn datePartner = DatingManager.Current.GetPartnerOfDateWith(this.pawn);
             if (datePartner == null)
             {
                 SLog.Message(string.Format("[SocialInteractions] FindPartner: No partner found in dating list for {0}.", this.pawn.LabelShort));
@@ -387,7 +387,7 @@ namespace SocialInteractions.Dating
             }
 
             // Return attractiveness from abuser's perspective
-            return DatingManager.CalculateAttractiveness(abuser, victim);
+            return DatingManager.Current.CalculateAttractiveness(abuser, victim);
         }
     }
 }

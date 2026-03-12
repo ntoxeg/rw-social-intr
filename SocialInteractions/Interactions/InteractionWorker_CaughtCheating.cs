@@ -23,7 +23,7 @@ namespace SocialInteractions.Interactions
 
             // Don't add initial thoughts here - let the branching logic in JobDriver_CaughtCheating handle adding appropriate thoughts
             // Get the partner for later use in JobDriver_CaughtCheating
-            Pawn partner = DatingManager.GetPartnerOfDateWith(recipient);
+            Pawn partner = DatingManager.Current.GetPartnerOfDateWith(recipient);
             if (partner != null)
             {
                 // Store the partner for use in JobDriver_CaughtCheating

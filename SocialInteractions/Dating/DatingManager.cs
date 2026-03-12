@@ -53,22 +53,27 @@ namespace SocialInteractions.Dating
         }
     }
 
-    public static class DatingManager
+    public class DatingManager : GameComponent
     {
-        private static List<Date> dates = new List<Date>();
-        private static readonly object datesLock = new object();
-        private static Dictionary<int, int> dateCooldowns = new Dictionary<int, int>();
+        public static DatingManager Current => Verse.Current.Game?.GetComponent<DatingManager>();
+
+        public DatingManager(Game game)
+        {
+        }
+        private List<Date> dates = new List<Date>();
+        private readonly object datesLock = new object();
+        private Dictionary<int, int> dateCooldowns = new Dictionary<int, int>();
         // private const int DateCooldownTicks = 300; // 5 min (now configurable in settings)
 
         // Property to track if a date stage was advanced by a job (prevents double advancement)
-        private static bool _wasDateStageAdvancedByJob = false;
-        public static bool WasDateStageAdvancedByJob { get { return _wasDateStageAdvancedByJob; } set { _wasDateStageAdvancedByJob = value; } }
+        private bool _wasDateStageAdvancedByJob = false;
+        public bool WasDateStageAdvancedByJob { get { return _wasDateStageAdvancedByJob; } set { _wasDateStageAdvancedByJob = value; } }
 
         /// <summary>
         /// Gets a copy of all current dates (thread-safe)
         /// </summary>
         /// <returns>A list of all current dates</returns>
-        public static List<Date> GetAllDates()
+        public List<Date> GetAllDates()
         {
             lock (datesLock)
             {
@@ -79,13 +84,14 @@ namespace SocialInteractions.Dating
         /// <summary>
         /// Expose data for serialization/deserialization
         /// </summary>
-        public static void ExposeData()
+        public override void ExposeData()
         {
+            base.ExposeData();
             Scribe_Collections.Look(ref dates, "dates", LookMode.Deep);
             Scribe_Collections.Look(ref dateCooldowns, "dateCooldowns", LookMode.Value, LookMode.Value);
         }
 
-        public static void StartDate(Pawn initiator, Pawn partner)
+        public void StartDate(Pawn initiator, Pawn partner)
         {
             lock (datesLock)
             {
@@ -115,7 +121,7 @@ namespace SocialInteractions.Dating
             }
         }
 
-        public static void RejectDate(Pawn initiator, Pawn partner)
+        public void RejectDate(Pawn initiator, Pawn partner)
         {
             // Remove the OnDate hediff if it was added
             HediffDef onDateHediffDef = HediffDef.Named("OnDate");
@@ -149,7 +155,7 @@ namespace SocialInteractions.Dating
             }
         }
 
-        public static void EndDate(Date date)
+        public void EndDate(Date date)
         {
             if (date == null) return;
             string initiatorLabel = (date.Initiator != null) ? date.Initiator.LabelShort : "NULL";
@@ -335,7 +341,7 @@ namespace SocialInteractions.Dating
             }
         }
 
-        private static Date GetDateWith_Unlocked(Pawn pawn)
+        private Date GetDateWith_Unlocked(Pawn pawn)
         {
             Date foundDate = dates.FirstOrDefault(d => d.Initiator == pawn || d.Partner == pawn);
             // Reduce log spam by commenting out this message
@@ -345,7 +351,7 @@ namespace SocialInteractions.Dating
             return foundDate;
         }
 
-        public static bool IsOnDate(Pawn pawn)
+        public bool IsOnDate(Pawn pawn)
         {
             if (pawn == null)
             {
@@ -373,7 +379,7 @@ namespace SocialInteractions.Dating
             return hasHediff;
         }
 
-        public static Date GetDateWith(Pawn pawn)
+        public Date GetDateWith(Pawn pawn)
         {
             lock (datesLock)
             {
@@ -381,7 +387,7 @@ namespace SocialInteractions.Dating
             }
         }
 
-        public static Pawn GetPartnerOfDateWith(Pawn pawn)
+        public Pawn GetPartnerOfDateWith(Pawn pawn)
         {
             if (pawn == null) return null;
 
@@ -413,7 +419,7 @@ namespace SocialInteractions.Dating
             return null;
         }
 
-        public static Pawn GetInitiatorOfDateWith(Pawn pawn)
+        public Pawn GetInitiatorOfDateWith(Pawn pawn)
         {
             lock (datesLock)
             {
@@ -427,7 +433,7 @@ namespace SocialInteractions.Dating
             }
         }
 
-        public static bool IsOnDateCooldown(Pawn pawn)
+        public bool IsOnDateCooldown(Pawn pawn)
         {
             if (pawn == null) return true;
             lock (datesLock)
@@ -450,7 +456,7 @@ namespace SocialInteractions.Dating
             }
         }
 
-        public static void CleanupExpiredDateCooldowns()
+        public void CleanupExpiredDateCooldowns()
         {
             lock (datesLock)
             {
@@ -472,12 +478,12 @@ namespace SocialInteractions.Dating
             }
         }
 
-        public static void CheckForStuckDates(Map map)
+        public void CheckForStuckDates(Map map)
         {
             if (map == null || map.mapPawns == null) return;
 
             // Check for stuck dates more frequently - every 60 ticks (1 second) instead of every 180 ticks
-            if (Current.Game.tickManager.TicksGame % 60 != 0) return;
+            if (Verse.Current.Game.tickManager.TicksGame % 60 != 0) return;
 
             JobDef dateLovinJobDef = SI_JobDefOf.DateLovin;
             JobDef goOnDateJobDef = SI_JobDefOf.GoOnDate;
@@ -597,7 +603,7 @@ namespace SocialInteractions.Dating
             }
         }
 
-        public static void AdvanceDateStage(Pawn pawn)
+        public void AdvanceDateStage(Pawn pawn)
         {
             // Reduce log spam by commenting out this message
             // SLog.Message(string.Format("[SocialInteractions] DatingManager.AdvanceDateStage called for pawn {0}", 
@@ -646,7 +652,7 @@ namespace SocialInteractions.Dating
         /// Calculates the chance the date goes badly based on the lowest mood of the two pawns.
         /// Lower mood = higher chance of bad date.
         /// </summary>
-        private static float CalculateBadDateChance(Date date)
+        private float CalculateBadDateChance(Date date)
         {
             if (date == null || date.Initiator == null || date.Partner == null)
                 return 0f;
@@ -678,13 +684,13 @@ namespace SocialInteractions.Dating
             return badDateChance;
         }
 
-        private static void HandleDateStage(Date date)
+        private void HandleDateStage(Date date)
         {
             switch (date.Stage)
             {
                 case DateStage.Lovin:
                     // Set the stage transition tick when transitioning to Lovin stage
-                    date.StageTransitionTick = Current.Game.tickManager.TicksGame;
+                    date.StageTransitionTick = Verse.Current.Game.tickManager.TicksGame;
                     // Note: We don't set ReachedLovinStage = true here because the transition might fail
                     // Instead, we'll set it in TransitionToLovin when the transition is successful
                     TransitionToLovin(date);
@@ -829,7 +835,7 @@ namespace SocialInteractions.Dating
             }
         }
 
-        private static void TransitionToLovin(Date date)
+        private void TransitionToLovin(Date date)
         {
             if (date.Initiator == null || date.Partner == null)
             {
@@ -927,7 +933,7 @@ namespace SocialInteractions.Dating
             }
         }
 
-        public static float CalculateDateCompatibility(Pawn pawn1, Pawn pawn2)
+        public float CalculateDateCompatibility(Pawn pawn1, Pawn pawn2)
         {
             // Start with a base compatibility factor
             float compatibility = 1.0f;
@@ -1037,7 +1043,7 @@ namespace SocialInteractions.Dating
         }
 
         // Helper method to calculate sexual compatibility based on vanilla RimWorld logic
-        public static float CalculateSexualCompatibility(Pawn pawn1, Pawn pawn2)
+        public float CalculateSexualCompatibility(Pawn pawn1, Pawn pawn2)
         {
             // Check if they're the same pawn
             if (pawn1 == pawn2)
@@ -1126,7 +1132,7 @@ namespace SocialInteractions.Dating
         }
 
         // Helper method to calculate attractiveness factor (similar to vanilla PrettinessFactor)
-        public static float CalculateAttractiveness(Pawn observer, Pawn target)
+        public float CalculateAttractiveness(Pawn observer, Pawn target)
         {
             float beauty = 0f;
             if (target.RaceProps.Humanlike)
@@ -1139,7 +1145,7 @@ namespace SocialInteractions.Dating
         }
 
         // Helper method to find a random valid position near a pawn
-        public static IntVec3 GetRandomValidPositionNear(Pawn pawn, int maxDistance)
+        public IntVec3 GetRandomValidPositionNear(Pawn pawn, int maxDistance)
         {
             if (pawn == null || !pawn.Spawned || pawn.Map == null)
             {
@@ -1171,7 +1177,7 @@ namespace SocialInteractions.Dating
         }
 
         // Helper method to find a suitable bed for lovin'
-        public static Building_Bed FindSuitableBedForLovin(Pawn initiator, Pawn partner)
+        public Building_Bed FindSuitableBedForLovin(Pawn initiator, Pawn partner)
         {
             if (initiator == null || initiator.Map == null || partner == null)
             {
@@ -1224,7 +1230,7 @@ namespace SocialInteractions.Dating
             return null;
         }
 
-        private static float Sigmoid(float x)
+        private float Sigmoid(float x)
         {
             return x / (1f + Mathf.Abs(x));
         }

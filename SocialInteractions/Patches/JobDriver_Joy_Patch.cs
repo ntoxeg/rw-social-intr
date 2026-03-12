@@ -32,7 +32,7 @@ namespace SocialInteractions.Patches
             if (pawn == null) return;
 
             // Check if the pawn is on a date
-            if (DatingManager.IsOnDate(pawn))
+            if (DatingManager.Current.IsOnDate(pawn))
             {
                 // Check if the job is the CaughtCheatingInteraction job, if so, skip the date logic
                 if (__instance.curJob != null && __instance.curJob.def == SI_JobDefOf.CaughtCheatingInteraction)
@@ -57,17 +57,17 @@ namespace SocialInteractions.Patches
                     // If it was a joy job, check if this pawn is the initiator of the date
                     if (isJoyJob)
                     {
-                        Pawn initiator = DatingManager.GetInitiatorOfDateWith(pawn);
+                        Pawn initiator = DatingManager.Current.GetInitiatorOfDateWith(pawn);
                         if (initiator == pawn)
                         {
                             // This pawn is the initiator, so advance the date stage
-                            DatingManager.AdvanceDateStage(pawn);
+                            DatingManager.Current.AdvanceDateStage(pawn);
                         }
                         else
                         {
                             // Check if the initiator is currently performing a specialized dating job
                             // If they are, we should NOT force the partner to follow, but let them join the specialized job
-                            Pawn dateInitiator = DatingManager.GetInitiatorOfDateWith(pawn);
+                            Pawn dateInitiator = DatingManager.Current.GetInitiatorOfDateWith(pawn);
                             bool initiatorInSpecialJob = (dateInitiator != null && dateInitiator.CurJobDef != null &&
                                 (dateInitiator.CurJobDef.defName == "PesterPrisoner" ||
                                  dateInitiator.CurJobDef.defName == "AbusiveThreesome"));
@@ -115,12 +115,12 @@ namespace SocialInteractions.Patches
                     // But only if the pawn is the initiator of the date and the date is in the joy stage
                     if (!isCurrentJobJoy && !isCurrentJobDateLovin && !isCurrentJobWaitMaintainPosture)
                     {
-                        Pawn initiator = DatingManager.GetInitiatorOfDateWith(pawn);
-                        Date date = DatingManager.GetDateWith(pawn);
+                        Pawn initiator = DatingManager.Current.GetInitiatorOfDateWith(pawn);
+                        Date date = DatingManager.Current.GetDateWith(pawn);
                         if (initiator == pawn && date != null && date.Stage == DateStage.Joy)
                         {
                             // This pawn is the initiator, so advance the date stage
-                            DatingManager.AdvanceDateStage(pawn);
+                            DatingManager.Current.AdvanceDateStage(pawn);
                         }
                         // For partners, we don't need to do anything special as they will be handled by the stuck date detection
                         // However, if the partner's DateLovin job was interrupted by a temporary need (like rest)

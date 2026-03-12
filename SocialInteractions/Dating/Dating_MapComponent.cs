@@ -25,9 +25,9 @@ namespace SocialInteractions.Dating
                 {
                     // Check if the pawn is on a date and in the Lovin stage
                     bool shouldKeepHediff = false;
-                    if (DatingManager.IsOnDate(pawn))
+                    if (DatingManager.Current.IsOnDate(pawn))
                     {
-                        Date date = DatingManager.GetDateWith(pawn);
+                        Date date = DatingManager.Current.GetDateWith(pawn);
                         if (date != null && date.Stage == DateStage.Lovin)
                         {
                             shouldKeepHediff = true;
@@ -56,7 +56,7 @@ namespace SocialInteractions.Dating
                     if (!shouldKeepHediff)
                     {
                         // Check if there's a date happening nearby with IsThreewayAction set to true
-                        foreach (Date date in DatingManager.GetAllDates())
+                        foreach (Date date in DatingManager.Current.GetAllDates())
                         {
                             if (date != null && date.IsThreewayAction)
                             {

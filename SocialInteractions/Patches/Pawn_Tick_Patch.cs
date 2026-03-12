@@ -28,7 +28,7 @@ namespace SocialInteractions.Patches
             if (pawn.IsHashIntervalTick(60))
             {
                 // Check if this pawn is on a date
-                if (DatingManager.IsOnDate(pawn))
+                if (DatingManager.Current.IsOnDate(pawn))
                 {
                     // Check if this pawn is currently engaged in the lovin activity
                     // We need to check if the pawn is actually doing the lovin, not just pathing to the spot
@@ -42,7 +42,7 @@ namespace SocialInteractions.Patches
                             if (!caughtCheatersCooldowns.ContainsKey(pawn) || Find.TickManager.TicksGame > caughtCheatersCooldowns[pawn])
                             {
                                 // Get the partner this pawn is on a date with
-                                Pawn datePartner = DatingManager.GetPartnerOfDateWith(pawn);
+                                Pawn datePartner = DatingManager.Current.GetPartnerOfDateWith(pawn);
 
                                 // If we have a date partner, check if we're cheating
                                 if (datePartner != null)

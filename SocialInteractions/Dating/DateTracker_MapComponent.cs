@@ -19,7 +19,7 @@ namespace SocialInteractions.Dating
         public override void ExposeData()
         {
             base.ExposeData();
-            DatingManager.ExposeData();
+            DatingManager.Current.ExposeData();
             Scribe_Values.Look(ref lastCleanupTick, "lastCleanupTick", 0);
         }
 
@@ -31,9 +31,9 @@ namespace SocialInteractions.Dating
             if (Find.TickManager.TicksGame % 180 == 0)
             {
                 // Check for stuck dates
-                DatingManager.CheckForStuckDates(this.map);
+                DatingManager.Current.CheckForStuckDates(this.map);
 
-                foreach (Date date in DatingManager.GetAllDates())
+                foreach (Date date in DatingManager.Current.GetAllDates())
                 {
                     Pawn initiator = date.Initiator;
                     Pawn partner = date.Partner;
@@ -42,7 +42,7 @@ namespace SocialInteractions.Dating
                     if (initiator == null || partner == null)
                     {
                         SLog.Warning("[SocialInteractions] DateTracker: Found date with null initiator or partner, ending date.");
-                        DatingManager.EndDate(date);
+                        DatingManager.Current.EndDate(date);
                         continue;
                     }
 
@@ -52,7 +52,7 @@ namespace SocialInteractions.Dating
                         initiator.InMentalState || partner.InMentalState ||
                         !IsPawnHealthyForDating(initiator) || !IsPawnHealthyForDating(partner))
                     {
-                        DatingManager.EndDate(date);
+                        DatingManager.Current.EndDate(date);
                         continue;
                     }
 
@@ -64,7 +64,7 @@ namespace SocialInteractions.Dating
                             initiator.needs.joy.CurLevelPercentage >= 0.99f)
                         {
                             // Check if the date is already in the Lovin stage or beyond
-                            Date dateStatus = DatingManager.GetDateWith(initiator);
+                            Date dateStatus = DatingManager.Current.GetDateWith(initiator);
                             if (dateStatus != null && dateStatus.Stage < DateStage.Lovin)
                             {
                                 // Don't advance if we are in a special job that we want to keep in Joy/initial stage
@@ -74,7 +74,7 @@ namespace SocialInteractions.Dating
                                 }
 
                                 // Initiator's joy need is satisfied, advance to Lovin stage
-                                DatingManager.AdvanceDateStage(initiator);
+                                DatingManager.Current.AdvanceDateStage(initiator);
                             }
                         }
                         else
@@ -110,7 +110,7 @@ namespace SocialInteractions.Dating
             // Periodically clean up expired date cooldowns
             if (Find.TickManager.TicksGame - lastCleanupTick >= CleanupInterval)
             {
-                DatingManager.CleanupExpiredDateCooldowns();
+                DatingManager.Current.CleanupExpiredDateCooldowns();
                 lastCleanupTick = Find.TickManager.TicksGame;
             }
         }

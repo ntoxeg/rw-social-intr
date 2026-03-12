@@ -14,7 +14,7 @@ namespace SocialInteractions.Patches
         public static void Prefix(Pawn_JobTracker __instance, Job newJob)
         {
             Pawn pawn = (Pawn)typeof(Pawn_JobTracker).GetField("pawn", System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance).GetValue(__instance);
-            if (pawn != null && DatingManager.IsOnDate(pawn))
+            if (pawn != null && DatingManager.Current.IsOnDate(pawn))
             {
                 // If the pawn is on a date and is being given a job other than DateLovin or a few other valid ones, log it with a stack trace.
                 if (newJob.def != SI_JobDefOf.DateLovin &&

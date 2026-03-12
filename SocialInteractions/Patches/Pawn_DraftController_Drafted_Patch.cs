@@ -24,10 +24,10 @@ namespace SocialInteractions.Patches
                 }
 
                 // Also end the date in the manager to be safe
-                if (DatingManager.IsOnDate(pawn))
+                if (DatingManager.Current.IsOnDate(pawn))
                 {
-                    Date date = DatingManager.GetDateWith(pawn);
-                    if (date != null) DatingManager.EndDate(date);
+                    Date date = DatingManager.Current.GetDateWith(pawn);
+                    if (date != null) DatingManager.Current.EndDate(date);
                 }
             }
         }

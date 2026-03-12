@@ -42,9 +42,9 @@ namespace SocialInteractions.Dating
 
             // Check if the pawn is on a date in the Lovin stage
             // If so, they should not be doing other jobs
-            if (DatingManager.IsOnDate(pawn))
+            if (DatingManager.Current.IsOnDate(pawn))
             {
-                Date date = DatingManager.GetDateWith(pawn);
+                Date date = DatingManager.Current.GetDateWith(pawn);
                 if (date != null && date.Stage == DateStage.Lovin)
                 {
                     // Allow the DateLovin job to start
@@ -149,14 +149,14 @@ namespace SocialInteractions.Dating
 
                 // The primary condition for this job to continue is that the date is still active.
                 // This is indicated by the initiator having the "OnDate" hediff.
-                if (!DatingManager.IsOnDate(initiator))
+                if (!DatingManager.Current.IsOnDate(initiator))
                 {
                     this.ReadyForNextToil(); // End the FollowAndWatch job
                     return;
                 }
 
                 // Also check if the follower is still on the date
-                if (!DatingManager.IsOnDate(this.pawn))
+                if (!DatingManager.Current.IsOnDate(this.pawn))
                 {
                     this.ReadyForNextToil(); // End the FollowAndWatch job
                     return;
@@ -188,7 +188,7 @@ namespace SocialInteractions.Dating
                     if (!isInitiatorDoingJoyJob && !isInitiatorDoingDatingJob)
                     {
                         // Advance the date stage. The DatingManager will handle ending this job.
-                        DatingManager.AdvanceDateStage(this.pawn);
+                        DatingManager.Current.AdvanceDateStage(this.pawn);
                         return; // Stop processing this tick as the job may have been changed
                     }
 

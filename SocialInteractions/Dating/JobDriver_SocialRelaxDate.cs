@@ -60,7 +60,7 @@ namespace SocialInteractions.Dating
                 // If not moving, face the partner to maintain the social atmosphere
                 if (pawn.pather != null && !pawn.pather.Moving)
                 {
-                    Pawn partner = DatingManager.GetPartnerOfDateWith(pawn);
+                    Pawn partner = DatingManager.Current.GetPartnerOfDateWith(pawn);
                     if (partner != null && partner.Spawned && partner.Map == pawn.Map)
                     {
                         pawn.rotationTracker.FaceCell(partner.Position);
@@ -98,9 +98,9 @@ namespace SocialInteractions.Dating
             Toil transition = ToilMaker.MakeToil("Transition");
             transition.initAction = delegate
             {
-                if (pawn != null && DatingManager.IsOnDate(pawn))
+                if (pawn != null && DatingManager.Current.IsOnDate(pawn))
                 {
-                    DatingManager.AdvanceDateStage(pawn);
+                    DatingManager.Current.AdvanceDateStage(pawn);
                 }
             };
             transition.defaultCompleteMode = ToilCompleteMode.Instant;

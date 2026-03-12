@@ -27,7 +27,7 @@ namespace SocialInteractions.Patches
                     return;
                 }
 
-                Pawn partner = DatingManager.GetPartnerOfDateWith(pawn);
+                Pawn partner = DatingManager.Current.GetPartnerOfDateWith(pawn);
                 // If they have a partner, and that partner is doing a dating-related job, don't end the activity.
                 if (partner != null && partner.CurJob != null)
                 {

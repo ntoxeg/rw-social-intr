@@ -173,9 +173,9 @@ namespace SocialInteractions.Patches
                         // but we ensure the busy state is properly managed by the queue system
 
                         // Check if pawns are on a date and advance the stage
-                        if (initiator != null && DatingManager.IsOnDate(initiator))
+                        if (initiator != null && DatingManager.Current.IsOnDate(initiator))
                         {
-                            DatingManager.AdvanceDateStage(initiator);
+                            DatingManager.Current.AdvanceDateStage(initiator);
                         }
                     });
                 }

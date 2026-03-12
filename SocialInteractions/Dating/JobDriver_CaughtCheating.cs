@@ -154,7 +154,7 @@ namespace SocialInteractions.Dating
                 SLog.Message(string.Format("[SocialInteractions] JobDriver_CaughtCheating: {0} has free love/polygamy precepts, initiating 3p action.", pawn.LabelShort));
 
                 // Instead of ending the date, modify it to include the spouse
-                Date date = DatingManager.GetDateWith(cheater);
+                Date date = DatingManager.Current.GetDateWith(cheater);
                 if (date != null)
                 {
                     SLog.Message("[SocialInteractions] JobDriver_CaughtCheating: Modifying date for 3p action.");
@@ -357,22 +357,22 @@ namespace SocialInteractions.Dating
                         }
 
                         // End the date when the angry spouse arrives and the waiting period is over
-                        Date date = DatingManager.GetDateWith(cheaterPawn);
+                        Date date = DatingManager.Current.GetDateWith(cheaterPawn);
                         if (date != null)
                         {
                             SLog.Message("[SocialInteractions] JobDriver_CaughtCheating: Ending date as angry spouse has arrived.");
-                            DatingManager.EndDate(date);
+                            DatingManager.Current.EndDate(date);
                         }
                         else
                         {
                             // If we can't get the date from the cheater, try to get it from the partner
                             if (partner != null)
                             {
-                                date = DatingManager.GetDateWith(partner);
+                                date = DatingManager.Current.GetDateWith(partner);
                                 if (date != null)
                                 {
                                     SLog.Message("[SocialInteractions] JobDriver_CaughtCheating: Ending date as angry spouse has arrived (from partner).");
-                                    DatingManager.EndDate(date);
+                                    DatingManager.Current.EndDate(date);
                                 }
                             }
                         }

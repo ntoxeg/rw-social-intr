@@ -125,7 +125,7 @@ namespace SocialInteractions.Dating
             }
 
             // Check if both pawns are still on a date
-            if (!DatingManager.IsOnDate(pawn) || !DatingManager.IsOnDate(Partner))
+            if (!DatingManager.Current.IsOnDate(pawn) || !DatingManager.Current.IsOnDate(Partner))
             {
                 SLog.Warning(string.Format("[SocialInteractions] JobDriver_DateLovin: pawn {0} or Partner {1} is no longer on a date in TryMakePreToilReservations.",
                     pawn.LabelShort, Partner.LabelShort));
@@ -141,7 +141,7 @@ namespace SocialInteractions.Dating
             }
 
             // Only the initiator makes reservations. The partner does nothing.
-            Pawn initiator = DatingManager.GetInitiatorOfDateWith(pawn);
+            Pawn initiator = DatingManager.Current.GetInitiatorOfDateWith(pawn);
             if (pawn == initiator)
             {
                 // Initiator reserves both the spot and the partner
@@ -228,13 +228,13 @@ namespace SocialInteractions.Dating
                 }
 
                 // Check if the pawn is still on a date in the Lovin stage
-                if (!DatingManager.IsOnDate(pawn))
+                if (!DatingManager.Current.IsOnDate(pawn))
                 {
                     this.EndJobWith(JobCondition.Incompletable);
                     return;
                 }
 
-                Date date = DatingManager.GetDateWith(pawn);
+                Date date = DatingManager.Current.GetDateWith(pawn);
                 if (date == null || date.Stage != DateStage.Lovin)
                 {
                     this.EndJobWith(JobCondition.Incompletable);
@@ -259,7 +259,7 @@ namespace SocialInteractions.Dating
                 {
                     // This can happen if the job was interrupted or replaced
                     // Let's check if the pawn is still on a date in the Lovin stage
-                    Date date = DatingManager.GetDateWith(initiator);
+                    Date date = DatingManager.Current.GetDateWith(initiator);
                     if (date != null && date.Stage == DateStage.Lovin)
                     {
                         // The pawn should still be in the DateLovin job
@@ -311,7 +311,7 @@ namespace SocialInteractions.Dating
                     {
                         // Get the partner from the date
                         Pawn partnerFromDate = null;
-                        Date date = DatingManager.GetDateWith(initiator);
+                        Date date = DatingManager.Current.GetDateWith(initiator);
 
                         if (date != null)
                         {
@@ -324,14 +324,14 @@ namespace SocialInteractions.Dating
                                 partnerFromDate = date.Initiator;
                             }
 
-                            // "Got some lovin" thoughts, pregnancy, and post-lovin LLM call are now handled in DatingManager.HandleDateStage when stage is Finished
+                            // "Got some lovin" thoughts, pregnancy, and post-lovin LLM call are now handled in DatingManager.Current.HandleDateStage when stage is Finished
 
-                            // Post-lovin LLM call is now handled in DatingManager.HandleDateStage when stage is Finished
+                            // Post-lovin LLM call is now handled in DatingManager.Current.HandleDateStage when stage is Finished
 
                             // Advance the date stage
                             if (date.Stage == DateStage.Lovin)
                             {
-                                DatingManager.AdvanceDateStage(initiator);
+                                DatingManager.Current.AdvanceDateStage(initiator);
                             }
                         }
                     }
@@ -488,7 +488,7 @@ namespace SocialInteractions.Dating
                 float adjustedTime = baseTime * animationSpeed;
 
                 float num = Mathf.Sin(adjustedTime);
-                Pawn initiator = DatingManager.GetInitiatorOfDateWith(pawn);
+                Pawn initiator = DatingManager.Current.GetInitiatorOfDateWith(pawn);
 
                 // If we can't get the initiator, just return zero offset
                 if (initiator == null)
