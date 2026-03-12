@@ -966,7 +966,7 @@ namespace SocialInteractions.Negotiation
                     }
                     string fallbackText = string.Format("{0} negotiates with {1}.", speakerPawn.Name.ToStringShort, recipientPawn.Name.ToStringShort);
                     string loggedText = speaker + ": " + text;
-                    ChatLogManager.AddMessage(new ChatMessage(speakerPawn, recipientPawn, loggedText, MessageType.LLMChat, conversationId, Color.white, fallbackText, loggedText));
+                    ChatLogManager.Current?.AddMessage(new ChatMessage(speakerPawn, recipientPawn, loggedText, MessageType.LLMChat, conversationId, Color.white, fallbackText, loggedText));
 
                     SLog.Message("[Negotiation] Added dialogue: " + speaker + ": " + text.Substring(0, Math.Min(50, text.Length)));
                 }

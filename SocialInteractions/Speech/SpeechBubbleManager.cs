@@ -41,7 +41,7 @@ namespace SocialInteractions.Speech
             activeConversations.Clear();
 
             // Clear the chat log on game load
-            ChatLogManager.ClearChatLog();
+            ChatLogManager.Current?.ClearChatLog();
 
             // Reset TTS state on game load
             TTSManager.Initialize();
@@ -397,7 +397,7 @@ namespace SocialInteractions.Speech
             {
                 fallbackText = string.Format("{0} talks with {1}.", speaker.LabelShort, recipient.LabelShort);
             }
-            ChatLogManager.AddMessage(new ChatMessage(speaker, recipient, rawMessage, messageType, conversationId, messageColor, fallbackText, formattedMessage));
+            ChatLogManager.Current?.AddMessage(new ChatMessage(speaker, recipient, rawMessage, messageType, conversationId, messageColor, fallbackText, formattedMessage));
 
             lock (queueLock)
             {
@@ -417,7 +417,7 @@ namespace SocialInteractions.Speech
         {
             string wrappedMessage = SocialInteractions.WrapText(text, SocialInteractions.Settings.Display.wordsPerLineLimit);
             // Add to chat log with fallback text
-            ChatLogManager.AddMessage(new ChatMessage(speaker, null, text, MessageType.LLMChat, conversationId, Color.grey, text, text));
+            ChatLogManager.Current?.AddMessage(new ChatMessage(speaker, null, text, MessageType.LLMChat, conversationId, Color.grey, text, text));
             lock (queueLock)
             {
                 speechBubbleQueue.Enqueue(new SpeechBubble(speaker, wrappedMessage, duration, conversationId, false, null));
@@ -438,7 +438,7 @@ namespace SocialInteractions.Speech
             string fallbackText = string.IsNullOrEmpty(subject)
                 ? string.Format("{0} thinks to themselves.", speaker.LabelShort)
                 : string.Format("{0} ponders about {1}", speaker.LabelShort, subject);
-            ChatLogManager.AddMessage(new ChatMessage(speaker, null, text, MessageType.LLMChat, conversationId, color ?? Color.grey, fallbackText, text));
+            ChatLogManager.Current?.AddMessage(new ChatMessage(speaker, null, text, MessageType.LLMChat, conversationId, color ?? Color.grey, fallbackText, text));
 
 
             lock (queueLock)
@@ -502,7 +502,7 @@ namespace SocialInteractions.Speech
             // Add to chat log
             Color messageColor = isHighPriority ? new Color(1.0f, 0.6f, 0.2f) : Color.white; // Orange for high priority, white for normal
             string fallbackText = string.Format("{0} talks with {1}.", speaker.LabelShort, recipient.LabelShort);
-            ChatLogManager.AddMessage(new ChatMessage(speaker, recipient, rawMessage, MessageType.LLMChat, -1, messageColor, fallbackText, formattedMessage));
+            ChatLogManager.Current?.AddMessage(new ChatMessage(speaker, recipient, rawMessage, MessageType.LLMChat, -1, messageColor, fallbackText, formattedMessage));
 
             float endTime;
             if (pawnBubbleEndTimes.TryGetValue(speaker, out endTime) && Time.time < endTime)

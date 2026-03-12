@@ -20,6 +20,9 @@ After introducing the `SocialInteractions.UI` namespace, any code referencing `U
 ### String-Based Harmony Self-Patching
 When the mod patches its own types across namespaces (e.g., `RaidNegotiation_Patches` in `SocialInteractions.Negotiation` patching `JobDriver_HaveChatWith` in `SocialInteractions.Jobs`), use string-based `AccessTools.Method("SocialInteractions.Jobs.JobDriver_HaveChatWith:MethodName")` rather than `typeof()` to avoid direct sibling namespace coupling.
 
+### GameComponent Constructor Pattern
+In this RimWorld target, `GameComponent` does **not** expose a `GameComponent(Game)` base constructor. Converted managers should still declare `public ClassName(Game game)` so RimWorld can instantiate them, but must **not** call `: base(game)`.
+
 ## Target State
 - 14 subdirectories (Core, Api, Dating, Children, Negotiation, Interactions, Combat, Speech, UI, DefOfs, Jobs, Components, Patches)
 - Namespaces matching directories: SocialInteractions.{Dir}
