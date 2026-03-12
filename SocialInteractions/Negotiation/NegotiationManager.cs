@@ -983,7 +983,7 @@ namespace SocialInteractions.Negotiation
         {
             foreach (var line in batch)
             {
-                TTSManager.Speak(line.Text, line.Speaker, SocialInteractions.Settings.Api.ttsSpeed, (int)SocialInteractions.Settings.Api.ttsVolume);
+                TTSManager.Current?.Speak(line.Text, line.Speaker, SocialInteractions.Settings.Api.ttsSpeed, (int)SocialInteractions.Settings.Api.ttsVolume);
                 // Stagger requests by 200ms (realtime) to force FIFO processing on server/network
                 yield return new WaitForSecondsRealtime(0.5f);
             }

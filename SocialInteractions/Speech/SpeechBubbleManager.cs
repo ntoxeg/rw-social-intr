@@ -44,7 +44,7 @@ namespace SocialInteractions.Speech
             ChatLogManager.Current?.ClearChatLog();
 
             // Reset TTS state on game load
-            TTSManager.Initialize();
+            TTSManager.Current?.Initialize();
         }
 
         public override void GameComponentTick()
@@ -749,7 +749,7 @@ namespace SocialInteractions.Speech
                 // 4. Strip remaining rich text tags (like <color=...>)
                 string cleanText = Regex.Replace(ttsText, "<.*?>", string.Empty);
 
-                TTSManager.Speak(cleanText, speaker, SocialInteractions.Settings.Api.ttsSpeed, (int)SocialInteractions.Settings.Api.ttsVolume);
+                TTSManager.Current?.Speak(cleanText, speaker, SocialInteractions.Settings.Api.ttsSpeed, (int)SocialInteractions.Settings.Api.ttsVolume);
             }
         }
     }

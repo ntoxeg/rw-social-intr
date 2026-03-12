@@ -29,7 +29,7 @@ namespace SocialInteractions.Speech
             base.FinalizeInit();
             if (SocialInteractions.Settings.Api.enableTTS)
             {
-                TTSManager.FetchVoicesFromApi();
+                TTSManager.Current?.FetchVoicesFromApi();
             }
         }
 

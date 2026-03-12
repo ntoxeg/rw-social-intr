@@ -45,7 +45,7 @@ namespace SocialInteractions
             harmony.PatchAll();
 
             // Initialize TTS Manager (reset sequence IDs)
-            TTSManager.Initialize();
+            TTSManager.Current?.Initialize();
 
             // Start Player2 health heartbeat if configured
             LlmClientFactory.UpdatePlayer2Heartbeat(Settings, true);
@@ -2313,7 +2313,7 @@ namespace SocialInteractions
 
         public static void StopTtsPlayback()
         {
-            TTSManager.Stop();
+            TTSManager.Current?.Stop();
         }
 
         /// <summary>

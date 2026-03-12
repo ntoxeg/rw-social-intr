@@ -12,26 +12,32 @@ using SocialInteractions;
 
 namespace SocialInteractions.Speech
 {
-    public static class TTSManager
+    public class TTSManager : GameComponent
     {
+        public static TTSManager Current => Verse.Current.Game?.GetComponent<TTSManager>();
+
         // Managed AudioSource
-        private static AudioSource audioSource;
+        private AudioSource audioSource;
 
         // Queue for TTS audio clips to prevent overlapping
-        private static Queue<TTSQueueEntry> ttsQueue = new Queue<TTSQueueEntry>();
-        private static bool isPlaying = false;
+        private Queue<TTSQueueEntry> ttsQueue = new Queue<TTSQueueEntry>();
+        private bool isPlaying = false;
 
         // Ordering for async requests
-        private static int nextRequestId = 0;
-        private static int nextPlaybackId = 0;
-        private static Dictionary<int, TTSQueueEntry> playbackBuffer = new Dictionary<int, TTSQueueEntry>();
-        private static readonly object bufferLock = new object();
+        private int nextRequestId = 0;
+        private int nextPlaybackId = 0;
+        private Dictionary<int, TTSQueueEntry> playbackBuffer = new Dictionary<int, TTSQueueEntry>();
+        private readonly object bufferLock = new object();
 
         // Lookup for Player2 Voice IDs: Name (Language) -> ID
-        private static Dictionary<string, string> voiceIdLookup = new Dictionary<string, string>();
+        private Dictionary<string, string> voiceIdLookup = new Dictionary<string, string>();
+
+        public TTSManager(Game game)
+        {
+        }
 
 
-        public static void Initialize()
+        public void Initialize()
         {
             // Reset state on game load/init
             lock (bufferLock)
@@ -44,15 +50,15 @@ namespace SocialInteractions.Speech
             }
         }
 
-        public static void Speak(string text, Pawn speaker, float speed = 1.0f, int volume = 100)
+        public void Speak(string text, Pawn speaker, float speed = 1.0f, int volume = 100)
         {
             if (string.IsNullOrEmpty(text)) return;
             if (!SocialInteractions.Settings.Api.enableTTS || SocialInteractions.Settings.Api.ttsMuted) return;
 
             string voiceName = "alloy";
-            if (speaker != null && Current.Game != null)
+            if (speaker != null && Verse.Current.Game != null)
             {
-                var manager = Current.Game.GetComponent<VoiceAssignmentManager>();
+                var manager = Verse.Current.Game.GetComponent<VoiceAssignmentManager>();
                 if (manager != null)
                 {
                     voiceName = manager.GetOrAssignVoice(speaker);
@@ -68,7 +74,7 @@ namespace SocialInteractions.Speech
             SpeakWithApi(text, voiceName, requestId);
         }
 
-        public static void Stop()
+        public void Stop()
         {
             // Clear all queues to stop future playback
             lock (bufferLock)
@@ -88,12 +94,12 @@ namespace SocialInteractions.Speech
             }
         }
 
-        public static List<string> GetVoices()
+        public List<string> GetVoices()
         {
             return VoiceAssignmentManager.AvailableVoices;
         }
 
-        public static void FetchVoicesFromApi()
+        public void FetchVoicesFromApi()
         {
             if (string.IsNullOrEmpty(SocialInteractions.Settings.Api.ttsApiUrl)) return;
 
@@ -123,11 +129,14 @@ namespace SocialInteractions.Speech
 
             LongEventHandler.ExecuteWhenFinished(() =>
             {
-                ((MonoBehaviour)Current.Root).StartCoroutine(FetchVoicesCoroutine(voicesUrl));
+                if (Verse.Current.Root != null)
+                {
+                    ((MonoBehaviour)Verse.Current.Root).StartCoroutine(FetchVoicesCoroutine(voicesUrl));
+                }
             });
         }
 
-        private static IEnumerator FetchVoicesCoroutine(string url)
+        private IEnumerator FetchVoicesCoroutine(string url)
         {
             string apiKey = SocialInteractions.Settings.Api.ttsApiKey;
             var request = UnityWebRequest.Get(url);
@@ -193,7 +202,7 @@ namespace SocialInteractions.Speech
             }
         }
 
-        private static void ParseVoiceArray(string arrayContent, ref List<string> voices)
+        private void ParseVoiceArray(string arrayContent, ref List<string> voices)
         {
             // For Player2, we need to extract objects with "id" and "name"
             if (SocialInteractions.Settings.Api.ttsApiType == TtsApiType.Player2)
@@ -245,7 +254,7 @@ namespace SocialInteractions.Speech
             }
         }
 
-        private static void SpeakWithApi(string text, string voiceName, int requestId)
+        private void SpeakWithApi(string text, string voiceName, int requestId)
         {
             if (string.IsNullOrEmpty(SocialInteractions.Settings.Api.ttsApiUrl))
             {
@@ -256,18 +265,18 @@ namespace SocialInteractions.Speech
             }
 
             // Directly start coroutine as we are on the main thread
-            if (Current.Root != null)
+            if (Verse.Current.Root != null)
             {
-                ((MonoBehaviour)Current.Root).StartCoroutine(FetchAndPlayAudio(text, voiceName, requestId));
+                ((MonoBehaviour)Verse.Current.Root).StartCoroutine(FetchAndPlayAudio(text, voiceName, requestId));
             }
             else
             {
-                SLog.Warning("[SocialInteractions] TTSManager: Verify Current.Root is not null.");
+                SLog.Warning("[SocialInteractions] TTSManager: Verify Verse.Current.Root is not null.");
                 ProcessPlaybackBuffer(requestId, null, 0);
             }
         }
 
-        private static IEnumerator FetchAndPlayAudio(string text, string voiceName, int requestId)
+        private IEnumerator FetchAndPlayAudio(string text, string voiceName, int requestId)
         {
             // Yield once to ensure we don't choke the frame if batching calls
             yield return null;
@@ -420,9 +429,9 @@ namespace SocialInteractions.Speech
             {
                 // We pass 1.0f here because ManagePlaybackQueue applies the settings volume dynamically
                 ProcessPlaybackBuffer(requestId, clip, 1.0f);
-                if (Current.Game != null && Current.Root != null)
+                if (Verse.Current.Game != null && Verse.Current.Root != null)
                 {
-                    ((MonoBehaviour)Current.Root).StartCoroutine(ManagePlaybackQueue());
+                    ((MonoBehaviour)Verse.Current.Root).StartCoroutine(ManagePlaybackQueue());
                 }
             }
             else
@@ -448,12 +457,12 @@ namespace SocialInteractions.Speech
             }
         }
 
-        private static void AddToPlaybackQueue(AudioClip clip, float volume)
+        private void AddToPlaybackQueue(AudioClip clip, float volume)
         {
             ttsQueue.Enqueue(new TTSQueueEntry(clip, volume));
         }
 
-        private static void ProcessPlaybackBuffer(int requestId, AudioClip clip, float volume)
+        private void ProcessPlaybackBuffer(int requestId, AudioClip clip, float volume)
         {
             lock (bufferLock)
             {
@@ -473,9 +482,9 @@ namespace SocialInteractions.Speech
                         AddToPlaybackQueue(entry.clip, entry.volume);
 
                         // Start the playback manager coroutine if not already running
-                        if (Current.Game != null && Current.Root != null)
+                        if (Verse.Current.Game != null && Verse.Current.Root != null)
                         {
-                            ((MonoBehaviour)Current.Root).StartCoroutine(ManagePlaybackQueue());
+                            ((MonoBehaviour)Verse.Current.Root).StartCoroutine(ManagePlaybackQueue());
                         }
                     }
                     else
@@ -489,7 +498,7 @@ namespace SocialInteractions.Speech
             }
         }
 
-        private static IEnumerator ManagePlaybackQueue()
+        private IEnumerator ManagePlaybackQueue()
         {
             // Prevent multiple queue managers from running
             if (isPlaying)
@@ -544,6 +553,11 @@ namespace SocialInteractions.Speech
             }
 
             isPlaying = false;
+        }
+
+        public override void ExposeData()
+        {
+            base.ExposeData();
         }
     }
 }

@@ -663,7 +663,7 @@ public class SocialInteractionsMod : Mod
             if (SocialInteractions.Settings.Api.enableTTS && !oldEnableTTS)
             {
                 // Auto-fetch when enabled
-                TTSManager.FetchVoicesFromApi();
+                TTSManager.Current?.FetchVoicesFromApi();
             }
 
             // Toggle Main Button visibility
@@ -748,7 +748,7 @@ public class SocialInteractionsMod : Mod
                         if (manager != null)
                         {
                             manager.ResetAllocations();
-                            TTSManager.FetchVoicesFromApi();
+                            TTSManager.Current?.FetchVoicesFromApi();
                             Messages.Message("Voice allocations reset and fetching new voices...", MessageTypeDefOf.PositiveEvent, false);
 
                             // Also assign voices proactively to all colonists to make them visible
@@ -811,7 +811,7 @@ public class SocialInteractionsMod : Mod
                     }
                 }
 
-                int voiceCount = TTSManager.GetVoices().Count;
+                int voiceCount = TTSManager.Current?.GetVoices().Count ?? 0;
                 if (voiceCount > 0)
                 {
                     listingStandard.Label("SocialInteractions_VoicesAvailable".Translate(voiceCount));

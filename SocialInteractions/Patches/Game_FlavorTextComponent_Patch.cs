@@ -16,7 +16,7 @@ namespace SocialInteractions.Patches
             Current.Game.components.Add(new PawnFlavorText_GameComponent());
 
             // Reset TTS Manager state on new game
-            TTSManager.Initialize();
+            TTSManager.Current?.Initialize();
         }
     }
 
@@ -32,7 +32,7 @@ namespace SocialInteractions.Patches
             }
 
             // Reset TTS Manager state on load game
-            TTSManager.Initialize();
+            TTSManager.Current?.Initialize();
         }
     }
 }
