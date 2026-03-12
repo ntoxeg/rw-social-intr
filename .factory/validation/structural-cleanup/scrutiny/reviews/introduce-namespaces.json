@@ -1,0 +1,26 @@
+{
+  "featureId": "introduce-namespaces",
+  "reviewedAt": "2026-03-12T16:56:00.000Z",
+  "commitId": "34801ecf347c59e704cff1b21551bcd552043d80",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "All 129 .cs files have directory-aligned namespace declarations. Core/ correctly retains bare 'SocialInteractions' namespace; all 13 other directories use 'SocialInteractions.{DirName}'. Cross-namespace using directives are present where needed (37 files import DefOfs, numerous cross-namespace imports for Api, Dating, Speech, UI, etc.). The critical Harmony self-patch in RaidNegotiation_Patches correctly resolves JobDriver_HaveChatWith via string-based AccessTools.Method(\"SocialInteractions.Jobs.JobDriver_HaveChatWith:TryMakePreToilReservations\"), avoiding direct sibling namespace coupling. StaticConstructorOnStartup attributes preserved in 3 files. PauseableMote correctly qualifies Verse.UI.screenHeight to avoid ambiguity with the new SocialInteractions.UI namespace. The .csproj retains RootNamespace=SocialInteractions, EnableDefaultCompileItems=true, AssemblyName=SocialInteractions, OutputPath=1.5\\Assemblies\\, and Compile Remove rules only exclude non-source directories (1.5/**, Defs/**, Languages/**, About/**). No .cs files remain in the SocialInteractions/ root. Build succeeded with 0 errors.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "Worker deviated from skill procedure step 1.3 (Baseline Validation) by skipping the test command since SocialInteractions.Tests.csproj doesn't exist yet in this milestone. The handoff's skillFeedback.followedProcedure=false and the deviation is justified — services.yaml 'test' command references a project from a future milestone.",
+      "evidence": "Handoff skillFeedback.deviations[0]: 'Ran the manifest test command once, observed missing test-project failure, then used dotnet build as practical baseline validation for this milestone.' services.yaml commands.test = 'dotnet test SocialInteractions.Tests\\SocialInteractions.Tests.csproj --no-restore' but that project is scheduled for milestone api-layer."
+    },
+    {
+      "area": "conventions",
+      "observation": "architecture.md was not updated by this worker to document the namespace mapping or the Verse.UI qualification pattern, despite the skill procedure (Step 6) requiring shared state updates when discovering patterns. The Verse.UI.screenHeight qualification is a subtle gotcha future workers should know about — any code referencing 'UI.' after the namespace introduction will shadow Verse.UI with SocialInteractions.UI.",
+      "evidence": "architecture.md still only has pre-refactoring and target state. No entry about: (1) the Verse.UI shadowing issue requiring full qualification, (2) the string-based Harmony TargetMethod pattern used for cross-namespace self-patching, (3) the completed namespace mapping."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "Feature 'introduce-namespaces' passes review. All 14 directories have correct namespace declarations (129 files total, no file loss). Cross-namespace using directives are properly added. The critical Harmony self-patch on JobDriver_HaveChatWith uses string-based resolution with the correct new namespace path. StaticConstructorOnStartup is preserved. DefOfs are accessible across all namespaces. The csproj is unchanged in key properties (EnableDefaultCompileItems, RootNamespace, AssemblyName, output path, Compile Remove rules). Build succeeded with 0 errors. Two minor shared state observations: (1) justified skill deviation for test baseline, (2) architecture.md not updated with discovered patterns (Verse.UI shadowing, string-based Harmony targeting)."
+}

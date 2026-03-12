@@ -1,0 +1,31 @@
+{
+  "featureId": "directory-restructure",
+  "reviewedAt": "2026-03-12T16:55:00.000Z",
+  "commitId": "c9c83c5",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "All 129 C# source files were correctly moved from the flat SocialInteractions/ root into the 14 expected subdirectories using git mv (0 insertions, 0 deletions — pure renames). Directory file counts match the specification exactly: Core=3, Api=10, Dating=18, Children=16, Negotiation=8, Interactions=14, Combat=1, Speech=4, UI=7, DefOfs=7, Jobs=7, Components=2, Patches=32. No .cs files remain in the SocialInteractions/ root. Non-source directories (About/, Defs/, Languages/, 1.5/) are untouched. The worker correctly used DefOfs/ instead of Defs/ to avoid the .csproj Compile Remove conflict. Build succeeds with 0 errors. No behavioral changes were introduced — this is a pure structural reorganization.",
+    "issues": []
+  },
+  "sharedStateObservations": [
+    {
+      "area": "skills",
+      "observation": "The refactor-worker skill's Step 3 (file moves) includes sub-steps for updating namespaces and adding using directives as part of file moves. However, this mission splits directory restructuring and namespace introduction into separate features. The skill procedure could clarify that namespace changes are optional per-feature and should only be done when the feature description explicitly calls for them.",
+      "evidence": "Skill SKILL.md Step 3 says 'Move files using git mv' then '3. Update namespaces in moved files' and '4. Add using directives'. Worker correctly skipped steps 3-4 because the feature description only covers file moves, not namespace changes."
+    },
+    {
+      "area": "services",
+      "observation": "services.yaml lacks a Windows-compatible init command. The worker attempted to run .factory/init.sh three times with different path formats before falling back to manual dotnet restore. An 'init' entry in services.yaml would help future workers.",
+      "evidence": "Transcript shows 3 failed attempts: bash \"C:\\...\\init.sh\", bash \"C:/...init.sh\", bash \"/c/...init.sh\" — all failed with 'No such file or directory'. Worker then ran dotnet restore manually as equivalent."
+    },
+    {
+      "area": "skills",
+      "observation": "Worker reported followedProcedure=false due to init.sh bash incompatibility on Windows and absence of the test project. Both deviations are justified and well-documented. The worker-base skill could note that on Windows, init.sh must be run via Git Bash or the equivalent commands should be run directly.",
+      "evidence": "handoff.skillFeedback.deviations: Step 1.2 (init.sh path issue on Windows), Step 1.3 (SocialInteractions.Tests not yet created, used build as baseline)."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS — The directory-restructure feature is correctly implemented. All 129 .cs files have been moved to their designated subdirectories with exact count matches, no orphaned files remain in the root, non-source directories are preserved, and the build succeeds. The commit consists entirely of git mv renames (0 insertions/deletions), confirming no file content was modified. All VAL-DIR-001 through VAL-DIR-017 assertions are satisfied."
+}

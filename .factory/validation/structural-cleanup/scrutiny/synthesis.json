@@ -1,0 +1,76 @@
+{
+  "milestone": "structural-cleanup",
+  "round": 1,
+  "status": "pass",
+  "validatorsRun": {
+    "build": {
+      "passed": true,
+      "command": "dotnet build SocialInteractions\\SocialInteractions.csproj -c Release",
+      "exitCode": 0,
+      "notes": "Build succeeded. 0 Warning(s), 0 Error(s)."
+    },
+    "test": {
+      "passed": true,
+      "command": "N/A",
+      "exitCode": null,
+      "notes": "Test project (SocialInteractions.Tests) does not exist yet — it is created in milestone api-layer. Skipped."
+    },
+    "typecheck": {
+      "passed": true,
+      "command": "dotnet build SocialInteractions\\SocialInteractions.csproj -c Release",
+      "exitCode": 0,
+      "notes": "C# compilation via dotnet build serves as typecheck. No separate typecheck tool configured."
+    },
+    "lint": {
+      "passed": true,
+      "command": "N/A",
+      "exitCode": null,
+      "notes": "No separate lint tool configured for this C# project. Build warnings (0) serve as lint check."
+    }
+  },
+  "reviewsSummary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "failedFeatures": []
+  },
+  "blockingIssues": [],
+  "appliedUpdates": [
+    {
+      "target": "library",
+      "description": "Updated .factory/library/architecture.md: changed 'Current State (Pre-Refactoring)' to 'Current State (After Milestone: structural-cleanup)', removed stale reference to legacy compile.bat/compile.rsp, added 'Gotchas Discovered During Structural Cleanup' section documenting Verse.UI namespace shadowing pattern and string-based Harmony self-patching pattern.",
+      "sourceFeature": "introduce-namespaces, kill-dual-build"
+    }
+  ],
+  "suggestedGuidanceUpdates": [
+    {
+      "target": "skills",
+      "suggestion": "The refactor-worker skill's Step 3 bundles namespace changes with file moves (sub-steps 3-4: 'Update namespaces in moved files', 'Add using directives'). When the mission plan splits directory moves and namespace changes into separate features, workers must skip these sub-steps. Consider adding a note that namespace updates are conditional on the feature description explicitly calling for them.",
+      "evidence": "Feature directory-restructure worker correctly skipped namespace sub-steps because the feature only covered file moves. Feature introduce-namespaces handled namespace changes as a separate feature. Both workers reported skill deviations.",
+      "isSystemic": true
+    },
+    {
+      "target": "skills",
+      "suggestion": "The mission-worker-base skill's Phase 1.3 Baseline Validation assumes a test command will work. For milestones that precede test project creation, the procedure should allow fallback to the build command (services.yaml commands.build) when the test command fails with 'project not found'. All three workers in this milestone hit this issue.",
+      "evidence": "All 3 workers (kill-dual-build, directory-restructure, introduce-namespaces) reported followedProcedure=false with deviations at Phase 1.3 because services.yaml commands.test references SocialInteractions.Tests.csproj which doesn't exist until milestone api-layer.",
+      "isSystemic": true
+    },
+    {
+      "target": "skills",
+      "suggestion": "The mission-worker-base skill should note that on Windows, .factory/init.sh may not be directly executable. Workers should either use Git Bash explicitly or run the equivalent commands (dotnet restore) directly.",
+      "evidence": "Feature directory-restructure worker attempted init.sh 3 times with different path formats before falling back to manual dotnet restore. The init.sh script uses bash syntax not compatible with PowerShell.",
+      "isSystemic": true
+    }
+  ],
+  "rejectedObservations": [
+    {
+      "observation": "SocialInteractions/architecture.md still references compile.rsp workflow and legacy csc compiler",
+      "reason": "This is project documentation (not shared state). Updating project docs is outside the scope of the scrutiny validator — it's a feature-level concern for the team to decide."
+    },
+    {
+      "observation": "Worker skill deviation for test baseline (introduce-namespaces)",
+      "reason": "Duplicate of the same observation from kill-dual-build and directory-restructure workers. Consolidated into a single suggestedGuidanceUpdate."
+    }
+  ],
+  "previousRound": null
+}

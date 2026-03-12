@@ -1,0 +1,44 @@
+{
+  "featureId": "kill-dual-build",
+  "reviewedAt": "2026-03-12T16:55:00.000Z",
+  "commitId": "07c8c1ec3838b02ab260fd0a04be0c2bcfaf88f7",
+  "transcriptSkeletonReviewed": true,
+  "diffReviewed": true,
+  "status": "pass",
+  "codeReview": {
+    "summary": "Clean, minimal commit that deletes exactly the two legacy build files (compile.bat and SocialInteractions/compile.rsp) with no accidental modifications to any other files. All three validation assertions are met: compile.bat deleted from repo root, compile.rsp deleted from SocialInteractions/, and deploy.bat preserved with its dotnet build invocation intact. The worker verified the build succeeds both before and after deletion (0 errors, 0 warnings). The commit message is descriptive and accurate.",
+    "issues": [
+      {
+        "file": "SocialInteractions/architecture.md",
+        "line": 15,
+        "severity": "non_blocking",
+        "description": "Stale documentation: line 15 still says 'Crucially, always add any new .cs source files to the compile.rsp response file so they are included in the compilation.' This advice is now invalid since compile.rsp was deleted. Line 6 also references 'the compiler only supports C# 5' which referred to the legacy csc.exe compiler, not the current dotnet build system."
+      },
+      {
+        "file": ".factory/library/architecture.md",
+        "line": 13,
+        "severity": "non_blocking",
+        "description": "Stale shared state: 'Legacy compile.bat + compile.rsp alongside modern .csproj' is listed under 'Current State (Pre-Refactoring)' — this was accurate before this feature but is now outdated. The legacy files no longer exist."
+      }
+    ]
+  },
+  "sharedStateObservations": [
+    {
+      "area": "conventions",
+      "observation": "SocialInteractions/architecture.md still references compile.rsp workflow (line 15: 'always add new .cs files to compile.rsp') and the legacy csc compiler (line 6: 'compiler only supports C# 5'). These are now stale after this feature deleted both legacy build files. Future workers following this doc could be confused.",
+      "evidence": "SocialInteractions/architecture.md:15 — 'Crucially, always add any new .cs source files to the compile.rsp response file so they are included in the compilation.' This file no longer exists as of commit 07c8c1e."
+    },
+    {
+      "area": "conventions",
+      "observation": ".factory/library/architecture.md lists 'Legacy compile.bat + compile.rsp alongside modern .csproj' as current state, but these files were removed by this feature. The shared library doc is now stale.",
+      "evidence": ".factory/library/architecture.md:13 — 'Legacy compile.bat + compile.rsp alongside modern .csproj' — both files were deleted in commit 07c8c1e."
+    },
+    {
+      "area": "skills",
+      "observation": "Worker deviated from Phase 1.3 Baseline Validation (couldn't run dotnet test because test project doesn't exist yet). The deviation was justified — the skill's baseline procedure assumes a test project exists, but this milestone precedes test project creation. The worker's suggestion to allow fallback to commands.build for early milestones is reasonable.",
+      "evidence": "Handoff skillFeedback.followedProcedure=false, deviation at 'Phase 1.3 Baseline Validation'. Test project SocialInteractions.Tests does not exist yet (MSB1009 error). services.yaml commands.test points to non-existent project."
+    }
+  ],
+  "addressesFailureFrom": null,
+  "summary": "PASS. The kill-dual-build feature is correctly implemented. The commit cleanly deletes compile.bat (8 lines) and SocialInteractions/compile.rsp (141 lines) with no side effects. deploy.bat is untouched and still uses dotnet build. The project builds successfully after deletion. Two non-blocking documentation staleness issues were identified (architecture.md references to deleted files)."
+}
