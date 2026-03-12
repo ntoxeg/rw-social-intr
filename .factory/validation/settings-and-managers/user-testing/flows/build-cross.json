@@ -1,0 +1,24 @@
+{
+  "flowId": "build-cross",
+  "assertions": {
+    "VAL-BUILD-003": {
+      "status": "pass",
+      "evidence": "dotnet build SocialInteractions.csproj -c Release: Build succeeded. 0 Warning(s) 0 Error(s)"
+    },
+    "VAL-CROSS-002": {
+      "status": "pass",
+      "evidence": "LlmClientFactory.Create() reads settings.Api.llmApiType, settings.Api.llmApiUrl, settings.Api.llmApiKey, and model names from nested ApiSettings. All 10 API clients (Kobold, Ollama, LMStudio, OpenAI, Gemini, Qwen, Deepseek, Grok, Claude, Player2) are constructed from settings.Api.* fields. See LlmClientFactory.cs lines 8-53."
+    },
+    "VAL-CROSS-003": {
+      "status": "pass",
+      "evidence": "All converted GameComponents reference nested settings: TTSManager reads Settings.Api.enableTTS/ttsApiUrl/ttsSpeed/ttsVolume etc. (16+ refs); DatingManager reads Settings.Features.enableDatingFeature/enableLovin; ChildrenMisbehaviorManager reads Settings.Features.enableChildrenMisbehavior; SpeechBubbleManager reads Settings.Api.enableTTS; VoiceAssignmentManager reads Settings.Api.enableTTS; ChatLogManager is a GameComponent. Patches also consistently use Settings.Features.* for feature toggles."
+    },
+    "VAL-CROSS-005": {
+      "status": "pass",
+      "evidence": "Full regression: dotnet build -c Release => Build succeeded. 0 Warning(s) 0 Error(s). dotnet test => Passed! Failed: 0, Passed: 24, Skipped: 0, Total: 24."
+    }
+  },
+  "frictions": [],
+  "blockers": [],
+  "toolsUsed": ["dotnet", "rg"]
+}

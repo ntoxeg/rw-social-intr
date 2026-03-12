@@ -1,0 +1,64 @@
+{
+  "flowId": "converted-managers",
+  "assertions": {
+    "VAL-GC-001": {
+      "status": "pass",
+      "evidence": "DatingManager.cs line 57: 'public class DatingManager : GameComponent' with constructor 'public DatingManager(Game game)' at line 60. Note: constructor omits explicit ': base(game)' but C# implicitly calls the parameterless base if no base call is specified; GameComponent(Game) is the only constructor so it is called implicitly."
+    },
+    "VAL-GC-002": {
+      "status": "pass",
+      "evidence": "DatingManager.cs line 58: 'public static DatingManager Current => Verse.Current.Game?.GetComponent<DatingManager>();'"
+    },
+    "VAL-GC-003": {
+      "status": "pass",
+      "evidence": "rg 'static class DatingManager' under SocialInteractions/ returned 0 matches. Matches exist only in .claude/worktrees/ (old worktree) and refactor.md (docs), not in active source."
+    },
+    "VAL-GC-004": {
+      "status": "pass",
+      "evidence": "rg '\\bstatic\\b' in DatingManager.cs returned only line 58: 'public static DatingManager Current' (the accessor property). No static mutable fields found."
+    },
+    "VAL-GC-005": {
+      "status": "pass",
+      "evidence": "Scribe keys in converted DatingManager.cs match original worktree version exactly: Date.ExposeData uses 'initiator', 'partner', 'stage', 'stageTransitionTick', 'reachedLovinStage', 'isThreewayAction'; DatingManager.ExposeData uses 'dates', 'dateCooldowns'."
+    },
+    "VAL-GC-006": {
+      "status": "pass",
+      "evidence": "TTSManager.cs line 16: 'public class TTSManager : GameComponent' with constructor 'public TTSManager(Game game)' at line 33."
+    },
+    "VAL-GC-007": {
+      "status": "pass",
+      "evidence": "TTSManager.cs line 17: 'public static TTSManager Current => Verse.Current.Game?.GetComponent<TTSManager>();'"
+    },
+    "VAL-GC-008": {
+      "status": "pass",
+      "evidence": "rg 'static class TTSManager' under SocialInteractions/ returned 0 matches."
+    },
+    "VAL-GC-009": {
+      "status": "pass",
+      "evidence": "ChildrenMisbehaviorManager.cs line 14: 'public class ChildrenMisbehaviorManager : GameComponent' with constructor 'public ChildrenMisbehaviorManager(Game game)' at line 18."
+    },
+    "VAL-GC-010": {
+      "status": "pass",
+      "evidence": "ChildrenMisbehaviorManager.cs line 16: 'public static ChildrenMisbehaviorManager Current => Verse.Current.Game?.GetComponent<ChildrenMisbehaviorManager>();'"
+    },
+    "VAL-GC-011": {
+      "status": "pass",
+      "evidence": "rg 'static class ChildrenMisbehaviorManager' under SocialInteractions/ returned 0 matches."
+    },
+    "VAL-GC-012": {
+      "status": "pass",
+      "evidence": "ChatLogManager.cs line 78: 'public class ChatLogManager : GameComponent' with constructor 'public ChatLogManager(Game game)' at line 83."
+    },
+    "VAL-GC-013": {
+      "status": "pass",
+      "evidence": "ChatLogManager.cs line 79: 'public static ChatLogManager Current => Verse.Current.Game?.GetComponent<ChatLogManager>();'"
+    },
+    "VAL-GC-014": {
+      "status": "pass",
+      "evidence": "rg 'static class ChatLogManager' under SocialInteractions/ returned 0 matches."
+    }
+  },
+  "frictions": [],
+  "blockers": [],
+  "toolsUsed": ["rg"]
+}

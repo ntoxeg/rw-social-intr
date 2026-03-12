@@ -1,0 +1,56 @@
+{
+  "flowId": "settings",
+  "assertions": {
+    "VAL-SET-001": {
+      "status": "pass",
+      "evidence": "Line 34: 'public class SocialInteractionsModSettings : ModSettings' — inherits from Verse.ModSettings (using Verse is imported at line 1)."
+    },
+    "VAL-SET-002": {
+      "status": "pass",
+      "evidence": "Line ~107: 'public class ApiSettings : IExposable' nested inside SocialInteractionsModSettings, with its own ExposeData() method containing all API-related Scribe_Values.Look calls."
+    },
+    "VAL-SET-003": {
+      "status": "pass",
+      "evidence": "Line ~145: 'public class FeatureToggles : IExposable' nested inside SocialInteractionsModSettings, with its own ExposeData() method containing all feature toggle Scribe_Values.Look calls."
+    },
+    "VAL-SET-004": {
+      "status": "pass",
+      "evidence": "Line ~217: 'public class PromptSettings : IExposable' nested inside SocialInteractionsModSettings, with its own ExposeData() method for llmPromptTemplate, llmMonologuePromptTemplate, llmStoppingStrings."
+    },
+    "VAL-SET-005": {
+      "status": "pass",
+      "evidence": "Line ~231: 'public class DisplaySettings : IExposable' nested inside SocialInteractionsModSettings, with its own ExposeData() method for wordsPerLineLimit, wordsPerSecond, llmMaxDialogueLines, showDefaultBubbles, showLlmBubbles, useBackgroundTextRendering."
+    },
+    "VAL-SET-006": {
+      "status": "pass",
+      "evidence": "Line ~249: 'public class GameplaySettings : IExposable' nested inside SocialInteractionsModSettings, with its own ExposeData() method for all gameplay-related fields (negotiation, combat, dating, badmouthing, admiration, backstabbing, children misbehavior, pester prisoner, etc.)."
+    },
+    "VAL-SET-007": {
+      "status": "pass",
+      "evidence": "All original flat fields are distributed across the 5 nested subclasses: ApiSettings (31 fields: llmApiKey, llmTemperature, llmMaxTokens, llmTopK, llmTopP, llmMinP, llmRepetitionPenalty, ollamaModelName, lmStudioModelName, openAiModelName, geminiModelName, qwenModelName, deepseekModelName, grokModelName, disableLlmThinking, claudeModelName, player2ModelName, player2GameClientId, forceChatCompletion, llmApiType, llmApiUrl, enableXtcSampling, enableTTS, ttsApiType, ttsVolume, ttsSpeed, ttsMuted, ttsInternalPlayback, ttsApiUrl, ttsApiKey, ttsModel, ttsAudioFormat), FeatureToggles (38 fields: all enable* flags, llmInteractionsEnabled, preventSpam, pawnsStopOnInteraction, verboseLogging, useLlmForBreakups), PromptSettings (3 fields: llmPromptTemplate, llmMonologuePromptTemplate, llmStoppingStrings), DisplaySettings (6 fields: wordsPerLineLimit, wordsPerSecond, llmMaxDialogueLines, showDefaultBubbles, showLlmBubbles, useBackgroundTextRendering), GameplaySettings (51 fields: all gameplay-related floats/ints). Top-level retains only modVersion and const templates. No fields are orphaned or duplicated."
+    },
+    "VAL-SET-008": {
+      "status": "pass",
+      "evidence": "Lines 426-433: 'public override void ExposeData()' calls base.ExposeData(), then Api.ExposeData(), Features.ExposeData(), Prompts.ExposeData(), Display.ExposeData(), Gameplay.ExposeData(), plus Scribe_Values.Look for modVersion. All 5 nested classes are delegated to."
+    },
+    "VAL-SET-009": {
+      "status": "pass",
+      "evidence": "All Scribe_Values.Look string keys are preserved in nested ExposeData methods. Examples: 'llmApiType', 'llmApiUrl', 'llmApiKey', 'llmTemperature', 'pawnsStopOnInteraction', 'enableCombatTaunts', 'llmPromptTemplate', 'showDefaultBubbles', 'wordsPerLineLimit', 'negotiationCooldownHours', 'meleeTauntProbability', 'modVersion', etc. Keys were not renamed during the refactor — they remain identical string literals in the Scribe_Values.Look calls, ensuring save compatibility."
+    },
+    "VAL-SET-010": {
+      "status": "pass",
+      "evidence": "Lines 12-24: 'public enum LlmApiType { KoboldCpp, Ollama, LMStudio, OpenAI, Gemini, Qwen, Deepseek, Grok, Claude, Player2 }' — exactly 10 values in the original order."
+    },
+    "VAL-SET-011": {
+      "status": "pass",
+      "evidence": "Lines 26-30: 'public enum TtsApiType { OpenAI, Player2 }' — exactly 2 values in the original order."
+    },
+    "VAL-SET-012": {
+      "status": "pass",
+      "evidence": "DoSettingsWindowContents exists at line 526 on class SocialInteractionsMod : Mod. Build succeeds with 0 warnings and 0 errors: 'dotnet build SocialInteractions/SocialInteractions.csproj --no-restore' produced 'Build succeeded. 0 Warning(s) 0 Error(s)'. The UI method references all nested settings via SocialInteractions.Settings.Api.*, SocialInteractions.Settings.Features.*, SocialInteractions.Settings.Display.*, SocialInteractions.Settings.Gameplay.*, SocialInteractions.Settings.Prompts.*."
+    }
+  },
+  "frictions": [],
+  "blockers": [],
+  "toolsUsed": ["rg", "Read", "dotnet build"]
+}

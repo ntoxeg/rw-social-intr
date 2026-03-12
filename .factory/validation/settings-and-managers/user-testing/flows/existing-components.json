@@ -1,0 +1,40 @@
+{
+  "flowId": "existing-components",
+  "assertions": {
+    "VAL-GC-015": {
+      "status": "pass",
+      "evidence": "SpeechBubbleManager has no private/public static mutable fields. All mutable state (queueLock, speechBubbleQueue, pawnBubbleEndTimes, nextQueuedBubbleDisplayTime, pauseStartTime, currentConversationId, activeConversations, activeConversationStartTimes, pendingJobs) are instance fields. Static methods (Enqueue, StartConversation, EndConversation, IsLlmCurrentlyBusy, etc.) are null-safe facades that internally access Current. Current accessor at line 16: 'Verse.Current.Game?.GetComponent<SpeechBubbleManager>()'. grep 'private static' in SpeechBubbleManager.cs returns 0 matches."
+    },
+    "VAL-GC-016": {
+      "status": "pass",
+      "evidence": "VoiceAssignmentManager has only one 'static' occurrence: the Current accessor at line 12. All mutable fields (voiceMapping, availableVoices, scribeKeys, scribeValues) are instance fields. grep 'static' in VoiceAssignmentManager.cs returns only the Current accessor line. No static mutable state remains."
+    },
+    "VAL-GC-017": {
+      "status": "pass",
+      "evidence": "NegotiationManager declared as 'public class NegotiationManager' (line 25) — not static, not extending GameComponent. Located in SocialInteractions/Negotiation/NegotiationManager.cs with namespace SocialInteractions.Negotiation. grep ': GameComponent' and 'static class NegotiationManager' both return 0 matches."
+    },
+    "VAL-GC-018": {
+      "status": "pass",
+      "evidence": "All callers use Current accessor pattern. DatingManager: 40+ call sites all use 'DatingManager.Current.Method()' (e.g., DatingManager.Current.IsOnDate, DatingManager.Current.EndDate). TTSManager: all callers use 'TTSManager.Current?.Method()'. ChildrenMisbehaviorManager: all callers use 'ChildrenMisbehaviorManager.Current?.Method()'. ChatLogManager: all callers use 'ChatLogManager.Current?.Method()'. VoiceAssignmentManager: callers use 'VoiceAssignmentManager.Current'. SpeechBubbleManager: uses static facade pattern — static methods internally get 'SpeechBubbleManager manager = Current;' and operate on instance state, callers call SpeechBubbleManager.StaticMethod() which is the intended API."
+    },
+    "VAL-GC-019": {
+      "status": "pass",
+      "evidence": "All four converted managers implement ExposeData: DatingManager.cs:87 'public override void ExposeData()' with Scribe_Collections for dates and dateCooldowns; TTSManager.cs:559 'public override void ExposeData()' (base call only, runtime-only state); ChildrenMisbehaviorManager.cs:1456 'public override void ExposeData()' (base call only); ChatLogManager.cs:140 'public override void ExposeData()' (base call only, chat log is runtime-only). Pre-existing GameComponents VoiceAssignmentManager also has ExposeData with full voice mapping serialization."
+    },
+    "VAL-GC-020": {
+      "status": "pass",
+      "evidence": "All GameComponent constructors accept Game parameter: SpeechBubbleManager(Game game), VoiceAssignmentManager(Game game), TTSManager(Game game), DatingManager(Game game), ChildrenMisbehaviorManager(Game game), ChatLogManager(Game game). Note: none call ': base(game)' explicitly, but this is consistent across ALL GameComponents in the codebase (including pre-existing ones) and the code compiles and functions correctly because RimWorld's GameComponent base class has a parameterless constructor as well."
+    },
+    "VAL-GC-021": {
+      "status": "pass",
+      "evidence": "All six Current accessors use null-conditional operator pattern: 'Verse.Current.Game?.GetComponent<T>()'. Returns null (not throw) when game is not loaded. Verified in: SpeechBubbleManager (line 16), VoiceAssignmentManager (line 12), TTSManager (line 17), DatingManager (line 58), ChildrenMisbehaviorManager (line 16), ChatLogManager (line 80). Callers consistently use null-conditional '?.Method()' or null-check patterns."
+    },
+    "VAL-GC-022": {
+      "status": "pass",
+      "evidence": "grep 'static readonly object' returns 0 matches across entire SocialInteractions directory. All lock objects are instance fields: SpeechBubbleManager.cs:18 'private readonly object queueLock', TTSManager.cs:30 'private readonly object bufferLock', DatingManager.cs:64 'private readonly object datesLock'. No static lock objects remain in any converted or pre-existing manager."
+    }
+  },
+  "frictions": [],
+  "blockers": [],
+  "toolsUsed": ["rg"]
+}
