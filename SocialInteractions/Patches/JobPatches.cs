@@ -3,8 +3,11 @@ using HarmonyLib;
 using RimWorld;
 using Verse;
 using Verse.AI;
+using SocialInteractions.Dating;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(PlayLog), "Add")]
     public static class PlayLog_Add_Patch
@@ -68,7 +71,7 @@ namespace SocialInteractions
                 {
                     Pawn doctor = __instance.pawn;
                     Pawn patient = (Pawn)__instance.job.targetA.Thing;
-                    
+
                     // Don't trigger LLM interaction when pawn is tending to themselves
                     if (doctor != patient)
                     {
@@ -156,7 +159,7 @@ namespace SocialInteractions
                 {
                     // Log.Warning("SocialInteractions Mod: Could not find the correct toil to patch for 'Lovin' interaction.");
                 }
-                
+
                 __result = newToils;
 
                 // Add a finish action to the last toil to reset isLlmBusy and advance date stage

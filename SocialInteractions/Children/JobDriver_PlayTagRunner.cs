@@ -2,8 +2,9 @@ using System.Collections.Generic;
 using RimWorld;
 using Verse;
 using Verse.AI;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Children
 {
     public class JobDriver_PlayTagRunner : JobDriver
     {

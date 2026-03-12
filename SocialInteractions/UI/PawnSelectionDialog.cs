@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using Verse;
 using RimWorld;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.UI
 {
     public class PawnSelectionDialog : Window
     {
@@ -52,8 +53,7 @@ namespace SocialInteractions
                     Rect entryRect = new Rect(0, y, listRect.width, EntryHeight);
 
                     // Get current voice assignment
-                    var manager = Current.Game.GetComponent<VoiceAssignmentManager>();
-                    string currentVoice = manager != null ? manager.GetVoiceForPawn(pawns[i]) : null;
+                    string currentVoice = SocialInteractions.GetVoiceForPawn(pawns[i]);
 
                     // Draw pawn info
                     Text.Font = GameFont.Small;
@@ -81,7 +81,8 @@ namespace SocialInteractions
                         Close();
 
                         // Use a small delay to ensure UI state is settled before opening new window
-                        Verse.LongEventHandler.ExecuteWhenFinished(() => {
+                        Verse.LongEventHandler.ExecuteWhenFinished(() =>
+                        {
                             SocialInteractions.OpenVoiceSelectionDialog(selectedPawn);
                         });
                         return;

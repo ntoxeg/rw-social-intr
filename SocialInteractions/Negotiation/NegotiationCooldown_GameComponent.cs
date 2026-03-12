@@ -2,8 +2,9 @@ using RimWorld;
 using Verse;
 using System.Collections.Generic;
 using UnityEngine;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Negotiation
 {
     /// <summary>
     /// GameComponent to handle persistent negotiation cooldowns for pawns and factions.
@@ -89,7 +90,7 @@ namespace SocialInteractions
         {
             int ticksGame = Find.TickManager.TicksGame;
             int expireTick = 0;
-            
+
             if (isFaction)
             {
                 if (!factionCooldowns.TryGetValue(id, out expireTick)) return 0f;

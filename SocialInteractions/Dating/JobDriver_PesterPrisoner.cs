@@ -3,8 +3,10 @@ using Verse;
 using Verse.AI;
 using System.Collections.Generic;
 using UnityEngine;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Dating
 {
     public class JobDriver_PesterPrisoner : JobDriver
     {
@@ -57,16 +59,16 @@ namespace SocialInteractions
                     // Partner joins
                     if (partner.CurJobDef != SI_JobDefOf.PesterPrisonerPartner)
                     {
-                        SLog.Message(string.Format("[SocialInteractions] JobDriver_PesterPrisoner: Partner {0} is in job {1}. Starting PesterPrisonerPartner.", 
+                        SLog.Message(string.Format("[SocialInteractions] JobDriver_PesterPrisoner: Partner {0} is in job {1}. Starting PesterPrisonerPartner.",
                             partner.LabelShort, partner.CurJobDef != null ? partner.CurJobDef.defName : "NULL"));
                         Job partnerJob = JobMaker.MakeJob(SI_JobDefOf.PesterPrisonerPartner, this.Target, this.pawn);
                         partner.jobs.StartJob(partnerJob, JobCondition.InterruptForced);
                     }
                     else
                     {
-                         SLog.Message(string.Format("[SocialInteractions] JobDriver_PesterPrisoner: Partner {0} is already in PesterPrisonerPartner.", partner.LabelShort));
+                        SLog.Message(string.Format("[SocialInteractions] JobDriver_PesterPrisoner: Partner {0} is already in PesterPrisonerPartner.", partner.LabelShort));
                     }
-                    
+
                     Messages.Message(
                         string.Format("{0} and {1} are pestering {2}.",
                             this.pawn.Name.ToStringShort,
@@ -167,7 +169,7 @@ namespace SocialInteractions
                         this.pawn.pather.StartPath(this.Target, PathEndMode.Touch);
                     }
                 }
-                
+
                 if (this.pawn.Position.InHorDistOf(this.Target.Position, 3f))
                 {
                     // Face the target
@@ -182,7 +184,7 @@ namespace SocialInteractions
             Toil finish = new Toil();
             finish.initAction = () =>
             {
-                SLog.Message(string.Format("[SocialInteractions] PesterPrisoner finish toil started for {0}. Partner null: {1}", 
+                SLog.Message(string.Format("[SocialInteractions] PesterPrisoner finish toil started for {0}. Partner null: {1}",
                     this.pawn.LabelShort, (partner == null)));
 
                 // Give mood buff to initiator
@@ -201,7 +203,7 @@ namespace SocialInteractions
                 }
 
                 bool isOnDate = DatingManager.IsOnDate(this.pawn);
-                SLog.Message(string.Format("[SocialInteractions] PesterPrisoner finish: Checking escalation. Partner: {0}, IsOnDate: {1}", 
+                SLog.Message(string.Format("[SocialInteractions] PesterPrisoner finish: Checking escalation. Partner: {0}, IsOnDate: {1}",
                     (partner != null ? partner.LabelShort : "NULL"), isOnDate));
 
                 if (partner != null && isOnDate)
@@ -236,7 +238,7 @@ namespace SocialInteractions
             {
                 return datePartner;
             }
-            
+
             SLog.Message(string.Format("[SocialInteractions] FindPartner: Partner {0} found but not available.", datePartner.LabelShort));
             return null;
         }
@@ -290,7 +292,7 @@ namespace SocialInteractions
             // Check romantic compatibility (One-sided: Abuser -> Victim)
             float compatibility = GetAbuserCompatibility(this.pawn, this.Target);
             SLog.Message(string.Format("[SocialInteractions] TryEscalateToThreesome: Compatibility score: {0}, Chance: {1:P0}", compatibility, escalationChance));
-            
+
             if (compatibility <= 0f)
             {
                 SLog.Message("[SocialInteractions] TryEscalateToThreesome: Failed compatibility check.");
@@ -330,9 +332,9 @@ namespace SocialInteractions
                 if (trait.def == TraitDefOf.Psychopath) chance += 0.35f;
                 else if (trait.def == TraitDefOf.Bloodlust) chance += 0.20f;
                 else if (trait.def.defName == "Cannibal") chance += 0.10f;
-                else if (trait.def.defName.Contains("Sadist") || 
-                         trait.def.defName.Contains("Abusive") || 
-                         trait.def.defName.Contains("Disturbing") || 
+                else if (trait.def.defName.Contains("Sadist") ||
+                         trait.def.defName.Contains("Abusive") ||
+                         trait.def.defName.Contains("Disturbing") ||
                          trait.def.defName.Contains("Evil"))
                 {
                     chance += 0.30f;

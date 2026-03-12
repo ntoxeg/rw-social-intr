@@ -4,8 +4,10 @@ using Verse;
 using System;
 using System.Reflection;
 using UnityEngine;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch]
     public static class PawnRenderer_GetDrawParms_Patch

@@ -4,8 +4,10 @@ using Verse.AI;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Dating
 {
     public class JobDriver_AbusiveThreesome : JobDriver
     {
@@ -51,7 +53,7 @@ namespace SocialInteractions
             // Fail if victim is invalid
             this.FailOnDespawnedOrNull(TargetIndex.A);
             this.FailOnDowned(TargetIndex.A);
-            
+
             // Add fail condition if pawn is drafted or interrupted
             this.FailOn(() => this.pawn.Drafted);
 
@@ -60,7 +62,7 @@ namespace SocialInteractions
             findSpot.initAction = () =>
             {
                 this.job.targetC = this.Victim.Position;
-                SLog.Message(string.Format("[SocialInteractions] AbusiveThreesome: Initiator {0} moving to victim {1} at {2} for stacking.", 
+                SLog.Message(string.Format("[SocialInteractions] AbusiveThreesome: Initiator {0} moving to victim {1} at {2} for stacking.",
                     this.pawn.LabelShort, (this.Victim != null ? this.Victim.LabelShort : "NULL"), this.job.targetC.Cell));
 
                 // Assign participant jobs to victim and partner IMMEDIATELY
@@ -70,7 +72,7 @@ namespace SocialInteractions
                     this.Victim.jobs.StartJob(participantJob, JobCondition.InterruptForced);
                     SLog.Message(string.Format("[SocialInteractions] AbusiveThreesome: Assigned participant job to victim {0} at {1}.", this.Victim.LabelShort, this.job.targetC.Cell));
                 }
-                
+
                 if (this.Partner != null)
                 {
                     Job participantJob = JobMaker.MakeJob(SI_JobDefOf.AbusiveThreesomeParticipant, this.pawn, this.Victim, this.job.targetC);
@@ -123,7 +125,7 @@ namespace SocialInteractions
                     {
                         FleckMaker.ThrowMetaIcon(this.pawn.Position, this.pawn.Map, FleckDefOf.Heart);
                     }
-                    
+
                     // Gain joy
                     if (this.pawn.needs.joy != null)
                     {
@@ -255,7 +257,7 @@ namespace SocialInteractions
             }
 
             // --- Pregnancy logic (Biotech) ---
-            if (ModsConfig.BiotechActive && this.Victim != null && this.Victim.gender == Gender.Female && 
+            if (ModsConfig.BiotechActive && this.Victim != null && this.Victim.gender == Gender.Female &&
                 !this.Victim.health.hediffSet.HasHediff(HediffDefOf.PregnantHuman))
             {
                 List<Pawn> maleAssailants = new List<Pawn>();
@@ -267,7 +269,7 @@ namespace SocialInteractions
                     Pawn malePawn = maleAssailants.RandomElement();
                     // Use the same pregnancy chance as vanilla lovin
                     float pregnancyChance = 0.05f;
-                    
+
                     if (Rand.Chance(pregnancyChance * PregnancyUtility.PregnancyChanceForPartners(this.Victim, malePawn)))
                     {
                         bool success;
@@ -336,15 +338,15 @@ namespace SocialInteractions
                 {
                     animationSpeed = 0.3f;
                 }
-                
+
                 float baseTime = progress * 8.0f * (totalTicks / 60.0f);
-                
+
                 // Initiator uses horizontal bounce (exact standard lovin formula)
                 float adjustedTime = baseTime * animationSpeed;
                 float num = Mathf.Sin(adjustedTime);
                 float num2 = Mathf.Sign(num);
                 float x = EaseInOutQuad(Mathf.Abs(num) * 0.6f) * 0.09f * num2;
-                
+
                 return new Vector3(x, 0f, 0f);
             }
         }

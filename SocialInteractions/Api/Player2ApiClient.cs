@@ -9,8 +9,9 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.IO;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Api
 {
     [DataContract]
     public class Player2ApiMessage
@@ -36,7 +37,7 @@ namespace SocialInteractions
         public bool Stream { get; set; }
         [DataMember(Name = "stop")]
         public List<string> Stop { get; set; }
-        
+
         [DataMember(Name = "top_p", EmitDefaultValue = false)]
         public float? TopP { get; set; }
         [DataMember(Name = "top_k", EmitDefaultValue = false)]
@@ -145,7 +146,7 @@ namespace SocialInteractions
             try
             {
                 string healthUrl = _healthBaseUrl + "/v1/health";
-                
+
                 using (var request = new HttpRequestMessage(HttpMethod.Get, healthUrl))
                 {
                     if (!string.IsNullOrEmpty(_healthGameClientId))
@@ -192,7 +193,7 @@ namespace SocialInteractions
                     MaxTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
                     Stream = false,
                     Stop = stopSequence ?? new List<string>(SocialInteractions.Settings.llmStoppingStrings.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)),
-                    
+
                     TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
                     TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
                     MinP = minP ?? (SocialInteractions.Settings.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.llmMinP : null),
@@ -219,7 +220,7 @@ namespace SocialInteractions
                     writer.Flush();
                 }
                 string jsonContent = Encoding.UTF8.GetString(stream.ToArray());
-                
+
                 // Sanitize the JSON content to ensure it's clean for the server
                 jsonContent = SanitizeJsonString(jsonContent);
 
@@ -236,12 +237,12 @@ namespace SocialInteractions
                     }
                     fullUrl = fullUrl + "/chat/completions";
                 }
-                
+
                 using (var httpRequestMessage = new HttpRequestMessage(HttpMethod.Post, fullUrl))
                 {
                     httpRequestMessage.Content = httpContent;
                     httpRequestMessage.Headers.Add("User-Agent", "SocialInteractionsMod/1.0");
-                    
+
                     if (!string.IsNullOrEmpty(_apiKey))
                     {
                         httpRequestMessage.Headers.Add("Authorization", string.Format("Bearer {0}", _apiKey));
@@ -253,7 +254,7 @@ namespace SocialInteractions
 
                     var response = await _httpClient.SendAsync(httpRequestMessage);
                     var responseBody = await response.Content.ReadAsStringAsync();
-                    
+
                     if (!response.IsSuccessStatusCode)
                     {
                         SLog.Warning(string.Format("[SocialInteractions] Player2 API Error (Status {0}): {1}", response.StatusCode, responseBody));
@@ -288,13 +289,13 @@ namespace SocialInteractions
         private string SanitizeJsonString(string json)
         {
             if (string.IsNullOrEmpty(json)) return json;
-            
+
             // Remove some common "smart" characters that often get mangled or cause 400s
             json = json.Replace("\u201c", "\"").Replace("\u201d", "\""); // Smart quotes
             json = json.Replace("\u2018", "'").Replace("\u2019", "'"); // Smart single quotes
             json = json.Replace("\u2013", "-").Replace("\u2014", "-"); // En/Em dashes
             json = json.Replace("\u2026", "..."); // Ellipsis
-            
+
             // Further sanitize to ensure only printable ASCII + common whitespace
             // This is a bit aggressive but helps with sensitive local servers
             // StringBuilder sb = new StringBuilder();
@@ -322,9 +323,9 @@ namespace SocialInteractions
             response = System.Text.RegularExpressions.Regex.Replace(response, @"<thinking>.*?</thinking>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             response = System.Text.RegularExpressions.Regex.Replace(response, @"<think>.*?</think>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             response = System.Text.RegularExpressions.Regex.Replace(response, @"\[thinking\].*?\[/thinking\]", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            
+
             response = response.Trim();
-            
+
             return response;
         }
 

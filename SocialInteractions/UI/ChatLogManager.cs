@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using Verse;
 using RimWorld;
 using UnityEngine;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.UI
 {
     public enum MessageType
     {
@@ -44,7 +45,7 @@ namespace SocialInteractions
         {
             string speakerName = speaker != null ? speaker.Name.ToStringShort : "Unknown";
             string recipientName = recipient != null ? recipient.Name.ToStringShort : "Unknown";
-            
+
             string prefix = "";
             switch (type)
             {
@@ -65,11 +66,11 @@ namespace SocialInteractions
                     break;
             }
 
-            return string.Format("{0} {1} {2} -> {3}: {4}", 
-                timestamp.ToString("HH:mm:ss"), 
+            return string.Format("{0} {1} {2} -> {3}: {4}",
+                timestamp.ToString("HH:mm:ss"),
                 prefix,
-                speakerName, 
-                recipientName, 
+                speakerName,
+                recipientName,
                 message);
         }
     }
@@ -82,21 +83,21 @@ namespace SocialInteractions
             chatLog.Add(message);
             // SLog.Message("[ChatLogManager] Added message to chat log: " + message.GetFormattedMessage());
         }
-        
+
         // Method for adding date events with specific fallback texts
         public static void AddDateEvent(Pawn speaker, Pawn recipient, string message, string fallbackText)
         {
             ChatMessage chatMessage = new ChatMessage(speaker, recipient, message, MessageType.DateEvent, -1, new Color(1f, 0.7f, 0.7f), fallbackText); // Using pink color for dating/romance
             AddMessage(chatMessage);
         }
-        
+
         // Method for adding game events with specific fallback texts
         public static void AddGameEvent(Pawn speaker, Pawn recipient, string message, string fallbackText)
         {
             ChatMessage chatMessage = new ChatMessage(speaker, recipient, message, MessageType.GameEvent, -1, Color.white, fallbackText);
             AddMessage(chatMessage);
         }
-        
+
         // Method for adding drama events (like badmouthing) with specific fallback texts
         public static void AddDramaEvent(Pawn speaker, Pawn recipient, string message, string fallbackText)
         {
@@ -127,7 +128,7 @@ namespace SocialInteractions
         {
             return chatLog.Count;
         }
-        
+
         private static List<ChatMessage> chatLog = new List<ChatMessage>();
     }
 }

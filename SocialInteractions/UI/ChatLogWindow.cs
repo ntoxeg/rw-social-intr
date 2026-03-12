@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using UnityEngine;
 using Verse;
 using RimWorld;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.UI
 {
     // This class is deprecated since the chat log is now integrated into the history tab
     // Keeping it for compatibility but it's essentially a no-op

@@ -1,8 +1,10 @@
 using HarmonyLib;
 using RimWorld;
 using Verse;
+using SocialInteractions.Dating;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(JoyUtility), "JoyTickCheckEnd")]
     public static class JoyTickCheckEnd_Patch
@@ -13,8 +15,8 @@ namespace SocialInteractions
             if (fullJoyAction == JoyTickFullJoyAction.EndJob)
             {
                 // Check if the pawn itself is doing a specialized job
-                if (pawn.CurJobDef != null && 
-                    (pawn.CurJobDef.defName == "PesterPrisoner" || 
+                if (pawn.CurJobDef != null &&
+                    (pawn.CurJobDef.defName == "PesterPrisoner" ||
                      pawn.CurJobDef.defName == "PesterPrisonerPartner" ||
                      pawn.CurJobDef.defName == "AbusiveThreesome" ||
                      pawn.CurJobDef.defName == "AbusiveThreesomeParticipant" ||

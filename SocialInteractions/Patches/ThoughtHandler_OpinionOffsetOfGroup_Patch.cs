@@ -2,8 +2,9 @@ using HarmonyLib;
 using RimWorld;
 using Verse;
 using System;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(ThoughtHandler), "OpinionOffsetOfGroup")]
     public static class ThoughtHandler_OpinionOffsetOfGroup_Patch

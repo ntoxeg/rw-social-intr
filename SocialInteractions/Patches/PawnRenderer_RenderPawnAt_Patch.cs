@@ -1,8 +1,9 @@
 using HarmonyLib;
 using UnityEngine;
 using Verse;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     // [HarmonyPatch(typeof(PawnRenderer), "RenderPawnAt")] // Attribute removed
     public static class PawnRenderer_RenderPawnAt_Patch

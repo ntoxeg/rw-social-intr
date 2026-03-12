@@ -2,8 +2,11 @@ using HarmonyLib;
 using RimWorld;
 using Verse;
 using Verse.AI;
+using SocialInteractions.Dating;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(Pawn_JobTracker), "StartJob")]
     public static class Debug_JobTracker_StartJob_Patch
@@ -14,7 +17,7 @@ namespace SocialInteractions
             if (pawn != null && DatingManager.IsOnDate(pawn))
             {
                 // If the pawn is on a date and is being given a job other than DateLovin or a few other valid ones, log it with a stack trace.
-                if (newJob.def != SI_JobDefOf.DateLovin && 
+                if (newJob.def != SI_JobDefOf.DateLovin &&
                     newJob.def != JobDefOf.Wait_MaintainPosture &&
                     newJob.def != SI_JobDefOf.PesterPrisoner &&
                     newJob.def != SI_JobDefOf.PesterPrisonerPartner &&

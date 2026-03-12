@@ -1,14 +1,15 @@
 using RimWorld;
 using Verse;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Dating
 {
     public class Dating_MapComponent : MapComponent
     {
         // Dictionary to track when SI_Naked hediff was added to a pawn
         private Dictionary<Pawn, int> siNakedHediffAddedTicks = new Dictionary<Pawn, int>();
-        
+
         public Dating_MapComponent(Map map) : base(map)
         {
         }
@@ -37,7 +38,7 @@ namespace SocialInteractions
                             shouldKeepHediff = true;
                         }
                     }
-                    
+
                     // Also keep the hediff if the pawn is in a JobDriver_CaughtCheating job
                     // This handles the 3p action scenario where the spouse joins in
                     if (!shouldKeepHediff && pawn.jobs != null && pawn.jobs.curDriver != null)
@@ -48,7 +49,7 @@ namespace SocialInteractions
                             shouldKeepHediff = true;
                         }
                     }
-                    
+
                     // Additional check for 3p action participants
                     // If a pawn has the SI_Naked hediff, they might be part of a 3p action
                     // even if they are not yet "on a date" in the traditional sense
@@ -69,7 +70,7 @@ namespace SocialInteractions
                             }
                         }
                     }
-                    
+
                     // Grace period for pawns with SI_Naked hediff
                     // If a pawn just got the hediff, give it a few ticks to get into the right job
                     if (!shouldKeepHediff)
@@ -84,13 +85,13 @@ namespace SocialInteractions
                             }
                         }
                     }
-                    
+
                     // Only remove the hediff if the pawn is not on a date in the Lovin stage
                     // and is not currently in the DateLovin job or JobDriver_CaughtCheating job
                     // and is not part of a 3p action
                     // and the grace period has expired
-                    if (!shouldKeepHediff && (pawn.jobs == null || pawn.jobs.curDriver == null || 
-                       (pawn.jobs.curDriver.GetType().Name != "JobDriver_DateLovin" && 
+                    if (!shouldKeepHediff && (pawn.jobs == null || pawn.jobs.curDriver == null ||
+                       (pawn.jobs.curDriver.GetType().Name != "JobDriver_DateLovin" &&
                         pawn.jobs.curDriver.GetType().Name != "JobDriver_AbusiveThreesome" &&
                         pawn.jobs.curDriver.GetType().Name != "JobDriver_AbusiveThreesomeParticipant" &&
                         pawn.jobs.curDriver.GetType().Name != "JobDriver_PesterPrisoner" &&
@@ -109,7 +110,7 @@ namespace SocialInteractions
                 }
             }
         }
-        
+
         /// <summary>
         /// Records when a pawn was given the SI_Naked hediff.
         /// </summary>

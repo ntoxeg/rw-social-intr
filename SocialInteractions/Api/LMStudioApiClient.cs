@@ -8,11 +8,12 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.IO;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Api
 {
     // Text completion request format
-// Text completion classes (Legacy)
+    // Text completion classes (Legacy)
     [DataContract]
     public class LMStudioCompletionRequest
     {
@@ -181,14 +182,14 @@ namespace SocialInteractions
                 var httpContent = new StringContent(jsonContent, Encoding.UTF8, "application/json");
 
                 var response = await _httpClient.PostAsync(_apiUrl.TrimEnd('/') + "/v1/completions", httpContent);
-                
+
                 // Log the response status code for debugging
                 SLog.Message(string.Format("[SocialInteractions] LMStudio API Response Status: {0}", response.StatusCode));
-                
+
                 response.EnsureSuccessStatusCode(); // Throws an exception if the HTTP response status is an error code
 
                 var responseBody = await response.Content.ReadAsStringAsync();
-                
+
                 // Log the response body for debugging
                 SLog.Message(string.Format("[SocialInteractions] LMStudio API Response Body: {0}", responseBody));
 
@@ -265,10 +266,10 @@ namespace SocialInteractions
             response = System.Text.RegularExpressions.Regex.Replace(response, @"<thinking>.*?</thinking>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             response = System.Text.RegularExpressions.Regex.Replace(response, @"<think>.*?</think>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             response = System.Text.RegularExpressions.Regex.Replace(response, @"\[thinking\].*?\[/thinking\]", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            
+
             // Trim whitespace
             response = response.Trim();
-            
+
             return response;
         }
 

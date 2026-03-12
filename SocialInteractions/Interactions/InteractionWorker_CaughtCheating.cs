@@ -4,8 +4,10 @@ using Verse.AI;
 using System.Collections.Generic;
 using System.Linq;
 using UnityEngine;
+using SocialInteractions.Dating;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Interactions
 {
     public class InteractionWorker_CaughtCheating : InteractionWorker
     {
@@ -46,14 +48,14 @@ namespace SocialInteractions
             }
 
             SLog.Message("[SocialInteractions] TriggerFightLogic: Starting fight logic evaluation.");
-            
+
             // The partner always flees
             if (partner != null)
             {
                 // Make the partner flee from the initiator
                 TryMakePartnerFlee(partner, initiator);
             }
-            
+
             // Add appropriate thoughts for the fight branch
             // Initiator (the one who caught cheating) gets the initial CaughtCheating thought
             ThoughtDef caughtCheatingThought = DefDatabase<ThoughtDef>.GetNamed("CaughtCheating");
@@ -78,26 +80,26 @@ namespace SocialInteractions
                     partner.needs.mood.thoughts.memories.TryGainMemory(wasCheatedOnThought, recipient);
                 }
             }
-            
+
             // Determine the type of response based on various factors
             float responseRoll = Rand.Value;
             SLog.Message(string.Format("[SocialInteractions] TriggerFightLogic: Response roll: {0}.", responseRoll));
-            
+
             // Calculate relationship strength between initiator and recipient
             float relationshipStrength = 0f;
             if (initiator.relations != null && recipient != null)
             {
                 relationshipStrength = initiator.relations.OpinionOf(recipient) / 100f; // Normalize to -1 to 1 range
             }
-            
+
             // Check for specific traits that might influence the response
             bool isKind = initiator.story.traits.HasTrait(TraitDefOf.Kind);
             bool isWimp = initiator.story.traits.HasTrait(TraitDefOf.Wimp);
             bool isBrawler = initiator.story.traits.HasTrait(TraitDefOf.Brawler);
-            
+
             // Check for Ideology precepts that might influence the response
             bool hasFreeLoveOrPolygamy = HasFreeLoveOrPolygamyPrecept(initiator);
-            
+
             // Modify the response based on traits and relationship
             float fightChance = 0.5f; // Base 50% chance
             if (isKind) fightChance -= 0.2f; // Kind pawns are less likely to fight
@@ -105,12 +107,12 @@ namespace SocialInteractions
             if (isBrawler) fightChance += 0.3f; // Brawlers are more likely to fight
             if (hasFreeLoveOrPolygamy) fightChance -= 0.4f; // Pawns with free love or polygamy are less likely to fight
             fightChance += relationshipStrength * 0.3f; // Stronger relationships reduce fight chance
-            
+
             // Clamp the chance between 0.1 and 0.9
             fightChance = Mathf.Clamp(fightChance, 0.1f, 0.9f);
-            
+
             SLog.Message(string.Format("[SocialInteractions] TriggerFightLogic: Adjusted fight chance: {0}.", fightChance));
-            
+
             if (responseRoll > fightChance)
             {
                 // Non-violent response
@@ -119,10 +121,10 @@ namespace SocialInteractions
             else
             {
                 // Violent response - fight the cheater
-                if (initiator.Faction == recipient.Faction && 
-                    initiator.mindState != null && 
+                if (initiator.Faction == recipient.Faction &&
+                    initiator.mindState != null &&
                     initiator.mindState.mentalStateHandler != null &&
-                    !initiator.Downed && !initiator.Dead && 
+                    !initiator.Downed && !initiator.Dead &&
                     !recipient.Downed && !recipient.Dead &&
                     initiator.Spawned && recipient.Spawned &&
                     initiator.Awake() && recipient.Awake() &&
@@ -151,7 +153,7 @@ namespace SocialInteractions
                 }
             }
         }
-        
+
         private bool HasFreeLoveOrPolygamyPrecept(Pawn pawn)
         {
             // Check if Ideology is active
@@ -159,13 +161,13 @@ namespace SocialInteractions
             {
                 return false;
             }
-            
+
             // Check if the pawn has an ideology
             if (pawn.Ideo == null)
             {
                 return false;
             }
-            
+
             // Check for free love precept (Lovin_FreeApproved) or polygamy precepts
             return pawn.Ideo.HasPrecept(DefDatabase<PreceptDef>.GetNamedSilentFail("Lovin_FreeApproved")) ||
                    pawn.Ideo.HasPrecept(DefDatabase<PreceptDef>.GetNamedSilentFail("SpouseCount_Male_Unlimited")) ||
@@ -175,23 +177,23 @@ namespace SocialInteractions
                    pawn.Ideo.HasPrecept(DefDatabase<PreceptDef>.GetNamedSilentFail("SpouseCount_Male_MaxFour")) ||
                    pawn.Ideo.HasPrecept(DefDatabase<PreceptDef>.GetNamedSilentFail("SpouseCount_Female_MaxFour"));
         }
-        
+
         private void HandleNonViolentResponse(Pawn initiator, Pawn recipient, Pawn partner, bool isKind, bool isWimp, bool hasFreeLoveOrPolygamy)
         {
             // Different non-violent responses based on traits and other factors
             float responseRoll = Rand.Value;
-            
+
             // If the pawn has free love or polygamy precept and there's a partner, join them in a 3p action
             if (hasFreeLoveOrPolygamy && partner != null && responseRoll < 0.7f)
             {
                 // 3p action - initiate a special lovin' job with all three pawns
-                SLog.Message(string.Format("[SocialInteractions] HandleNonViolentResponse: {0} has free love/polygamy precept, initiating 3p action with {1} and {2}.", 
+                SLog.Message(string.Format("[SocialInteractions] HandleNonViolentResponse: {0} has free love/polygamy precept, initiating 3p action with {1} and {2}.",
                     initiator.LabelShort, recipient.LabelShort, partner.LabelShort));
-                
+
                 // Log the 3p action
-                SLog.Message(string.Format("[SocialInteractions] InitiateThreewayLovin: {0}, {1}, and {2} engaged in a 3p action.", 
+                SLog.Message(string.Format("[SocialInteractions] InitiateThreewayLovin: {0}, {1}, and {2} engaged in a 3p action.",
                     initiator.LabelShort, recipient.LabelShort, partner.LabelShort));
-                
+
                 // For 3p route, add positive thoughts for all pawns (no negative thoughts)
                 ThoughtDef threewayLovinThought = DefDatabase<ThoughtDef>.GetNamedSilentFail("ThreewayLovin");
                 if (threewayLovinThought != null)
@@ -206,7 +208,7 @@ namespace SocialInteractions
             {
                 // Wimpy response - run away (add appropriate thoughts for all pawns)
                 SLog.Message(string.Format("[SocialInteractions] HandleNonViolentResponse: {0} is running away (wimp).", initiator.LabelShort));
-                
+
                 // Add appropriate thoughts for all pawns
                 // Initiator gets a wimp-specific thought
                 ThoughtDef reconcilingThought = DefDatabase<ThoughtDef>.GetNamedSilentFail("ReconcilingAfterCheating");
@@ -231,20 +233,20 @@ namespace SocialInteractions
                         partner.needs.mood.thoughts.memories.TryGainMemory(wasCheatedOnThought, recipient);
                     }
                 }
-                
+
                 // Create a list of threats (in this case, just the recipient)
                 List<Thing> threats = new List<Thing> { recipient };
-                
+
                 // Try to find a cell to flee to
                 IntVec3 fleeCell = CellFinderLoose.GetFleeDest(initiator, threats, 15f); // Flee farther away
-                
+
                 if (fleeCell.IsValid && fleeCell != initiator.Position)
                 {
                     // Create a job for the initiator to go to the flee cell
                     Job fleeJob = JobMaker.MakeJob(JobDefOf.Goto, fleeCell);
                     fleeJob.locomotionUrgency = LocomotionUrgency.Sprint; // Make them sprint away
                     fleeJob.expiryInterval = 1200; // Expire the job after 20 seconds if not completed
-                    
+
                     // Start the job
                     initiator.jobs.TryTakeOrderedJob(fleeJob);
                 }
@@ -253,7 +255,7 @@ namespace SocialInteractions
             {
                 // Kind response - try to reconcile (add appropriate thoughts for all pawns)
                 SLog.Message(string.Format("[SocialInteractions] HandleNonViolentResponse: {0} is trying to reconcile (kind).", initiator.LabelShort));
-                
+
                 // Add appropriate thoughts for all pawns
                 // Initiator also gets a reconcile-specific thought
                 ThoughtDef reconcilingThought = DefDatabase<ThoughtDef>.GetNamedSilentFail("ReconcilingAfterCheating");
@@ -283,7 +285,7 @@ namespace SocialInteractions
             {
                 // Default non-violent response - just end the relationship (add appropriate thoughts for all pawns)
                 SLog.Message(string.Format("[SocialInteractions] HandleNonViolentResponse: {0} is breaking up with {1}.", initiator.LabelShort, recipient.LabelShort));
-                
+
                 // Add appropriate thoughts for all pawns
                 // Initiator (the one who caught cheating) gets CaughtCheating thought and breakup thought
                 ThoughtDef caughtCheatingThought = DefDatabase<ThoughtDef>.GetNamed("CaughtCheating");
@@ -291,7 +293,7 @@ namespace SocialInteractions
                 {
                     initiator.needs.mood.thoughts.memories.TryGainMemory(caughtCheatingThought, recipient);
                 }
-                
+
                 ThoughtDef brokeUpThought = DefDatabase<ThoughtDef>.GetNamedSilentFail("BrokeUpAfterCheating");
                 if (brokeUpThought != null)
                 {
@@ -314,12 +316,12 @@ namespace SocialInteractions
                         partner.needs.mood.thoughts.memories.TryGainMemory(wasCheatedOnThought, recipient);
                     }
                 }
-                
+
                 // Break up with the cheater by removing the relationship
                 // Find the existing relationship between initiator and recipient
                 PawnRelationDef relationDef = null;
                 DirectPawnRelation relation = null;
-                
+
                 // Check for different types of relationships
                 if (initiator.relations.DirectRelationExists(PawnRelationDefOf.Spouse, recipient))
                 {
@@ -336,13 +338,13 @@ namespace SocialInteractions
                     relationDef = PawnRelationDefOf.Fiance;
                     relation = new DirectPawnRelation(relationDef, recipient, 0);
                 }
-                
+
                 // If we found a relationship, remove it and add the appropriate ex-relationship
                 if (relationDef != null)
                 {
                     // Remove the current relationship
                     initiator.relations.RemoveDirectRelation(relationDef, recipient);
-                    
+
                     // Add the appropriate ex-relationship
                     if (relationDef == PawnRelationDefOf.Spouse)
                     {
@@ -360,7 +362,7 @@ namespace SocialInteractions
                 }
             }
         }
-        
+
         public void MakePartnerFleeImmediately(Pawn partner, Pawn initiator)
         {
             if (partner == null || initiator == null)
@@ -368,34 +370,34 @@ namespace SocialInteractions
                 SLog.Warning("[SocialInteractions] MakePartnerFleeImmediately: Partner or initiator is null, skipping.");
                 return;
             }
-            
+
             SLog.Message(string.Format("[SocialInteractions] MakePartnerFleeImmediately: Making partner {0} flee from initiator {1}.", partner.LabelShort, initiator.LabelShort));
             TryMakePartnerFlee(partner, initiator);
         }
-        
+
         private void TryMakePartnerFlee(Pawn partner, Pawn initiator)
         {
             if (partner == null || initiator == null || partner.Map == null)
             {
                 return;
             }
-            
+
             // Don't remove the SI_OnDate hediff here - let the JobDriver_CaughtCheating handle it
             // when the confrontation is finished
-            
+
             // Create a list of threats (in this case, just the initiator)
             List<Thing> threats = new List<Thing> { initiator };
-            
+
             // Try to find a cell to flee to
             IntVec3 fleeCell = CellFinderLoose.GetFleeDest(partner, threats, 10f); // Flee 10 cells away
-            
+
             if (fleeCell.IsValid && fleeCell != partner.Position)
             {
                 // Create a job for the partner to go to the flee cell
                 Job fleeJob = JobMaker.MakeJob(JobDefOf.Goto, fleeCell);
                 fleeJob.locomotionUrgency = LocomotionUrgency.Sprint; // Make them sprint away
                 fleeJob.expiryInterval = 900; // Expire the job after 10 seconds if not completed
-                
+
                 // Start the job
                 partner.jobs.TryTakeOrderedJob(fleeJob);
             }

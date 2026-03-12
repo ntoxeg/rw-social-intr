@@ -4,8 +4,10 @@ using System.Collections.Generic;
 using Verse;
 using System.Text;
 using System.Reflection;
+using SocialInteractions.Speech;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     // Using AccessTools.Method to get the MethodInfo since InteractionWorker_Breakup might not be publicly accessible
     [HarmonyPatch]
@@ -19,7 +21,7 @@ namespace SocialInteractions
                 "Assembly-CSharp",
                 "Assembly-CSharp-firstpass"
             };
-            
+
             System.Type interactionWorkerBreakupType = null;
             foreach (string assemblyName in assemblyNames)
             {
@@ -31,20 +33,20 @@ namespace SocialInteractions
                     break;
                 }
             }
-            
+
             if (interactionWorkerBreakupType == null)
             {
                 SLog.Warning("[SocialInteractions] Could not find InteractionWorker_Breakup type. Breakup patch may not work.");
                 return null;
             }
-            
+
             MethodBase method = AccessTools.Method(interactionWorkerBreakupType, "Interacted");
             if (method == null)
             {
                 SLog.Warning("[SocialInteractions] Could not find Interacted method in InteractionWorker_Breakup. Breakup patch may not work.");
                 return null;
             }
-            
+
             return method;
         }
 
@@ -70,20 +72,20 @@ namespace SocialInteractions
             if (SocialInteractions.Settings.useLlmForBreakups)
             {
                 SLog.Message("[SocialInteractions] Processing LLM breakup interaction...");
-                
+
                 // Create a subject for the breakup based on the pawn names and context
                 string subject = string.Format("{0} is breaking up with {1}.", initiator.LabelShort, recipient.LabelShort);
-                
+
                 // Generate LLM prompt and handle interaction
                 string prompt = SocialInteractions.GenerateDeepTalkPrompt(initiator, recipient, null, subject);
-                
+
                 if (!string.IsNullOrEmpty(prompt))
                 {
                     SLog.Message("[SocialInteractions] Breakup has a valid prompt, creating LLM interaction.");
-                    
+
                     // Handle the interaction using the same approach as other LLM interactions
                     int conversationId = SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, null, subject, true, true);
-                    
+
                     // Format the subject with rich text for the default bubble
                     string formattedSubject = SpeechBubbleManager.FormatSpeakerName(initiator, "Breaking up...");
                     SpeechBubbleManager.ShowDefaultBubble(initiator, formattedSubject);
@@ -96,7 +98,7 @@ namespace SocialInteractions
             else
             {
                 SLog.Message("[SocialInteractions] LLM for breakups is disabled, proceeding with default behavior but still showing default bubble.");
-                
+
                 // Even if LLM is disabled, we can still show a default bubble with modified text
                 string defaultSubject = string.Format("I can't go on like this. We need to break up, {0}.", recipient.LabelShort);
                 string formattedSubject = SpeechBubbleManager.FormatSpeakerName(initiator, defaultSubject);

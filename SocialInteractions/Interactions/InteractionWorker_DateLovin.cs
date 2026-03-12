@@ -1,7 +1,8 @@
 using RimWorld;
 using Verse;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Interactions
 {
     public class InteractionWorker_DateLovin : InteractionWorker
     {

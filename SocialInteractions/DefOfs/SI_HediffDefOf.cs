@@ -5,8 +5,9 @@ using System.Text;
 using UnityEngine;
 using Verse;
 using RimWorld;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.DefOfs
 {
     [DefOf]
     public static class SI_HediffDefOf

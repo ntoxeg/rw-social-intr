@@ -8,8 +8,9 @@ using UnityEngine.Networking;
 using System.Collections;
 using System.IO;
 using System.Text;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Speech
 {
     public static class TTSManager
     {
@@ -25,7 +26,7 @@ namespace SocialInteractions
         private static int nextPlaybackId = 0;
         private static Dictionary<int, TTSQueueEntry> playbackBuffer = new Dictionary<int, TTSQueueEntry>();
         private static readonly object bufferLock = new object();
-        
+
         // Lookup for Player2 Voice IDs: Name (Language) -> ID
         private static Dictionary<string, string> voiceIdLookup = new Dictionary<string, string>();
 
@@ -78,7 +79,7 @@ namespace SocialInteractions
                 nextPlaybackId = nextRequestId;
                 isPlaying = false;
             }
-            
+
             // Stop current audio
             if (audioSource != null)
             {
@@ -89,13 +90,13 @@ namespace SocialInteractions
 
         public static List<string> GetVoices()
         {
-             return VoiceAssignmentManager.AvailableVoices;
+            return VoiceAssignmentManager.AvailableVoices;
         }
 
         public static void FetchVoicesFromApi()
         {
             if (string.IsNullOrEmpty(SocialInteractions.Settings.ttsApiUrl)) return;
-            
+
             // Try to deduce the voices endpoint
             string speechUrl = SocialInteractions.Settings.ttsApiUrl;
             string voicesUrl = speechUrl;
@@ -128,68 +129,68 @@ namespace SocialInteractions
 
         private static IEnumerator FetchVoicesCoroutine(string url)
         {
-             string apiKey = SocialInteractions.Settings.ttsApiKey;
-             var request = UnityWebRequest.Get(url);
-             if (!string.IsNullOrEmpty(apiKey))
-             {
-                 request.SetRequestHeader("Authorization", "Bearer " + apiKey);
-             }
+            string apiKey = SocialInteractions.Settings.ttsApiKey;
+            var request = UnityWebRequest.Get(url);
+            if (!string.IsNullOrEmpty(apiKey))
+            {
+                request.SetRequestHeader("Authorization", "Bearer " + apiKey);
+            }
 
-             yield return request.SendWebRequest();
+            yield return request.SendWebRequest();
 
-             if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
-             {
-                 SLog.Error("[SocialInteractions] TTSManager: Failed to fetch voices: " + request.error);
-             }
-             else
-             {
-                 string json = request.downloadHandler.text;
-                 SLog.Message("[SocialInteractions] TTSManager: Voices response: " + json);
+            if (request.result == UnityWebRequest.Result.ConnectionError || request.result == UnityWebRequest.Result.ProtocolError)
+            {
+                SLog.Error("[SocialInteractions] TTSManager: Failed to fetch voices: " + request.error);
+            }
+            else
+            {
+                string json = request.downloadHandler.text;
+                SLog.Message("[SocialInteractions] TTSManager: Voices response: " + json);
 
-                 List<string> voices = new List<string>();
+                List<string> voices = new List<string>();
 
-                 try
-                 {
-                     // Simple parsing without JsonUtility dependency issues
-                     // Look for "voices":[ ... ] block (for OpenAI-compatible APIs)
-                     int voicesStart = json.IndexOf("\"voices\"");
-                     if (voicesStart != -1)
-                     {
-                         int arrayStart = json.IndexOf('[', voicesStart);
-                         int arrayEnd = json.IndexOf(']', arrayStart);
-                         if (arrayStart != -1 && arrayEnd != -1)
-                         {
-                             string arrayContent = json.Substring(arrayStart, arrayEnd - arrayStart + 1);
-                             ParseVoiceArray(arrayContent, ref voices);
-                         }
-                     }
-                     else
-                     {
-                         // If "voices" not found, try parsing as direct array [ "voice1", "voice2", ... ]
-                         int arrayStart = json.IndexOf('[');
-                         int arrayEnd = json.LastIndexOf(']');
-                         if (arrayStart != -1 && arrayEnd != -1 && arrayEnd > arrayStart)
-                         {
-                             string arrayContent = json.Substring(arrayStart, arrayEnd - arrayStart + 1);
-                             ParseVoiceArray(arrayContent, ref voices);
-                         }
-                     }
-                 }
-                 catch (Exception ex)
-                 {
-                     SLog.Warning("[SocialInteractions] TTSManager: Parsing failed: " + ex.Message);
-                 }
+                try
+                {
+                    // Simple parsing without JsonUtility dependency issues
+                    // Look for "voices":[ ... ] block (for OpenAI-compatible APIs)
+                    int voicesStart = json.IndexOf("\"voices\"");
+                    if (voicesStart != -1)
+                    {
+                        int arrayStart = json.IndexOf('[', voicesStart);
+                        int arrayEnd = json.IndexOf(']', arrayStart);
+                        if (arrayStart != -1 && arrayEnd != -1)
+                        {
+                            string arrayContent = json.Substring(arrayStart, arrayEnd - arrayStart + 1);
+                            ParseVoiceArray(arrayContent, ref voices);
+                        }
+                    }
+                    else
+                    {
+                        // If "voices" not found, try parsing as direct array [ "voice1", "voice2", ... ]
+                        int arrayStart = json.IndexOf('[');
+                        int arrayEnd = json.LastIndexOf(']');
+                        if (arrayStart != -1 && arrayEnd != -1 && arrayEnd > arrayStart)
+                        {
+                            string arrayContent = json.Substring(arrayStart, arrayEnd - arrayStart + 1);
+                            ParseVoiceArray(arrayContent, ref voices);
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SLog.Warning("[SocialInteractions] TTSManager: Parsing failed: " + ex.Message);
+                }
 
-                 if (voices.Count > 0)
-                 {
-                     SLog.Message(string.Format("[SocialInteractions] TTSManager: Found {0} voices.", voices.Count));
-                     VoiceAssignmentManager.SetAvailableVoices(voices);
-                 }
-                 else
-                 {
-                     SLog.Warning("[SocialInteractions] TTSManager: No voices found in response.");
-                 }
-             }
+                if (voices.Count > 0)
+                {
+                    SLog.Message(string.Format("[SocialInteractions] TTSManager: Found {0} voices.", voices.Count));
+                    VoiceAssignmentManager.SetAvailableVoices(voices);
+                }
+                else
+                {
+                    SLog.Warning("[SocialInteractions] TTSManager: No voices found in response.");
+                }
+            }
         }
 
         private static void ParseVoiceArray(string arrayContent, ref List<string> voices)
@@ -202,7 +203,7 @@ namespace SocialInteractions
                 foreach (System.Text.RegularExpressions.Match objMatch in objectMatches)
                 {
                     string objContent = objMatch.Groups[1].Value;
-                    
+
                     // Extract id, name, and gender using regex
                     var idMatch = System.Text.RegularExpressions.Regex.Match(objContent, "\"id\"\\s*:\\s*\"([a-zA-Z0-9.-]+)\"");
                     var nameMatch = System.Text.RegularExpressions.Regex.Match(objContent, "\"name\"\\s*:\\s*\"([a-zA-Z0-9.\\s]+)\"");
@@ -215,15 +216,15 @@ namespace SocialInteractions
                         string name = nameMatch.Groups[1].Value;
                         string lang = langMatch.Success ? langMatch.Groups[1].Value : "";
                         string gender = genderMatch.Success ? genderMatch.Groups[1].Value.ToLower() : "";
-                        
+
                         // Prefix name with [Male] or [Female] if found
                         string prefix = "";
                         if (gender == "male") prefix = "[Male] ";
                         else if (gender == "female") prefix = "[Female] ";
-                        
+
                         string displayName = prefix + name;
                         if (!string.IsNullOrEmpty(lang)) displayName += string.Format(" ({0})", lang);
-                        
+
                         if (!voices.Contains(displayName)) voices.Add(displayName);
                         voiceIdLookup[displayName] = id;
                     }
@@ -250,7 +251,7 @@ namespace SocialInteractions
             {
                 SLog.Warning("[SocialInteractions] TTSManager: TTS API URL is empty.");
                 // Mark request as failed/done to prevent blocking
-                ProcessPlaybackBuffer(requestId, null, 0); 
+                ProcessPlaybackBuffer(requestId, null, 0);
                 return;
             }
 
@@ -286,7 +287,7 @@ namespace SocialInteractions
                 // Player2 format: {"text": "...", "voice_ids": ["..."], "speed": 1.0, "audio_format": "wav", "play_in_app": false}
                 // Note: using play_in_app: false to routing audio back to mod.
                 string internalPlaybackStr = SocialInteractions.Settings.ttsInternalPlayback ? "true" : "false";
-                
+
                 // Lookup UUID if possible, otherwise use name as fallback
                 string voiceId = voice;
                 string foundId;
@@ -304,16 +305,16 @@ namespace SocialInteractions
             else
             {
                 // OpenAI compatible format (default)
-                json = string.Format("{{\"model\": \"{0}\", \"input\": \"{1}\", \"voice\": \"{2}\", \"speed\": {3}}}", 
-                    model, 
-                    text.Replace("\"", "\\\"").Replace("\n", " ").Replace("\r", ""), 
-                    voice, 
+                json = string.Format("{{\"model\": \"{0}\", \"input\": \"{1}\", \"voice\": \"{2}\", \"speed\": {3}}}",
+                    model,
+                    text.Replace("\"", "\\\"").Replace("\n", " ").Replace("\r", ""),
+                    voice,
                     speed.ToString("0.00", System.Globalization.CultureInfo.InvariantCulture));
             }
 
             // Define formats to try (for standard binary APIs)
-            var formats = new[] 
-            { 
+            var formats = new[]
+            {
                 new { Type = AudioType.WAV, Name = "WAV" },
                 new { Type = AudioType.MPEG, Name = "MPEG" },
                 new { Type = AudioType.OGGVORBIS, Name = "OGG" }
@@ -371,7 +372,7 @@ namespace SocialInteractions
                                         }
 
                                         // Try to delete temp file
-                                        try { if (File.Exists(tempPathStr)) File.Delete(tempPathStr); } catch {}
+                                        try { if (File.Exists(tempPathStr)) File.Delete(tempPathStr); } catch { }
                                     }
                                 }
                             }
@@ -409,7 +410,7 @@ namespace SocialInteractions
                         else
                         {
                             if (request.result == UnityWebRequest.Result.ConnectionError) break;
-                            if (request.responseCode == 401 || request.responseCode == 403 || request.responseCode == 404) break; 
+                            if (request.responseCode == 401 || request.responseCode == 403 || request.responseCode == 404) break;
                         }
                     }
                 }
@@ -470,7 +471,7 @@ namespace SocialInteractions
                     if (entry.clip != null) // Only valid clips
                     {
                         AddToPlaybackQueue(entry.clip, entry.volume);
-                        
+
                         // Start the playback manager coroutine if not already running
                         if (Current.Game != null && Current.Root != null)
                         {
@@ -479,9 +480,9 @@ namespace SocialInteractions
                     }
                     else
                     {
-                         // SLog.Message(string.Format("[TTS Debug] ProcessPlaybackBuffer: ID {0} has null clip, skipping.", nextPlaybackId));
+                        // SLog.Message(string.Format("[TTS Debug] ProcessPlaybackBuffer: ID {0} has null clip, skipping.", nextPlaybackId));
                     }
-                    
+
                     playbackBuffer.Remove(nextPlaybackId);
                     nextPlaybackId++;
                 }
@@ -524,7 +525,7 @@ namespace SocialInteractions
                 // We apply the settings volume here so it reacts to slider changes in real-time
                 audioSource.volume = entry.volume * (SocialInteractions.Settings.ttsVolume / 100f);
                 audioSource.Play();
-                
+
                 // SLog.Message("[TTS Debug] Started playback of clip. Duration: " + entry.clip.length);
 
                 // Wait for the clip to finish playing (clip.length is in seconds)

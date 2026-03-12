@@ -2,8 +2,9 @@ using RimWorld;
 using Verse;
 using Verse.AI;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Dating
 {
     public class JobDriver_SocialRelaxDate : JobDriver
     {
@@ -30,10 +31,10 @@ namespace SocialInteractions
 
             // Relaxation Toil
             Toil relax = ToilMaker.MakeToil("Relax");
-            relax.tickAction = delegate()
+            relax.tickAction = delegate ()
             {
                 pawn.GainComfortFromCellIfPossible(1);
-                
+
                 // Gain Joy at the same rate as the partner would from watching
                 if (pawn.needs != null && pawn.needs.joy != null)
                 {
@@ -55,7 +56,7 @@ namespace SocialInteractions
                         }
                     }
                 }
-                
+
                 // If not moving, face the partner to maintain the social atmosphere
                 if (pawn.pather != null && !pawn.pather.Moving)
                 {
@@ -72,10 +73,10 @@ namespace SocialInteractions
             };
             relax.defaultCompleteMode = ToilCompleteMode.Delay;
             relax.defaultDuration = job.def.joyDuration > 0 ? job.def.joyDuration : 4000;
-            
+
             // Allow natural social interactions
             relax.socialMode = RandomSocialMode.SuperActive;
-            
+
             relax.AddFinishAction(delegate
             {
                 try

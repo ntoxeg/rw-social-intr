@@ -3,8 +3,11 @@ using RimWorld;
 using Verse;
 using Verse.AI;
 using System;
+using SocialInteractions.Dating;
+using SocialInteractions.Speech;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Jobs
 {
     public class JobDriver_BeTalkedTo : JobDriver
     {
@@ -22,15 +25,17 @@ namespace SocialInteractions
         protected override IEnumerable<Toil> MakeNewToils()
         {
             SLog.Message("[SocialInteractions] JobDriver_BeTalkedTo.MakeNewToils called.");
-            
+
             this.FailOnDespawnedOrNull(TargetIndex.A);
             Toil toil = new Toil();
-            toil.initAction = () => {
+            toil.initAction = () =>
+            {
                 SLog.Message("[SocialInteractions] JobDriver_BeTalkedTo: Stopping and facing initiator.");
                 pawn.pather.StopDead();
                 pawn.rotationTracker.FaceCell(TargetA.Cell);
             };
-            toil.tickAction = () => {
+            toil.tickAction = () =>
+            {
                 // Check if we should still be in this job
                 Pawn initiator = (Pawn)TargetA.Thing;
                 if (initiator == null || initiator.jobs == null || initiator.jobs.curDriver == null)
@@ -40,7 +45,7 @@ namespace SocialInteractions
                     pawn.jobs.EndCurrentJob(JobCondition.Succeeded);
                     return;
                 }
-                
+
                 // If the initiator is no longer doing a HaveDeepTalk or CaughtCheating job, 
                 // but the conversation is still active or has pending speech bubbles, wait a bit longer
                 if (!(initiator.jobs.curDriver is JobDriver_HaveDeepTalk) && !(initiator.jobs.curDriver is JobDriver_CaughtCheating))
@@ -48,33 +53,33 @@ namespace SocialInteractions
                     // Check if there's still an active conversation or pending speech bubbles
                     // This handles the case where the initiator's job has changed but speech bubbles are still displaying
                     bool stillActive = false;
-                    try 
+                    try
                     {
                         // Try to get the conversation ID from the JobDriver_CaughtCheating if it was recently active
                         // Or check if there are any active conversations or pending speech bubbles for this pawn
-                        stillActive = SpeechBubbleManager.HasPendingSpeechBubblesForPawn(pawn) || 
+                        stillActive = SpeechBubbleManager.HasPendingSpeechBubblesForPawn(pawn) ||
                                      SpeechBubbleManager.HasActiveConversations();
                     }
                     catch (Exception ex)
                     {
                         SLog.Warning(string.Format("[SocialInteractions] JobDriver_BeTalkedTo: Exception while checking conversation status: {0}", ex.Message));
                     }
-                    
+
                     if (stillActive)
                     {
                         // Continue waiting for speech bubbles to finish
-                        SLog.Message(string.Format("[SocialInteractions] JobDriver_BeTalkedTo: Initiator {0} no longer doing HaveDeepTalk or CaughtCheating job (currently doing {1}), but conversation still active, continuing to wait.", 
+                        SLog.Message(string.Format("[SocialInteractions] JobDriver_BeTalkedTo: Initiator {0} no longer doing HaveDeepTalk or CaughtCheating job (currently doing {1}), but conversation still active, continuing to wait.",
                             initiator.LabelShort, initiator.jobs.curDriver.GetType().Name));
                     }
                     else
                     {
-                        SLog.Message(string.Format("[SocialInteractions] JobDriver_BeTalkedTo: Initiator {0} no longer doing HaveDeepTalk or CaughtCheating job (currently doing {1}), and conversation finished, ending job.", 
+                        SLog.Message(string.Format("[SocialInteractions] JobDriver_BeTalkedTo: Initiator {0} no longer doing HaveDeepTalk or CaughtCheating job (currently doing {1}), and conversation finished, ending job.",
                             initiator.LabelShort, initiator.jobs.curDriver.GetType().Name));
                         pawn.jobs.EndCurrentJob(JobCondition.Succeeded);
                         return;
                     }
                 }
-                
+
                 pawn.rotationTracker.FaceCell(TargetA.Cell);
                 if (pawn.needs != null && pawn.needs.joy != null)
                 {

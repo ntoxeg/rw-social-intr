@@ -2,8 +2,11 @@ using HarmonyLib;
 using RimWorld;
 using Verse;
 using Verse.AI;
+using SocialInteractions.Dating;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(Pawn_JobTracker), "EndCurrentJob")]
     public static class JobDriver_Joy_Patch
@@ -24,10 +27,10 @@ namespace SocialInteractions
             {
                 SLog.Warning(string.Format("[SocialInteractions] Error getting pawn from Pawn_JobTracker: {0}", ex.Message));
             }
-            
+
             // Only proceed if we have a valid pawn
             if (pawn == null) return;
-            
+
             // Check if the pawn is on a date
             if (DatingManager.IsOnDate(pawn))
             {
@@ -36,7 +39,7 @@ namespace SocialInteractions
                 {
                     return;
                 }
-                
+
                 // Check if the job was completed successfully
                 if (__instance.curJob != null && condition == JobCondition.Succeeded)
                 {
@@ -50,7 +53,7 @@ namespace SocialInteractions
                             break;
                         }
                     }
-                    
+
                     // If it was a joy job, check if this pawn is the initiator of the date
                     if (isJoyJob)
                     {
@@ -65,8 +68,8 @@ namespace SocialInteractions
                             // Check if the initiator is currently performing a specialized dating job
                             // If they are, we should NOT force the partner to follow, but let them join the specialized job
                             Pawn dateInitiator = DatingManager.GetInitiatorOfDateWith(pawn);
-                            bool initiatorInSpecialJob = (dateInitiator != null && dateInitiator.CurJobDef != null && 
-                                (dateInitiator.CurJobDef.defName == "PesterPrisoner" || 
+                            bool initiatorInSpecialJob = (dateInitiator != null && dateInitiator.CurJobDef != null &&
+                                (dateInitiator.CurJobDef.defName == "PesterPrisoner" ||
                                  dateInitiator.CurJobDef.defName == "AbusiveThreesome"));
 
                             if (!initiatorInSpecialJob)
@@ -83,7 +86,7 @@ namespace SocialInteractions
                             }
                             else
                             {
-                                SLog.Message(string.Format("[SocialInteractions] JobDriver_Joy_Patch: Skipping FollowAndWatch for {0} because initiator {1} is in specialized job {2}.", 
+                                SLog.Message(string.Format("[SocialInteractions] JobDriver_Joy_Patch: Skipping FollowAndWatch for {0} because initiator {1} is in specialized job {2}.",
                                     pawn.LabelShort, dateInitiator.LabelShort, dateInitiator.CurJobDef.defName));
                             }
                         }
@@ -103,11 +106,11 @@ namespace SocialInteractions
                             break;
                         }
                     }
-                    
+
                     // Special cases: If the current job is a DateLovin job or Wait_MaintainPosture job, we should not treat it as a non-joy job
                     bool isCurrentJobDateLovin = (__instance.curJob.def == SI_JobDefOf.DateLovin);
                     bool isCurrentJobWaitMaintainPosture = (__instance.curJob.def == JobDefOf.Wait_MaintainPosture);
-                    
+
                     // If the current job is not a joy job and not a DateLovin job and not a Wait_MaintainPosture job, advance the date
                     // But only if the pawn is the initiator of the date and the date is in the joy stage
                     if (!isCurrentJobJoy && !isCurrentJobDateLovin && !isCurrentJobWaitMaintainPosture)

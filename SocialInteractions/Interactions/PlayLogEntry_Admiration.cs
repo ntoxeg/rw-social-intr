@@ -1,8 +1,9 @@
 using RimWorld;
 using Verse;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Interactions
 {
     /// <summary>
     /// Custom PlayLogEntry for Admiration interactions that includes admiration type information

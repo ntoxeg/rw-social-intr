@@ -5,8 +5,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System;
 using Verse.Utility;
+using SocialInteractions;
+using SocialInteractions.Speech;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Dating
 {
     public class JobDriver_GoOnDate : JobDriver
     {
@@ -14,7 +17,7 @@ namespace SocialInteractions
         {
             get { return (Pawn)this.job.targetA.Thing; }
         }
-        
+
         private JobDef lastKnownInitiatorJobDef = null;
         private const int JoyJobJoinDelay = 180; // 3 seconds delay before trying to join joy job
         private JobDef partnerJoyJobDef = null; // Track the joy job the partner is doing
@@ -30,24 +33,24 @@ namespace SocialInteractions
             {
                 return false;
             }
-            
+
             if (pawn.InMentalState || pawn.health == null || pawn.health.capacities == null)
             {
                 return false;
             }
-            
+
             // Check if the pawn is capable of being awake (basic health check)
             if (!pawn.health.capacities.CanBeAwake)
             {
                 return false;
             }
-            
+
             // Check if the pawn is drafted
             if (pawn.Drafted)
             {
                 return false;
             }
-            
+
             // Check if the pawn is on a date in the Lovin stage
             // If so, they should not be doing other jobs
             if (DatingManager.IsOnDate(pawn))
@@ -63,7 +66,7 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             return true;
         }
 
@@ -75,14 +78,14 @@ namespace SocialInteractions
                 SLog.Warning("[SocialInteractions] JobDriver_GoOnDate: pawn is null in TryMakePreToilReservations.");
                 return false;
             }
-            
+
             // Use the helper method to check if the pawn is valid for dating
             if (!IsPawnValidForDating(this.pawn))
             {
                 SLog.Warning("[SocialInteractions] JobDriver_GoOnDate: pawn is not valid for dating in TryMakePreToilReservations.");
                 return false;
             }
-            
+
             return true;
         }
 
@@ -120,7 +123,7 @@ namespace SocialInteractions
                     this.EndJobWith(JobCondition.Incompletable);
                     return;
                 }
-                
+
                 int maxDistance = SocialInteractions.Settings.maxDistanceForDate; // 50x50 tiles
                 if ((Math.Abs(this.pawn.Position.x - recipient.Position.x) + Math.Abs(this.pawn.Position.z - recipient.Position.z)) > maxDistance)
                 {
@@ -135,7 +138,8 @@ namespace SocialInteractions
 
             // Ask for the date
             Toil askToil = new Toil();
-            askToil.initAction = () => {
+            askToil.initAction = () =>
+            {
                 Pawn recipient = this.Partner;
                 if (recipient == null || this.pawn == null)
                 {
@@ -158,11 +162,11 @@ namespace SocialInteractions
 
                 // Calculate acceptance chance based on opinion and mood
                 float baseChance = 0.95f; // 95% base chance
-                
+
                 // Factor in the recipient's opinion of the initiator
                 int opinion = recipient.relations.OpinionOf(this.pawn);
                 float opinionFactor = System.Math.Max(0f, System.Math.Min(1f, 0.5f + (opinion / 100f))); // Convert opinion to a 0-1 factor
-                
+
                 // Factor in the recipient's current mood
                 float moodFactor = 1.0f;
                 if (recipient.needs != null && recipient.needs.mood != null)
@@ -173,18 +177,18 @@ namespace SocialInteractions
                     // When mood is very high (1.0), factor is 1.5 (increases chance)
                     moodFactor = 0.5f + recipient.needs.mood.CurLevelPercentage;
                 }
-                
+
                 // Calculate final chance as base chance adjusted by both factors
                 float finalChance = baseChance * opinionFactor * moodFactor;
-                
+
                 // Cap the chance at 100%
                 finalChance = System.Math.Min(finalChance, 1.0f);
-                
+
                 // Roll for acceptance
                 float roll = Rand.Value;
                 bool accepted = roll < finalChance;
-                
-                SLog.Message(string.Format("[SocialInteractions] JobDriver_GoOnDate: Acceptance roll for {0} asking {1}. Rolled: {2:F3}, Chance: {3:F3}, Accepted: {4}", 
+
+                SLog.Message(string.Format("[SocialInteractions] JobDriver_GoOnDate: Acceptance roll for {0} asking {1}. Rolled: {2:F3}, Chance: {3:F3}, Accepted: {4}",
                     this.pawn.Name.ToStringShort, recipient.Name.ToStringShort, roll, finalChance, accepted));
 
                 if (accepted)
@@ -215,18 +219,18 @@ namespace SocialInteractions
                     this.EndJobWith(JobCondition.Incompletable);
                     return;
                 }
-                
+
                 // Find a suitable joy job for the initiator
                 Job joyJob = FindJoyJobFor(this.pawn, this.Partner);
                 if (joyJob == null)
                 {
                     SLog.Message(string.Format("[SocialInteractions] JobDriver_GoOnDate: Could not find joy job for {0} and {1}, ending date.", this.pawn.LabelShort, this.Partner.LabelShort));
-                    SocialInteractions.HandleNonStoppingInteraction(this.pawn, this.Partner, SI_InteractionDefOf.DateRejected, 
+                    SocialInteractions.HandleNonStoppingInteraction(this.pawn, this.Partner, SI_InteractionDefOf.DateRejected,
                         string.Format("{0} accepted the date, but they couldn't find anything to do together.", this.Partner.LabelShort));
                     this.EndJobWith(JobCondition.Incompletable);
                     return;
                 }
-                
+
                 // --- Trigger LLM Interaction with correct subject ---
                 string dateSubject = "";
                 if (joyJob.def.defName == "SocialRelaxDate")
@@ -246,10 +250,10 @@ namespace SocialInteractions
                     dateSubject = SpeechBubbleManager.GetDateSubject(this.pawn, this.Partner, joyJob.targetA);
                 }
 
-                
+
                 SocialInteractions.HandleNonStoppingInteraction(this.pawn, this.Partner, SI_InteractionDefOf.DateAccepted, dateSubject, true);
                 // --- End LLM Interaction ---
-                
+
                 // Create the FollowAndWatch job for the partner
                 // Create the job for the partner
                 Job partnerJob;
@@ -269,16 +273,16 @@ namespace SocialInteractions
                     SLog.Message(string.Format("[SocialInteractions] JobDriver_GoOnDate: Selected {0} activity. Assigning FollowAndWatchInitiator to {1}.", joyJob.def.defName, this.Partner.LabelShort));
                     partnerJob = JobMaker.MakeJob(SI_JobDefOf.FollowAndWatchInitiator, this.pawn);
                 }
-                
+
                 // Start the partner's job
                 this.Partner.jobs.StartJob(partnerJob, JobCondition.InterruptForced);
-                
+
                 // Store the job def for monitoring
                 lastKnownInitiatorJobDef = joyJob.def;
-                
+
                 // Start the initiator's joy job
                 this.pawn.jobs.StartJob(joyJob, JobCondition.InterruptForced);
-                
+
                 // End this job successfully since we've set up the date
                 this.EndJobWith(JobCondition.Succeeded);
             };
@@ -289,12 +293,12 @@ namespace SocialInteractions
         private void TryHavePartnerJoinJoyActivity(JobDef joyJobDef)
         {
             // Check if the partner's joy need is high enough that they don't want to join
-            if (this.Partner.needs != null && this.Partner.needs.joy != null && 
+            if (this.Partner.needs != null && this.Partner.needs.joy != null &&
                 this.Partner.needs.joy.CurLevelPercentage >= 0.95f)
             {
                 return;
             }
-            
+
             // Find the joy giver for this job def
             JoyGiverDef initiatorJoyGiver = null;
             foreach (JoyGiverDef joyGiver in DefDatabase<JoyGiverDef>.AllDefs)
@@ -305,19 +309,19 @@ namespace SocialInteractions
                     break;
                 }
             }
-            
+
             if (initiatorJoyGiver == null)
             {
                 return;
             }
-            
+
             // Try to give the partner the same joy job as the initiator
             Job partnerJoyJob = initiatorJoyGiver.Worker.TryGiveJob(this.Partner);
             if (partnerJoyJob == null)
             {
                 return;
             }
-            
+
             // Check if the target locations match or are nearby
             bool targetsMatch = false;
             if (partnerJoyJob.targetA.Thing != null && this.pawn.CurJob.targetA.Thing != null)
@@ -328,12 +332,12 @@ namespace SocialInteractions
             {
                 targetsMatch = partnerJoyJob.targetA.Cell.DistanceTo(this.pawn.CurJob.targetA.Cell) <= 7f;
             }
-            
+
             if (targetsMatch)
             {
                 // Track the joy job we're starting for the partner
                 partnerJoyJobDef = partnerJoyJob.def;
-                
+
                 // Enqueue the joy job and then interrupt the current job for a smooth transition
                 this.Partner.jobs.jobQueue.EnqueueFirst(partnerJoyJob);
                 this.Partner.jobs.EndCurrentJob(JobCondition.InterruptForced);
@@ -358,7 +362,7 @@ namespace SocialInteractions
             foreach (JoyGiverDef joyGiverDef in joyGivers)
             {
                 float weight = joyGiverDef.Worker.GetChance(initiator);
-                
+
                 if (weight > 0)
                 {
                     weightedJoyGivers.Add(new Pair<JoyGiverDef, float>(joyGiverDef, weight));
@@ -407,8 +411,8 @@ namespace SocialInteractions
                         // Check if partner accepts Pester Prisoner logic
                         if (joyJob.def == SI_JobDefOf.PesterPrisoner && JobDriver_PesterPrisoner.ShouldPartnerRefuse(partner))
                         {
-                             // Partner refuses this specific activity, try another
-                             continue;
+                            // Partner refuses this specific activity, try another
+                            continue;
                         }
 
                         // Skip jobs that don't have a valid target
@@ -416,7 +420,7 @@ namespace SocialInteractions
                         {
                             continue;
                         }
-                        
+
                         // Determine the correct PathEndMode based on whether the target is a Thing or a Cell
                         PathEndMode pathEndMode = joyJob.targetA.HasThing ? PathEndMode.InteractionCell : PathEndMode.OnCell;
 
@@ -431,30 +435,30 @@ namespace SocialInteractions
                 }
                 catch (NullReferenceException nre)
                 {
-                    SLog.Warning(string.Format("[SocialInteractions] JobDriver_GoOnDate: NullReferenceException while trying joy giver {0}: {1}", 
+                    SLog.Warning(string.Format("[SocialInteractions] JobDriver_GoOnDate: NullReferenceException while trying joy giver {0}: {1}",
                         selectedJoyGiverDef.defName, nre.Message));
                     // Continue to the next attempt
                 }
                 catch (Exception ex)
                 {
-                    SLog.Warning(string.Format("[SocialInteractions] JobDriver_GoOnDate: Exception while trying joy giver {0}: {1}", 
+                    SLog.Warning(string.Format("[SocialInteractions] JobDriver_GoOnDate: Exception while trying joy giver {0}: {1}",
                         selectedJoyGiverDef.defName, ex.Message));
                     // Continue to the next attempt
                 }
             }
-            
+
             // --- Fallback: SocialRelaxDate ---
             // If we reach here, no vanilla joy giver worked.
             // We'll create a SocialRelaxDate job instead of returning null.
-            SLog.Message(string.Format("[SocialInteractions] JobDriver_GoOnDate: No vanilla joy found for {0} and {1}, using SocialRelaxDate fallback.", 
+            SLog.Message(string.Format("[SocialInteractions] JobDriver_GoOnDate: No vanilla joy found for {0} and {1}, using SocialRelaxDate fallback.",
                 initiator.LabelShort, partner.LabelShort));
 
             IntVec3 fallbackSpot = initiator.Position;
-            
+
             // For the fallback, we'll just find a random spot nearby to "walk around" during the date.
             // This is simple and always works.
             fallbackSpot = RCellFinder.RandomWanderDestFor(initiator, initiator.Position, 7f, null, Danger.None);
-            
+
             if (fallbackSpot.IsValid)
             {
                 return JobMaker.MakeJob(SI_JobDefOf.SocialRelaxDate, fallbackSpot);

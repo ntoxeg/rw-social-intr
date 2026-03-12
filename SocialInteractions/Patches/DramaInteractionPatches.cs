@@ -6,8 +6,12 @@ using System;
 using System.Collections.Generic;
 using System.Reflection;
 using System.Reflection.Emit;
+using SocialInteractions.Interactions;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
+using SocialInteractions.Components;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     /// <summary>
     /// Patch to handle all drama interactions during social interactions like Chitchat

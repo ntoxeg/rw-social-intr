@@ -2,8 +2,9 @@ using RimWorld;
 using Verse;
 using Verse.AI;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Children
 {
     public class JobDriver_ChildPlayWithWeapon : JobDriver
     {
@@ -20,9 +21,10 @@ namespace SocialInteractions
         {
             // Fail if the weapon is destroyed or null
             this.FailOnDestroyedOrNull(TargetIndex.A);
-            
+
             // Fail if the weapon is forbidden (only if spawned)
-            this.FailOn(() => {
+            this.FailOn(() =>
+            {
                 Thing weapon = job.GetTarget(TargetIndex.A).Thing;
                 if (weapon != null && weapon.Spawned && weapon.IsForbidden(pawn))
                 {
@@ -77,10 +79,10 @@ namespace SocialInteractions
 
                 // Find a random target to shoot at
                 Thing target = FindRandomTarget(pawn, weapon);
-                
+
                 if (target != null)
                 {
-                    SLog.Message(string.Format("[SocialInteractions] JobDriver_ChildPlayWithWeapon: Child {0} is shooting at {1} with {2}", 
+                    SLog.Message(string.Format("[SocialInteractions] JobDriver_ChildPlayWithWeapon: Child {0} is shooting at {1} with {2}",
                         pawn.LabelShort, target.Label, weapon.Label));
 
                     // Trigger LLM interaction about playing with the weapon
@@ -103,7 +105,7 @@ namespace SocialInteractions
                         SLog.Message(string.Format("[SocialInteractions] JobDriver_ChildPlayWithWeapon: Weapon discharged and hurt child {0}", pawn.LabelShort));
                         Messages.Message(string.Format("{0}'s weapon discharged and hurt them!", pawn.LabelShort),
                             new LookTargets(pawn), MessageTypeDefOf.NegativeEvent);
-                        
+
                         // Deal damage to child - High AP to ensure it hurts
                         DamageInfo dinfo = new DamageInfo(DamageDefOf.Bullet, 10f, 999f, -1f, pawn, null, weapon.def);
                         pawn.TakeDamage(dinfo);
@@ -124,18 +126,18 @@ namespace SocialInteractions
                     // No target found, just shoot in the air (ground nearby)
                     IntVec3 randomCell = GenRadial.RadialCellsAround(pawn.Position, 5, true).RandomElement();
                     Verb attackVerb = pawn.TryGetAttackVerb(null, !pawn.IsColonist); // Get default ranged verb
-                     if (attackVerb != null && !attackVerb.verbProps.IsMeleeAttack)
+                    if (attackVerb != null && !attackVerb.verbProps.IsMeleeAttack)
                     {
-                         attackVerb.TryStartCastOn(randomCell);
+                        attackVerb.TryStartCastOn(randomCell);
                     }
-                    
-                    SLog.Message(string.Format("[SocialInteractions] JobDriver_ChildPlayWithWeapon: Child {0} shot in the air with {1}", 
+
+                    SLog.Message(string.Format("[SocialInteractions] JobDriver_ChildPlayWithWeapon: Child {0} shot in the air with {1}",
                         pawn.LabelShort, weapon.Label));
                 }
             };
-            
+
             yield return findTargetAndShootToil;
-            
+
             // Short delay after shooting
             yield return Toils_General.Wait(60);
         }

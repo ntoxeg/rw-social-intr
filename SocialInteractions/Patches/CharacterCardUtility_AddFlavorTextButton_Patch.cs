@@ -4,8 +4,10 @@ using UnityEngine;
 using Verse;
 using System;
 using System.Reflection;
+using SocialInteractions.UI;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch]
     public static class CharacterCardUtility_AddFlavorTextButton_Patch
@@ -30,16 +32,16 @@ namespace SocialInteractions
                 // The buttons are positioned from right to left in the original code
                 float baseX = PawnCardSize(pawn).x; // This matches the original base position
                 float buttonSpacing = 40f; // Same as original
-                
+
                 // The original code logic for button positions:
                 // float num = PawnCardSize(pawn).x - 85f;
                 // - Banish button (-40f if applicable)
                 // - Rename button (-40f if applicable) 
                 // - Title button (-40f if applicable)
                 // - Execute button (if applicable)
-                
+
                 float num = baseX - 85f; // Start from the same position as original code
-                
+
                 // Replicate the original logic for determining positions
                 if (pawn.IsFreeColonist && pawn.Spawned && !pawn.IsQuestLodger())
                 {
@@ -48,7 +50,7 @@ namespace SocialInteractions
 
                 // Position the button under rename
                 Rect bioButtonRect = new Rect(num, 45f, 30f, 30f);
-                
+
                 // Tooltip for the bio button
                 TooltipHandler.TipRegion(bioButtonRect, "SocialInteractions_EditBioButtonTooltip".Translate());
 

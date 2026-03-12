@@ -9,8 +9,9 @@ using System.Runtime.Serialization.Json;
 using System.IO;
 using System.Collections.Generic;
 using System.Net.Http.Headers;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Api
 {
     [DataContract]
     public class GrokApiMessage
@@ -92,10 +93,10 @@ namespace SocialInteractions
             // Trim whitespace which can cause header issues
             _apiKey = (apiKey != null) ? apiKey.Trim() : null;
             _httpClient = SharedHttpClient;
-            
+
             // Clear any existing default request headers
             _httpClient.DefaultRequestHeaders.Clear();
-            
+
             // Add required headers for Grok API
             if (!string.IsNullOrEmpty(_apiKey))
             {
@@ -117,7 +118,7 @@ namespace SocialInteractions
                     SLog.Warning(string.Format("[SocialInteractions] Failed to add Authorization header for Grok. Error: {0}", ex.Message));
                 }
             }
-            
+
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "SocialInteractionsMod/1.0");
         }
 
@@ -193,7 +194,7 @@ namespace SocialInteractions
 
                 // Use the correct Grok API endpoint
                 string fullUrl = _apiUrl.TrimEnd('/');
-                
+
                 // For Grok API, if the URL doesn't already contain the chat endpoint, append it
                 if (!fullUrl.EndsWith("/v1/chat/completions"))
                 {
@@ -205,14 +206,14 @@ namespace SocialInteractions
                 }
 
                 var response = await _httpClient.PostAsync(fullUrl, httpContent);
-                
+
                 // Log the response status code for debugging
                 SLog.Message(string.Format("[SocialInteractions] Grok API Response Status: {0}", response.StatusCode));
-                
+
                 response.EnsureSuccessStatusCode(); // Throws an exception if the HTTP response status is an error code
 
                 var responseBody = await response.Content.ReadAsStringAsync();
-                
+
                 // Log the response body for debugging
                 SLog.Message(string.Format("[SocialInteractions] Grok API Response Body: {0}", responseBody));
 
@@ -247,10 +248,10 @@ namespace SocialInteractions
             response = System.Text.RegularExpressions.Regex.Replace(response, @"<thinking>.*?</thinking>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             response = System.Text.RegularExpressions.Regex.Replace(response, @"<think>.*?</think>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             response = System.Text.RegularExpressions.Regex.Replace(response, @"\[thinking\].*?\[/thinking\]", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            
+
             // Trim whitespace
             response = response.Trim();
-            
+
             return response;
         }
 

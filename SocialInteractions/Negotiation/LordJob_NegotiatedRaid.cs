@@ -4,8 +4,10 @@ using Verse.AI;
 using Verse.AI.Group;
 using RimWorld;
 using System.Linq;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Negotiation
 {
     public enum NegotiatedRaidOutcome
     {
@@ -22,12 +24,12 @@ namespace SocialInteractions
         private Faction faction;
         private IntVec3 gatherSpot = IntVec3.Invalid;
         private int originalGoodwill = -100;
-        
+
         // Settings
         private int lingerDurationTicks = 5000;
-        
-        public LordJob_NegotiatedRaid() 
-        { 
+
+        public LordJob_NegotiatedRaid()
+        {
         }
 
         public LordJob_NegotiatedRaid(Faction faction, NegotiatedRaidOutcome outcome, int originalGoodwill = -100)
@@ -46,7 +48,7 @@ namespace SocialInteractions
             Scribe_Values.Look(ref lingerDurationTicks, "lingerDurationTicks", 5000);
             Scribe_Values.Look(ref originalGoodwill, "originalGoodwill", -100);
         }
-        
+
         public override bool AddFleeToil
         {
             get { return false; } // We handle flee manually in fallback graph
@@ -55,66 +57,66 @@ namespace SocialInteractions
         public override StateGraph CreateGraph()
         {
             StateGraph graph = new StateGraph();
-            
+
             if (outcome == NegotiatedRaidOutcome.Positive)
             {
                 // Positive: Travel to gather spot -> Linger/Loiter/Plunder -> Steal/Exit
-                
+
                 // 1. Travel to Smart Linger Spot
                 IntVec3 lingerSpot = gatherSpot;
                 if (!lingerSpot.IsValid) lingerSpot = GetSmartLingerSpot(this.Map);
-                
+
                 LordToil_Travel travelToil = new LordToil_Travel(lingerSpot);
                 graph.AddToil(travelToil);
-                
+
                 // 2. Linger (Wander/Eat/Use Tables)
                 // Use DefendPoint but with duty that allows wandering/eating
-                LordToil_DefendPoint lingerToil = new LordToil_DefendPoint(lingerSpot, 28f); 
+                LordToil_DefendPoint lingerToil = new LordToil_DefendPoint(lingerSpot, 28f);
                 graph.AddToil(lingerToil);
-                
+
                 // 3. Exit (Steal is handled by opportunistic behavior or we can add explicit Steal toil)
                 // Explicit Steal toil ensures they try to take stuff before leaving
                 LordToil_Plunder stealToil = new LordToil_Plunder();
                 graph.AddToil(stealToil);
-                
+
                 LordToil_ExitMap exitToil = new LordToil_ExitMap(LocomotionUrgency.Jog, true, true);
                 graph.AddToil(exitToil);
-                
+
                 // Transitions
-                
+
                 // Travel -> Linger (Upon Reaching Dest)
                 Transition travelToLinger = new Transition(travelToil, lingerToil);
                 travelToLinger.AddTrigger(new Trigger_PawnHarmed(0.5f, true, null)); // Safety trigger
                 travelToLinger.AddTrigger(new Trigger_Memo("TravelArrived"));
                 graph.AddTransition(travelToLinger);
-                
+
                 // Linger -> Steal (After Duration)
                 Transition lingerToSteal = new Transition(lingerToil, stealToil);
                 lingerToSteal.AddTrigger(new Trigger_TicksPassed(lingerDurationTicks));
                 lingerToSteal.AddTrigger(new Trigger_PawnHarmed(0.5f, true, null)); // If harmed, start stealing/leaving? No, assault handles this via global trigger.
                 lingerToSteal.AddPreAction(new TransitionAction_Message("Raiders are done loitering and will now plunder before leaving.", MessageTypeDefOf.NeutralEvent));
                 graph.AddTransition(lingerToSteal);
-                
+
                 // Steal -> Exit (When done or full)
                 // LordToil_StealCover usually transitions itself, but let's add timeout/completion
                 Transition stealToExit = new Transition(stealToil, exitToil);
                 stealToExit.AddTrigger(new Trigger_TicksPassed(10000)); // Increased from 5000
                 graph.AddTransition(stealToExit);
-                
+
                 // GLOBAL Aggression Trigger: If attacked, switch to Assault
                 LordToil_AssaultColony assaultToil = new LordToil_AssaultColony();
                 graph.AddToil(assaultToil);
-                
+
                 Transition toAssault = new Transition(travelToil, assaultToil);
                 toAssault.AddSource(lingerToil);
                 toAssault.AddSource(stealToil);
                 toAssault.AddSource(exitToil); // Even if leaving, if attacked, fight back?
-                
+
                 // Trigger if any pawn in the lord is harmed by Player
                 // We need Trigger_PawnHarmed.
                 // Trigger_PawnHarmed: chance=1, involveFaction=true -> signals simple harm.
                 // We can check if damage info instigator is player in code, or use simple harm response.
-                toAssault.AddTrigger(new Trigger_PawnHarmed(1f, false, this.faction)); 
+                toAssault.AddTrigger(new Trigger_PawnHarmed(1f, false, this.faction));
                 toAssault.AddPreAction(new TransitionAction_Message("Raiders are fighting back!", MessageTypeDefOf.NegativeEvent));
                 toAssault.AddPreAction(new TransitionAction_WakeAll());
                 graph.AddTransition(toAssault);
@@ -129,23 +131,23 @@ namespace SocialInteractions
             }
 
             // Failure/Neutral (Aggressive)
-            
+
             // Just provide a basic Assault graph for safety if somehow this job is active.
             LordToil_AssaultColony assaultToilDefault = new LordToil_AssaultColony();
             graph.AddToil(assaultToilDefault);
-            
+
             LordToil_ExitMap exitToilDefault = new LordToil_ExitMap(LocomotionUrgency.Jog, true, true);
             graph.AddToil(exitToilDefault);
-            
+
             Transition fleeTrigDefault = new Transition(assaultToilDefault, exitToilDefault);
             fleeTrigDefault.AddTrigger(new Trigger_FractionPawnsLost(0.5f));
             graph.AddTransition(fleeTrigDefault);
-            
+
             graph.StartingToil = assaultToilDefault;
-            
+
             return graph;
         }
-        
+
         private IntVec3 GetSmartLingerSpot(Map map)
         {
             if (map == null) return IntVec3.Invalid;
@@ -153,9 +155,9 @@ namespace SocialInteractions
             // 1. Try to find a Gather Spot (Table/Party Spot)
             Building gatherBuilding = null;
             // Check building defName since property is not easily accessible
-            if (map.listerBuildings.allBuildingsColonist.Where(b => 
-                b.def.defName.Contains("Table") || 
-                b.def.defName == "PartySpot" || 
+            if (map.listerBuildings.allBuildingsColonist.Where(b =>
+                b.def.defName.Contains("Table") ||
+                b.def.defName == "PartySpot" ||
                 b.def.defName == "MarriageSpot"
             ).TryRandomElement(out gatherBuilding))
             {
@@ -176,10 +178,10 @@ namespace SocialInteractions
             {
                 return result;
             }
-            
+
             return CellFinder.RandomClosewalkCellNear(map.Center, map, 20);
         }
-        
+
         public void Notify_RaiderHarmed(Pawn victim, DamageInfo dinfo)
         {
             // Called by custom patch to ensure instant response
@@ -192,7 +194,7 @@ namespace SocialInteractions
                 }
             }
         }
-        
+
         public override void Notify_PawnLost(Pawn p, PawnLostCondition condition)
         {
             base.Notify_PawnLost(p, condition);
@@ -205,7 +207,7 @@ namespace SocialInteractions
             RaidOutcomeUtility.CheckAndRestoreHostility(this.faction, this.Map, this.originalGoodwill);
         }
     }
-    
+
     public class LordToil_SafeTravel : LordToil
     {
         private IntVec3 dest;
@@ -216,12 +218,12 @@ namespace SocialInteractions
 
         public override void UpdateAllDuties()
         {
-             for (int i = 0; i < lord.ownedPawns.Count; i++)
-             {
-                 Pawn p = lord.ownedPawns[i];
-                 if (p == null || p.mindState == null) continue;
-                 p.mindState.duty = new PawnDuty(DutyDefOf.TravelOrWait, dest, -1f);
-             }
+            for (int i = 0; i < lord.ownedPawns.Count; i++)
+            {
+                Pawn p = lord.ownedPawns[i];
+                if (p == null || p.mindState == null) continue;
+                p.mindState.duty = new PawnDuty(DutyDefOf.TravelOrWait, dest, -1f);
+            }
         }
     }
 
@@ -233,9 +235,9 @@ namespace SocialInteractions
             {
                 Pawn p = lord.ownedPawns[i];
                 if (p == null || p.mindState == null) continue;
-                
+
                 p.mindState.duty = new PawnDuty(DutyDefOf.AssaultColony);
-                
+
                 // Ensure no lingering negotiation hediffs prevent hostility
                 if (p.health != null)
                 {
@@ -248,26 +250,26 @@ namespace SocialInteractions
             }
         }
     }
-    
+
     public static class RaidOutcomeUtility
     {
         public static void ApplyRaidOutcome(Lord lord, NegotiatedRaidOutcome outcome)
         {
             if (lord == null) return;
-            
+
             if (outcome == NegotiatedRaidOutcome.Neutral)
             {
                 SLog.Message("[RaidOutcome] Neutral outcome: Raiders will continue their original attack pattern.");
                 return;
             }
-            
+
             Map map = lord.Map;
             Faction faction = lord.faction;
-            
+
             // Debug logging
             SLog.Message("[RaidOutcome] Applying outcome " + outcome + " to Lord " + lord.loadID);
             SLog.Message("[RaidOutcome] Original Lord has " + lord.ownedPawns.Count + " pawns");
-            
+
             // Gather ALL valid pawns of this faction on the map to ensure we catch split groups
             List<Pawn> pawns = new List<Pawn>();
             if (faction != null && map != null)
@@ -286,7 +288,7 @@ namespace SocialInteractions
             {
                 pawns.AddRange(lord.ownedPawns);
             }
-            
+
             SLog.Message("[RaidOutcome] Gathered " + pawns.Count + " total pawns for new Lord");
 
             // Clean up hediffs
@@ -294,11 +296,11 @@ namespace SocialInteractions
             {
                 if (p != null && p.health != null)
                 {
-                     Hediff hediff = p.health.hediffSet.GetFirstHediffOfDef(SI_HediffDefOf.SI_Negotiating);
-                     if (hediff != null)
-                     {
-                         p.health.RemoveHediff(hediff);
-                     }
+                    Hediff hediff = p.health.hediffSet.GetFirstHediffOfDef(SI_HediffDefOf.SI_Negotiating);
+                    if (hediff != null)
+                    {
+                        p.health.RemoveHediff(hediff);
+                    }
                 }
             }
 
@@ -306,7 +308,7 @@ namespace SocialInteractions
             // Pawns might belong to different Lords (e.g. split raids). We must free them all.
             HashSet<Lord> lordsToRemove = new HashSet<Lord>();
             if (lord != null) lordsToRemove.Add(lord);
-            
+
             foreach (Pawn p in pawns)
             {
                 if (p.GetLord() != null)
@@ -314,7 +316,7 @@ namespace SocialInteractions
                     lordsToRemove.Add(p.GetLord());
                 }
             }
-            
+
             foreach (Lord l in lordsToRemove)
             {
                 SLog.Message("[RaidOutcome] Removing old Lord " + l.loadID);
@@ -324,10 +326,10 @@ namespace SocialInteractions
             Lord newLord = null;
             if (outcome == NegotiatedRaidOutcome.CriticalSuccess)
             {
-                 // Critical Success: Leave Immediately
-                 Messages.Message("Negotiation Critical Success! Raiders are leaving.", MessageTypeDefOf.PositiveEvent);
-                 LordJob_ExitMapBest exitJob = new LordJob_ExitMapBest(LocomotionUrgency.Jog, true, true);
-                 newLord = LordMaker.MakeNewLord(faction, exitJob, map, pawns);
+                // Critical Success: Leave Immediately
+                Messages.Message("Negotiation Critical Success! Raiders are leaving.", MessageTypeDefOf.PositiveEvent);
+                LordJob_ExitMapBest exitJob = new LordJob_ExitMapBest(LocomotionUrgency.Jog, true, true);
+                newLord = LordMaker.MakeNewLord(faction, exitJob, map, pawns);
             }
             else if (outcome == NegotiatedRaidOutcome.Positive)
             {
@@ -348,7 +350,7 @@ namespace SocialInteractions
                         faction.TryAffectGoodwillWith(Faction.OfPlayer, needed, canSendMessage: false, canSendHostilityLetter: false);
                         SLog.Message("[RaidOutcome] Adjusted faction goodwill by " + needed + " to reach 0 (Neutral).");
                     }
-                    
+
                     // Clear combat states for all pawns to prevent lingering aggression
                     foreach (Pawn p in pawns)
                     {
@@ -360,23 +362,23 @@ namespace SocialInteractions
                     }
                 }
                 Messages.Message("Raiders agreed to a deal. They will hang around before leaving.", MessageTypeDefOf.PositiveEvent);
-                
+
                 // Use custom LordJob for "Loiter and Plunder" logic
                 LordJob_NegotiatedRaid positiveJob = new LordJob_NegotiatedRaid(faction, NegotiatedRaidOutcome.Positive, originalGoodwill);
                 newLord = LordMaker.MakeNewLord(faction, positiveJob, map, pawns);
                 SLog.Message("[RaidOutcome] Created LordJob_NegotiatedRaid (Positive) for " + pawns.Count + " pawns with originalGoodwill " + originalGoodwill);
             }
-             else if (outcome == NegotiatedRaidOutcome.Failure)
+            else if (outcome == NegotiatedRaidOutcome.Failure)
             {
-                 // Failure: Attack
-                 Messages.Message("Negotiation Failed! Raiders are attacking!", MessageTypeDefOf.NegativeEvent);
-                 
-                 // Use custom LordJob_NegotiatedRaid which has a simplified, aggressive Assault graph (no early stealing/leaving)
-                 LordJob_NegotiatedRaid assaultJob = new LordJob_NegotiatedRaid(faction, NegotiatedRaidOutcome.Failure);
-                 newLord = LordMaker.MakeNewLord(faction, assaultJob, map, pawns);
-                 SLog.Message("[RaidOutcome] Created LordJob_NegotiatedRaid (Failure) for " + pawns.Count + " pawns");
+                // Failure: Attack
+                Messages.Message("Negotiation Failed! Raiders are attacking!", MessageTypeDefOf.NegativeEvent);
+
+                // Use custom LordJob_NegotiatedRaid which has a simplified, aggressive Assault graph (no early stealing/leaving)
+                LordJob_NegotiatedRaid assaultJob = new LordJob_NegotiatedRaid(faction, NegotiatedRaidOutcome.Failure);
+                newLord = LordMaker.MakeNewLord(faction, assaultJob, map, pawns);
+                SLog.Message("[RaidOutcome] Created LordJob_NegotiatedRaid (Failure) for " + pawns.Count + " pawns");
             }
-            
+
             // Force duty update
             if (newLord != null && newLord.CurLordToil != null)
             {
@@ -405,10 +407,10 @@ namespace SocialInteractions
         public static void CheckAndRestoreHostility(Faction faction, Map map, int originalGoodwill, Lord ignoreLord = null)
         {
             if (faction == null || map == null) return;
-            
+
             // Check if current goodwill is "Negotiated Neutral" (around 0)
             int currentGoodwill = faction.GoodwillWith(Faction.OfPlayer);
-            
+
             // If they are still neutralish (between -50 and 50) and we should restore their hostility
             if (currentGoodwill > -50)
             {
@@ -425,7 +427,7 @@ namespace SocialInteractions
                         }
                     }
                 }
-                
+
                 if (!anotherNegotiatedLord)
                 {
                     // Restore to original goodwill

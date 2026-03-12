@@ -2,8 +2,9 @@ using RimWorld;
 using Verse;
 using Verse.AI;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Children
 {
     public class JobDriver_ChildTrampleCrops : JobDriver
     {
@@ -79,11 +80,11 @@ namespace SocialInteractions
                         }
                         else
                         {
-                             // No more crops found
-                             SLog.Message("[SocialInteractions] JobDriver_ChildTrampleCrops: No more crops found.");
-                             SocialInteractions.HandleMonologue(pawn, "is bored because there are no crops to trample", true, "bored");
-                             EndJobWith(JobCondition.Incompletable);
-                             return;
+                            // No more crops found
+                            SLog.Message("[SocialInteractions] JobDriver_ChildTrampleCrops: No more crops found.");
+                            SocialInteractions.HandleMonologue(pawn, "is bored because there are no crops to trample", true, "bored");
+                            EndJobWith(JobCondition.Incompletable);
+                            return;
                         }
                     }
 
@@ -138,26 +139,26 @@ namespace SocialInteractions
 
                             // Show message to player
                             Messages.Message(string.Format("{0} (child) was caught trampling crop!", pawn.LabelShort), MessageTypeDefOf.NegativeEvent);
-                            
+
                             // Add exclamation mote
                             MoteMaker.MakeColonistActionOverlay(pawn, ThingDefOf.Mote_ColonistFleeing);
-                            
+
                             // Trigger "caught" monologue
                             SocialInteractions.HandleMonologue(pawn, string.Format("Uh oh, {0} saw me stomping on crops! I better run!", adult.LabelShort), true, "caught");
-                            
+
                             // Add negative thought for getting caught
                             if (pawn.needs != null && pawn.needs.mood != null)
                             {
                                 pawn.needs.mood.thoughts.memories.TryGainMemory(ChildThoughtDefOf.ChildMisbehaved, null);
                             }
-                            
+
                             // Flee logic
-                            IntVec3 fleeDest = CellFinderLoose.GetFleeDest(pawn, new List<Thing>{adult}, 20f);
+                            IntVec3 fleeDest = CellFinderLoose.GetFleeDest(pawn, new List<Thing> { adult }, 20f);
                             if (fleeDest != IntVec3.Invalid)
                             {
-                                 Job runJob = JobMaker.MakeJob(JobDefOf.Goto, fleeDest);
-                                 runJob.locomotionUrgency = LocomotionUrgency.Sprint;
-                                 pawn.jobs.StartJob(runJob, JobCondition.InterruptForced);
+                                Job runJob = JobMaker.MakeJob(JobDefOf.Goto, fleeDest);
+                                runJob.locomotionUrgency = LocomotionUrgency.Sprint;
+                                pawn.jobs.StartJob(runJob, JobCondition.InterruptForced);
                             }
                             else
                             {
@@ -188,14 +189,14 @@ namespace SocialInteractions
         private Pawn FindNearbyAdult(Pawn child)
         {
             if (child.Map == null) return null;
-            
+
             // Use AllPawnsSpawned to be safer, filter by faction
             foreach (Pawn p in child.Map.mapPawns.AllPawnsSpawned)
             {
                 if (p.Faction == child.Faction && p.RaceProps.Humanlike && p != child && !p.Dead && !p.Downed)
                 {
                     if (!p.Awake()) continue;
-                    
+
                     if (p.ageTracker.AgeBiologicalYears < 13) continue;
 
                     // Check distance (5 cells)

@@ -2,8 +2,9 @@ using RimWorld;
 using Verse;
 using Verse.AI;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Children
 {
     public class JobDriver_ChildLightFire : JobDriver
     {
@@ -42,7 +43,7 @@ namespace SocialInteractions
                 bool successfullyIgnited = false;
                 if (target.FlammableNow && !target.IsBurning())
                 {
-                     successfullyIgnited = FireUtility.TryStartFireIn(target.Position, target.Map, 0.3f, pawn);
+                    successfullyIgnited = FireUtility.TryStartFireIn(target.Position, target.Map, 0.3f, pawn);
                 }
 
                 SLog.Message(string.Format("[SocialInteractions] JobDriver_ChildLightFire: Child {0} lit a fire on {1}, success: {2}",
@@ -67,12 +68,12 @@ namespace SocialInteractions
                     MoteMaker.MakeColonistActionOverlay(pawn, ThingDefOf.Mote_ColonistFleeing);
 
                     // Flee from the fire
-                    IntVec3 fleeDest = CellFinderLoose.GetFleeDest(pawn, new List<Thing>{target}, 20f);
+                    IntVec3 fleeDest = CellFinderLoose.GetFleeDest(pawn, new List<Thing> { target }, 20f);
                     if (fleeDest != IntVec3.Invalid)
                     {
-                         Job runJob = JobMaker.MakeJob(JobDefOf.Goto, fleeDest);
-                         runJob.locomotionUrgency = LocomotionUrgency.Sprint;
-                         pawn.jobs.StartJob(runJob, JobCondition.InterruptForced);
+                        Job runJob = JobMaker.MakeJob(JobDefOf.Goto, fleeDest);
+                        runJob.locomotionUrgency = LocomotionUrgency.Sprint;
+                        pawn.jobs.StartJob(runJob, JobCondition.InterruptForced);
                     }
                 }
             };

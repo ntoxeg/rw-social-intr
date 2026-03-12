@@ -5,14 +5,17 @@ using System.Collections.Generic;
 using System;
 using System.Linq;
 using System.Threading.Tasks;
+using SocialInteractions.Api;
+using SocialInteractions.Speech;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Jobs
 {
     public class JobDriver_HaveDeepTalk : JobDriver
     {
         public InteractionDef interactionDef;
         public string subject;
-        
+
         private Pawn Recipient { get { return (Pawn)job.GetTarget(TargetIndex.A).Thing; } }
         private bool llmTaskComplete = false;
         private string llmResponse;
@@ -39,10 +42,12 @@ namespace SocialInteractions
         protected override IEnumerable<Toil> MakeNewToils()
         {
             SLog.Message("[SocialInteractions] JobDriver_HaveDeepTalk.MakeNewToils called.");
-            
+
             // Add a finish action to ensure the conversation is ended regardless of how the job ends
-            this.AddFinishAction((condition) => {
-                if (this.conversationId != -1) {
+            this.AddFinishAction((condition) =>
+            {
+                if (this.conversationId != -1)
+                {
                     SpeechBubbleManager.EndConversation(this.conversationId);
                     SLog.Message(string.Format("[SocialInteractions] JobDriver_HaveDeepTalk: Ended conversation ID: {0} via finish action.", this.conversationId));
                     this.conversationId = -1;
@@ -58,7 +63,8 @@ namespace SocialInteractions
 
             // Face each other
             Toil faceToil = new Toil();
-            faceToil.initAction = () => {
+            faceToil.initAction = () =>
+            {
                 SLog.Message("[SocialInteractions] JobDriver_HaveDeepTalk: Facing recipient.");
                 pawn.rotationTracker.FaceCell(recipient.Position);
                 recipient.rotationTracker.FaceCell(pawn.Position);
@@ -68,19 +74,21 @@ namespace SocialInteractions
 
             // Get LLM response
             Toil getLlmResponseToil = new Toil();
-            getLlmResponseToil.initAction = () => {
+            getLlmResponseToil.initAction = () =>
+            {
                 SLog.Message("[SocialInteractions] JobDriver_HaveDeepTalk: Starting LLM response toil.");
-                
+
                 // Start a conversation to indicate LLM activity, so subsequent calls will be blocked by spam protection
                 this.conversationId = SpeechBubbleManager.StartConversation();
                 SLog.Message(string.Format("[SocialInteractions] JobDriver_HaveDeepTalk: Started conversation ID: {0}", this.conversationId));
-                
-                if (this.job == null) {
+
+                if (this.job == null)
+                {
                     SLog.Error("Job is null. Ending job.");
                     pawn.jobs.EndCurrentJob(JobCondition.Errored);
                     return;
                 }
-                
+
                 try
                 {
                     llmTaskComplete = false;
@@ -111,10 +119,11 @@ namespace SocialInteractions
                         return;
                     }
 
-                    SLog.Message(string.Format("[SocialInteractions] JobDriver_HaveDeepTalk: InteractionDef={0}, Subject={1}", 
+                    SLog.Message(string.Format("[SocialInteractions] JobDriver_HaveDeepTalk: InteractionDef={0}, Subject={1}",
                         interactionDefForTask.defName, subjectForTask));
 
-                    Task.Run(async () => {
+                    Task.Run(async () =>
+                    {
                         KoboldApiClient client = null;
                         try
                         {
@@ -151,14 +160,14 @@ namespace SocialInteractions
                             {
                                 client = new KoboldApiClient(SocialInteractions.Settings.llmApiUrl, SocialInteractions.Settings.llmApiKey);
                                 llmResponse = await client.GenerateText(prompt);
-                                
+
                                 if (llmResponse == null)
                                 {
                                     SLog.Warning("[SocialInteractions] JobDriver_HaveDeepTalk: LLM API returned null response");
                                     llmTaskComplete = true;
                                     return;
                                 }
-                                
+
                                 if (!string.IsNullOrEmpty(llmResponse))
                                 {
                                     messages = llmResponse.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries).Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
@@ -193,7 +202,8 @@ namespace SocialInteractions
                     pawn.jobs.EndCurrentJob(JobCondition.Errored);
                 }
             };
-            getLlmResponseToil.tickAction = () => {
+            getLlmResponseToil.tickAction = () =>
+            {
                 if (llmTaskComplete)
                 {
                     SLog.Message("[SocialInteractions] JobDriver_HaveDeepTalk: LLM task complete, moving to next toil.");
@@ -205,22 +215,23 @@ namespace SocialInteractions
 
             // Display messages
             Toil displayMessagesToil = new Toil();
-            displayMessagesToil.initAction = () => {
+            displayMessagesToil.initAction = () =>
+            {
                 SLog.Message(string.Format("[SocialInteractions] JobDriver_HaveDeepTalk: Displaying messages. Message count: {0}", messages.Count));
-                
+
                 Pawn recipientForDisplay = (Pawn)job.GetTarget(TargetIndex.A).Thing;
                 if (recipientForDisplay == null) return;
 
                 for (int i = 0; i < messages.Count; i++)
                 {
                     string rawMessage = messages[i].Trim();
-                    
+
                     if (!string.IsNullOrWhiteSpace(rawMessage))
                     {
                         // Determine the speaker from the message
                         Pawn speaker = pawn; // Default to initiator
                         string messageText = rawMessage;
-                        
+
                         // Check if the message starts with a speaker name
                         if (rawMessage.StartsWith(pawn.Name.ToStringShort + ":", StringComparison.OrdinalIgnoreCase))
                         {
@@ -232,7 +243,7 @@ namespace SocialInteractions
                             speaker = recipientForDisplay;
                             messageText = rawMessage.Substring(recipientForDisplay.Name.ToStringShort.Length + 1).Trim();
                         }
-                        
+
                         SpeechBubbleManager.Enqueue(speaker, messageText, recipientForDisplay, i == 0, conversationId, true, subject); // Orange for high priority (stopping interactions), pass subject as fallback text
                     }
                 }
@@ -247,7 +258,8 @@ namespace SocialInteractions
                 Pawn recipientPawn = (Pawn)job.GetTarget(TargetIndex.A).Thing;
                 return recipientPawn == null || recipientPawn.Downed || recipientPawn.Dead;
             });
-            waitForConversationToil.tickAction = () => {
+            waitForConversationToil.tickAction = () =>
+            {
                 if (job.def.joyKind != null && pawn.needs != null && pawn.needs.joy != null)
                 {
                     pawn.needs.joy.GainJoy(0.00015f, job.def.joyKind);
@@ -256,7 +268,7 @@ namespace SocialInteractions
                 {
                     SLog.Message("[SocialInteractions] JobDriver_HaveDeepTalk: Conversation finished, ending both jobs.");
                     // End both jobs when conversation is finished
-                    
+
                     // First end the recipient's BeTalkedTo job if it exists
                     Pawn finalRecipient = (Pawn)job.GetTarget(TargetIndex.A).Thing;
                     if (finalRecipient != null && finalRecipient.jobs != null && finalRecipient.jobs.curDriver != null)
@@ -276,7 +288,7 @@ namespace SocialInteractions
                     {
                         SLog.Message("[SocialInteractions] JobDriver_HaveDeepTalk: Recipient is null or doesn't have a job.");
                     }
-                    
+
                     // Then end this job
                     SLog.Message(string.Format("[SocialInteractions] JobDriver_HaveDeepTalk: Ending initiator {0}'s job.", pawn.LabelShort));
                     pawn.jobs.EndCurrentJob(JobCondition.Succeeded);

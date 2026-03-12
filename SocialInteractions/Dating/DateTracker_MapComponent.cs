@@ -2,8 +2,10 @@ using RimWorld;
 using Verse;
 using Verse.AI;
 using System.Collections.Generic;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Dating
 {
     public class DateTracker_MapComponent : MapComponent
     {
@@ -30,12 +32,12 @@ namespace SocialInteractions
             {
                 // Check for stuck dates
                 DatingManager.CheckForStuckDates(this.map);
-                
+
                 foreach (Date date in DatingManager.GetAllDates())
                 {
                     Pawn initiator = date.Initiator;
                     Pawn partner = date.Partner;
-                    
+
                     // Skip invalid dates
                     if (initiator == null || partner == null)
                     {
@@ -43,10 +45,10 @@ namespace SocialInteractions
                         DatingManager.EndDate(date);
                         continue;
                     }
-                    
+
                     // Check if either pawn in the date is no longer in a valid state for dating
-                    if (initiator.Dead || partner.Dead || 
-                        initiator.Downed || partner.Downed || 
+                    if (initiator.Dead || partner.Dead ||
+                        initiator.Downed || partner.Downed ||
                         initiator.InMentalState || partner.InMentalState ||
                         !IsPawnHealthyForDating(initiator) || !IsPawnHealthyForDating(partner))
                     {
@@ -58,7 +60,7 @@ namespace SocialInteractions
                     if (date.Stage == DateStage.Joy)
                     {
                         // Check if the initiator's joy need is satisfied
-                        if (initiator != null && initiator.needs != null && initiator.needs.joy != null && 
+                        if (initiator != null && initiator.needs != null && initiator.needs.joy != null &&
                             initiator.needs.joy.CurLevelPercentage >= 0.99f)
                         {
                             // Check if the date is already in the Lovin stage or beyond
@@ -94,7 +96,7 @@ namespace SocialInteractions
                                     }
                                 }
                             }
-                            
+
                             // If the initiator is doing a joy job, check if the partner should join in or continue with their current activity
                             if (initiator != null && isDoingJoyJob && initiatorJoyJobDef != null)
                             {
@@ -141,31 +143,31 @@ namespace SocialInteractions
             {
                 return;
             }
-            
+
             // Additional validation to ensure both pawns are still valid for dating
             if (!IsPawnHealthyForDating(initiator) || !IsPawnHealthyForDating(partner))
             {
                 return;
             }
-            
+
             // Check if the partner is already doing the same joy job
             if (partner.CurJobDef == joyJobDef)
             {
                 // Partner is already doing the joy job, let them continue
                 // Check if they've gained enough joy and should go back to following
-                if (partner.needs != null && partner.needs.joy != null && 
+                if (partner.needs != null && partner.needs.joy != null &&
                     partner.needs.joy.CurLevelPercentage >= 0.99f)
                 {
                     // Partner's joy need is satisfied, interrupt their joy job to go back to following
                     partner.jobs.EndCurrentJob(JobCondition.InterruptForced);
-                    
+
                     // Start the FollowAndWatch job for the partner
                     Job partnerJob = JobMaker.MakeJob(SI_JobDefOf.FollowAndWatchInitiator, initiator);
                     partner.jobs.StartJob(partnerJob, JobCondition.InterruptForced);
                 }
                 return;
             }
-            
+
             // Check if the partner is doing a DateLovin job or other specialized dating jobs
             if (partner.CurJobDef == SI_JobDefOf.DateLovin ||
                 partner.CurJobDef.defName == "PesterPrisonerPartner" ||
@@ -174,26 +176,26 @@ namespace SocialInteractions
             {
                 return;
             }
-            
+
             // Check if the partner is doing the FollowAndWatch job
             if (partner.CurJobDef == SI_JobDefOf.FollowAndWatchInitiator)
             {
                 // Partner is following, check if they should join the joy activity
                 // Check if the partner's joy need is high enough that they don't want to join
-                if (partner.needs != null && partner.needs.joy != null && 
+                if (partner.needs != null && partner.needs.joy != null &&
                     partner.needs.joy.CurLevelPercentage >= 0.95f)
                 {
                     return;
                 }
-                
+
                 // Try to have the partner join the joy activity
                 TryHavePartnerJoinJoyActivity(initiator, partner, joyJobDef);
                 return;
             }
-            
+
             // If the partner is doing some other job, we'll assume they're not part of the date anymore
             // This could happen if they were interrupted by something else
-            
+
             // Start the FollowAndWatch job for the partner
             Job followJob = JobMaker.MakeJob(SI_JobDefOf.FollowAndWatchInitiator, initiator);
             partner.jobs.StartJob(followJob, JobCondition.InterruptForced);
@@ -206,7 +208,7 @@ namespace SocialInteractions
             {
                 return;
             }
-            
+
             // Find the joy giver for this job def
             JoyGiverDef initiatorJoyGiver = null;
             foreach (JoyGiverDef joyGiver in DefDatabase<JoyGiverDef>.AllDefs)
@@ -217,19 +219,19 @@ namespace SocialInteractions
                     break;
                 }
             }
-            
+
             if (initiatorJoyGiver == null)
             {
                 return;
             }
-            
+
             // Try to give the partner the same joy job as the initiator
             Job partnerJoyJob = initiatorJoyGiver.Worker.TryGiveJob(partner);
             if (partnerJoyJob == null)
             {
                 return;
             }
-            
+
             // Check if the target locations match or are nearby
             bool targetsMatch = false;
             if (partnerJoyJob.targetA.Thing != null && initiator.CurJob.targetA.Thing != null)
@@ -249,7 +251,7 @@ namespace SocialInteractions
                     targetsMatch = partner.Position.DistanceTo(initiator.Position) <= 15f;
                 }
             }
-            
+
             if (targetsMatch)
             {
                 // Enqueue the joy job and then interrupt the current job for a smooth transition

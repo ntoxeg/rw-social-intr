@@ -4,8 +4,10 @@ using Verse.AI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Dating
 {
     public class JobDriver_FollowAndWatch : JobDriver
     {
@@ -20,24 +22,24 @@ namespace SocialInteractions
             {
                 return false;
             }
-            
+
             if (pawn.InMentalState || pawn.health == null || pawn.health.capacities == null)
             {
                 return false;
             }
-            
+
             // Check if the pawn is capable of being awake (basic health check)
             if (!pawn.health.capacities.CanBeAwake)
             {
                 return false;
             }
-            
+
             // Check if the pawn is drafted
             if (pawn.Drafted)
             {
                 return false;
             }
-            
+
             // Check if the pawn is on a date in the Lovin stage
             // If so, they should not be doing other jobs
             if (DatingManager.IsOnDate(pawn))
@@ -48,7 +50,7 @@ namespace SocialInteractions
                     // Allow the DateLovin job to start
                     // If the pawn is in any other job, they should not be doing it
                     // If the pawn is in any other job, they should not be doing it
-                    if (pawn.jobs != null && pawn.jobs.curJob != null && 
+                    if (pawn.jobs != null && pawn.jobs.curJob != null &&
                         pawn.jobs.curJob.def != SI_JobDefOf.DateLovin &&
                         pawn.jobs.curJob.def.defName != "PesterPrisoner" &&
                         pawn.jobs.curJob.def.defName != "PesterPrisonerPartner" &&
@@ -60,7 +62,7 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             return true;
         }
         public override bool TryMakePreToilReservations(bool errorOnFailed)
@@ -71,14 +73,14 @@ namespace SocialInteractions
                 SLog.Warning("[SocialInteractions] JobDriver_FollowAndWatch: pawn is null in TryMakePreToilReservations.");
                 return false;
             }
-            
+
             // Use the helper method to check if the pawn is valid for dating
             if (!IsPawnValidForDating(this.pawn))
             {
                 SLog.Warning("[SocialInteractions] JobDriver_FollowAndWatch: pawn is not valid for dating in TryMakePreToilReservations.");
                 return false;
             }
-            
+
             return true;
         }
 
@@ -90,14 +92,14 @@ namespace SocialInteractions
             follow.initAction = delegate
             {
                 // Add comprehensive null checks
-                if (this.pawn == null || this.job == null || this.job.targetA == null) 
+                if (this.pawn == null || this.job == null || this.job.targetA == null)
                 {
                     SLog.Warning("[SocialInteractions] JobDriver_FollowAndWatch: follow.initAction - pawn, job, or targetA is null. Ending job.");
                     this.EndJobWith(JobCondition.Incompletable);
                     return;
                 }
-                
-                if (this.pawn.pather != null) 
+
+                if (this.pawn.pather != null)
                 {
                     Pawn initiator = this.job.targetA.Thing as Pawn;
                     if (initiator != null)
@@ -123,20 +125,21 @@ namespace SocialInteractions
             yield return follow;
 
             Toil watch = new Toil();
-            watch.tickAction = () => {
+            watch.tickAction = () =>
+            {
                 // Add comprehensive null checks at the beginning
                 if (this.pawn == null)
                 {
                     this.ReadyForNextToil();
                     return;
                 }
-                
+
                 if (this.job == null)
                 {
                     this.ReadyForNextToil();
                     return;
                 }
-                
+
                 Pawn initiator = this.job.targetA.Thing as Pawn;
                 if (initiator == null)
                 {
@@ -151,14 +154,14 @@ namespace SocialInteractions
                     this.ReadyForNextToil(); // End the FollowAndWatch job
                     return;
                 }
-                
+
                 // Also check if the follower is still on the date
                 if (!DatingManager.IsOnDate(this.pawn))
                 {
                     this.ReadyForNextToil(); // End the FollowAndWatch job
                     return;
                 }
-                
+
                 // Check if the initiator has moved on to a non-joy job, and if so, advance the date
                 // Only check every 30 ticks (0.5 seconds) to reduce performance impact
                 if (initiator.jobs != null && initiator.jobs.curJob != null && this.pawn.IsHashIntervalTick(30))
@@ -173,14 +176,14 @@ namespace SocialInteractions
                             break;
                         }
                     }
-                    
+
                     // Special case: If the initiator is doing a DateLovin job, SocialRelaxDate, PesterPrisoner, or AbusiveThreesome, we should account for it
-                    bool isInitiatorDoingDatingJob = (initiator.jobs.curJob != null && 
-                        (initiator.jobs.curJob.def.defName == "DateLovin" || 
+                    bool isInitiatorDoingDatingJob = (initiator.jobs.curJob != null &&
+                        (initiator.jobs.curJob.def.defName == "DateLovin" ||
                          initiator.jobs.curJob.def.defName == "SocialRelaxDate" ||
                          initiator.jobs.curJob.def.defName == "PesterPrisoner" ||
                          initiator.jobs.curJob.def.defName == "AbusiveThreesome"));
-                    
+
                     // If the initiator is not doing a joy job and not doing a dating job, advance the date
                     if (!isInitiatorDoingJoyJob && !isInitiatorDoingDatingJob)
                     {
@@ -193,29 +196,29 @@ namespace SocialInteractions
                     if (initiator.CurJobDef.defName == "PesterPrisoner")
                     {
                         // Only start if not already pestering the same target
-                        if (this.pawn.CurJobDef.defName != "PesterPrisonerPartner" || 
+                        if (this.pawn.CurJobDef.defName != "PesterPrisonerPartner" ||
                             this.pawn.CurJob.targetA != initiator.CurJob.targetA)
                         {
-                            SLog.Message(string.Format("[SocialInteractions] JobDriver_FollowAndWatch: {0} detected initiator {1} is pestering. Switching to PesterPrisonerPartner.", 
+                            SLog.Message(string.Format("[SocialInteractions] JobDriver_FollowAndWatch: {0} detected initiator {1} is pestering. Switching to PesterPrisonerPartner.",
                                 this.pawn.LabelShort, initiator.LabelShort));
-                            
+
                             Job partnerJob = JobMaker.MakeJob(SI_JobDefOf.PesterPrisonerPartner, initiator.CurJob.targetA, initiator);
                             this.pawn.jobs.StartJob(partnerJob, JobCondition.InterruptForced);
                             return;
                         }
                     }
-                    
+
                     // Specialized Job Joining: If the initiator is in an Abusive Threesome, join them!
                     if (initiator.CurJobDef.defName == "AbusiveThreesome" && SI_JobDefOf.AbusiveThreesomeParticipant != null)
                     {
                         // Only start if not already in the threesome
-                        if (this.pawn.CurJobDef.defName != "AbusiveThreesomeParticipant" || 
-                            this.pawn.CurJob.targetA != initiator || 
+                        if (this.pawn.CurJobDef.defName != "AbusiveThreesomeParticipant" ||
+                            this.pawn.CurJob.targetA != initiator ||
                             this.pawn.CurJob.targetB != initiator.CurJob.targetA)
                         {
-                             SLog.Message(string.Format("[SocialInteractions] JobDriver_FollowAndWatch: {0} detected initiator {1} is in Threesome. Switching to AbusiveThreesomeParticipant.", 
-                                this.pawn.LabelShort, initiator.LabelShort));
-                            
+                            SLog.Message(string.Format("[SocialInteractions] JobDriver_FollowAndWatch: {0} detected initiator {1} is in Threesome. Switching to AbusiveThreesomeParticipant.",
+                               this.pawn.LabelShort, initiator.LabelShort));
+
                             // Mapping: targetA = Abuser (initiator), targetB = Victim (initiator's targetA)
                             Job partnerJob = JobMaker.MakeJob(SI_JobDefOf.AbusiveThreesomeParticipant, initiator, initiator.CurJob.targetA);
                             this.pawn.jobs.StartJob(partnerJob, JobCondition.InterruptForced);
@@ -259,11 +262,11 @@ namespace SocialInteractions
                         {
                             // Attempt to start path
                             this.pawn.pather.StartPath(initiator, PathEndMode.Touch);
-                            
+
                             // Basic check for immediate pathing failure (heuristic)
-                            if (!this.pawn.pather.Moving && this.pawn.Position.DistanceTo(initiator.Position) > 5f) 
+                            if (!this.pawn.pather.Moving && this.pawn.Position.DistanceTo(initiator.Position) > 5f)
                             {
-                                this.ReadyForNextToil(); 
+                                this.ReadyForNextToil();
                                 return;
                             }
                         }
@@ -285,7 +288,8 @@ namespace SocialInteractions
                     this.pawn.needs.joy.GainJoy(0.000144f, JoyKindDefOf.Social);
                 }
             };
-            watch.AddFinishAction(() => {
+            watch.AddFinishAction(() =>
+            {
                 // OnDate hediffs are now handled by DatingManager
             });
             watch.defaultCompleteMode = ToilCompleteMode.Never;

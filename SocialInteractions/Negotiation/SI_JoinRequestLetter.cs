@@ -2,8 +2,9 @@ using System;
 using System.Collections.Generic;
 using Verse;
 using RimWorld;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Negotiation
 {
     /// <summary>
     /// A choice letter for when a visitor wants to join the colony.
@@ -52,7 +53,7 @@ namespace SocialInteractions
 
                 yield return accept;
                 yield return reject;
-                
+
                 if (lookTargets.IsValid())
                 {
                     yield return Option_JumpToLocationAndPostpone;

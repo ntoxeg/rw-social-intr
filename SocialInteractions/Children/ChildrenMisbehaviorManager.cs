@@ -6,8 +6,10 @@ using UnityEngine;
 using Verse;
 using Verse.AI;
 using HarmonyLib;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Children
 {
     public static class ChildrenMisbehaviorManager
     {
@@ -19,7 +21,7 @@ namespace SocialInteractions
         private const int ChildMinAge = 3; // Minimum age to be considered for misbehavior
         private const int TeenagerAgeLimit = 17; // Pawns under this age may have different behavior patterns
         private const int MaxTimeSinceParentInteraction = 180000; // 5 days in ticks, after which misbehavior increases
-        
+
         // Misbehavior level thresholds
         private const float Level1Threshold = 0.1f; // Annoying adults
         private const float Level2Threshold = 0.2f; // Misplacing items
@@ -302,7 +304,7 @@ namespace SocialInteractions
         private static void HandleMisbehaviorFailure(Pawn child, string subject, ThoughtDef thoughtDef)
         {
             SLog.Message(string.Format("[SocialInteractions] Misbehavior failed: Child {0} could not perform action. Subject: {1}", child.LabelShort, subject));
-            
+
             if (child.needs != null && child.needs.mood != null && thoughtDef != null)
             {
                 child.needs.mood.thoughts.memories.TryGainMemory(thoughtDef, null);
@@ -436,9 +438,9 @@ namespace SocialInteractions
                 SLog.Message(string.Format("[SocialInteractions] SpyOnCouples: Child {0} is spying on {1}", child.LabelShort, target.LabelShort));
 
                 // Find a spot to watch from
-                IntVec3 watchSpot = CellFinder.RandomClosewalkCellNear(target.Position, child.Map, 4, (IntVec3 c) => 
-                    c.Standable(child.Map) && 
-                    !c.IsForbidden(child) && 
+                IntVec3 watchSpot = CellFinder.RandomClosewalkCellNear(target.Position, child.Map, 4, (IntVec3 c) =>
+                    c.Standable(child.Map) &&
+                    !c.IsForbidden(child) &&
                     GenSight.LineOfSight(c, target.Position, child.Map) &&
                     c.DistanceTo(target.Position) >= 2f); // Don't get too close
 
@@ -463,7 +465,7 @@ namespace SocialInteractions
             foreach (Pawn p in child.Map.mapPawns.FreeColonistsSpawned)
             {
                 if (p == child) continue;
-                
+
                 // Check distance
                 if (p.Position.DistanceTo(child.Position) > 30f) continue;
 
@@ -508,7 +510,7 @@ namespace SocialInteractions
             else
             {
                 SLog.Message(string.Format("[SocialInteractions] PlayTag: Child {0} found no one to play tag with", child.LabelShort));
-                
+
                 // Fallback to boredom if no one to play with
                 if (child.needs != null && child.needs.mood != null)
                 {
@@ -528,7 +530,7 @@ namespace SocialInteractions
             foreach (Pawn p in child.Map.mapPawns.FreeColonistsSpawned)
             {
                 if (p == child) continue;
-                
+
                 // Must be a child
                 if (!IsChild(p)) continue;
 
@@ -844,7 +846,7 @@ namespace SocialInteractions
                     {
                         // Exclude critical infrastructure
                         if (edifice.def.defName != "Door" && edifice.def.defName != "Autodoor" &&
-                            !edifice.def.defName.Contains("Wall") && 
+                            !edifice.def.defName.Contains("Wall") &&
                             !edifice.def.defName.Contains("Vent"))
                         {
                             breakableBuildings.Add(edifice);
@@ -1280,7 +1282,7 @@ namespace SocialInteractions
         private static List<Pawn> GetParentsAndGuardians(Pawn child)
         {
             List<Pawn> parents = new List<Pawn>();
-            
+
             if (child.relations != null)
             {
                 // Get direct parents (biological, adoptive, etc.)
@@ -1324,7 +1326,7 @@ namespace SocialInteractions
         private static float GetTraitInfluenceOnMisbehavior(Pawn child)
         {
             float traitInfluence = 0f;
-            
+
             if (child.story != null && child.story.traits != null)
             {
                 foreach (Trait trait in child.story.traits.allTraits)
@@ -1358,7 +1360,7 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             return Mathf.Clamp(traitInfluence, -0.5f, 0.5f);
         }
 
@@ -1375,11 +1377,11 @@ namespace SocialInteractions
 
                 Job leakJob = JobMaker.MakeJob(SI_JobDefOf.ChildPlayWithRadio, commsConsole);
                 bool jobTaken = child.jobs.TryTakeOrderedJob(leakJob);
-                
+
                 if (jobTaken)
                 {
-                     SLog.Message(string.Format("[SocialInteractions] LeakLocation: Child {0} might leak location via {1}", child.LabelShort, commsConsole.Label));
-                     return true;
+                    SLog.Message(string.Format("[SocialInteractions] LeakLocation: Child {0} might leak location via {1}", child.LabelShort, commsConsole.Label));
+                    return true;
                 }
             }
             HandleMisbehaviorFailure(child, "wanted to play with the radio but couldn't find a comms console", ChildThoughtDefOf.ChildRiskTaking);
@@ -1390,12 +1392,13 @@ namespace SocialInteractions
         {
             if (child.Map == null) return null;
 
-            return GenClosest.ClosestThingReachable(child.Position, child.Map, 
-                ThingRequest.ForDef(ThingDefOf.CommsConsole), 
-                PathEndMode.InteractionCell, 
-                TraverseParms.For(child), 
-                9999f, 
-                (Thing t) => {
+            return GenClosest.ClosestThingReachable(child.Position, child.Map,
+                ThingRequest.ForDef(ThingDefOf.CommsConsole),
+                PathEndMode.InteractionCell,
+                TraverseParms.For(child),
+                9999f,
+                (Thing t) =>
+                {
                     Building_CommsConsole comms = t as Building_CommsConsole;
                     return comms != null && comms.CanUseCommsNow && child.CanReserve(t);
                 });
@@ -1419,9 +1422,9 @@ namespace SocialInteractions
             if (pawn.RaceProps.FleshType != null)
             {
                 string fleshName = pawn.RaceProps.FleshType.defName;
-                if (fleshName.Contains("Asimov") || 
-                    fleshName.Contains("Automaton") || 
-                    fleshName.Contains("Droid") || 
+                if (fleshName.Contains("Asimov") ||
+                    fleshName.Contains("Automaton") ||
+                    fleshName.Contains("Droid") ||
                     fleshName.Contains("Robot"))
                 {
                     return false;
@@ -1451,7 +1454,7 @@ namespace SocialInteractions
         {
             // Remove references to pawns that are no longer valid
             List<Pawn> toRemove = new List<Pawn>();
-            
+
             foreach (var kvp in nextAllowedMisbehaviorTick)
             {
                 if (kvp.Key == null || kvp.Key.Dead || !kvp.Key.Spawned)
@@ -1459,7 +1462,7 @@ namespace SocialInteractions
                     toRemove.Add(kvp.Key);
                 }
             }
-            
+
             foreach (Pawn pawn in toRemove)
             {
                 nextAllowedMisbehaviorTick.Remove(pawn);

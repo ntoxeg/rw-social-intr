@@ -4,8 +4,10 @@ using Verse.AI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Interactions
 {
     public class InteractionWorker_Badmouthing : InteractionWorker
     {
@@ -39,7 +41,7 @@ namespace SocialInteractions
 
             // Find the least favorite pawn in the colony for the initiator
             Pawn targetPawn = GetLeastFavoritePawn(initiator);
-                
+
             if (targetPawn == null)
             {
                 base.Interacted(initiator, recipient, extraSentencePacks, out letterText, out letterLabel, out letterDef, out lookTargets);
@@ -56,12 +58,12 @@ namespace SocialInteractions
             // Check recipient's opinions of both the target and the initiator
             int recipientOpinionOfTarget = recipient.relations != null ? recipient.relations.OpinionOf(targetPawn) : 0;
             int recipientOpinionOfInitiator = recipient.relations != null ? recipient.relations.OpinionOf(initiator) : 0;
-            
+
             // Get initiator's opinion of the target
             int initiatorOpinionOfTarget = initiator.relations != null ? initiator.relations.OpinionOf(targetPawn) : 0;
-            
+
             // Check if both initiator and recipient share a negative opinion of the target (gossip scenario)
-            bool sharedNegativeOpinion = initiatorOpinionOfTarget <= SocialInteractions.Settings.badmouthingLowOpinionThreshold && 
+            bool sharedNegativeOpinion = initiatorOpinionOfTarget <= SocialInteractions.Settings.badmouthingLowOpinionThreshold &&
                                         recipientOpinionOfTarget <= SocialInteractions.Settings.badmouthingLowOpinionThreshold;
 
             if (sharedNegativeOpinion)
@@ -69,12 +71,12 @@ namespace SocialInteractions
                 // Gossip scenario: Both pawns share negative opinions about the target
                 // This should strengthen their bond and confirm their shared views
                 ApplyGossipThoughts(initiator, recipient, targetPawn);
-                
+
                 // Generate appropriate subject text for LLM with more detailed information
                 string targetDescription = SocialInteractions.GetPawnDescription(targetPawn);
                 string subject = string.Format("A gossip interaction where {0} and {1} share negative opinions about {2} ({3}). This strengthens their relationship and confirms their mutual dislike.",
                     initiator.LabelShort, recipient.LabelShort, targetPawn.LabelShort, targetDescription);
-                
+
                 // Handle the LLM interaction
                 SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, SI_InteractionDefOf.Badmouthing, subject);
             }
@@ -82,12 +84,12 @@ namespace SocialInteractions
             {
                 // Original badmouthing scenario: recipient was told negative things about someone they already don't like much
                 ApplyBadmouthingThoughtsToTarget(initiator, recipient, targetPawn);
-                
+
                 // Generate appropriate subject text for LLM with more detailed information
                 string targetDescription = SocialInteractions.GetPawnDescription(targetPawn);
                 string subject = string.Format("A badmouthing interaction where {0} speaks negatively about {1} ({2}) to {3}. {3} values {1} less than {0}, causing {3} to believe the badmouthing and think worse of {1}.",
                     initiator.LabelShort, targetPawn.LabelShort, targetDescription, recipient.LabelShort);
-                
+
                 // Handle the LLM interaction
                 SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, SI_InteractionDefOf.Badmouthing, subject);
             }
@@ -95,12 +97,12 @@ namespace SocialInteractions
             {
                 // Original badmouthing scenario: recipient was told negative things about someone they respect
                 ApplyBadmouthingThoughtsToInitiator(initiator, recipient, targetPawn);
-                
+
                 // Generate appropriate subject text for LLM with more detailed information
                 string targetDescription = SocialInteractions.GetPawnDescription(targetPawn);
                 string subject = string.Format("A badmouthing interaction where {0} speaks negatively about {1} ({2}) to {3}. However, {3} respects {1} more than {0}, causing {3} to lose respect for {0} instead.",
                     initiator.LabelShort, targetPawn.LabelShort, targetDescription, recipient.LabelShort);
-                
+
                 // Handle the LLM interaction
                 SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, SI_InteractionDefOf.Badmouthing, subject);
             }
@@ -111,7 +113,7 @@ namespace SocialInteractions
 
             // Call the base Interacted method to create the normal log entry using XML rules
             base.Interacted(initiator, recipient, extraSentencePacks, out letterText, out letterLabel, out letterDef, out lookTargets);
-            
+
             // Create a custom log entry that includes the target pawn information to ensure consistency
             // This ensures the target shown in the play log matches the one used in the interaction
             try
@@ -122,13 +124,13 @@ namespace SocialInteractions
                 {
                     // Create a custom log entry for the badmouthing interaction that includes the target pawn
                     PlayLogEntry_Badmouthing badmouthingLogEntry = new PlayLogEntry_Badmouthing(SI_InteractionDefOf.Badmouthing, initiator, recipient, extraSentencePacks, targetPawn);
-                    
+
                     // Add the entry to the play log to update the social history
                     if (Find.PlayLog != null)
                     {
                         Find.PlayLog.Add(badmouthingLogEntry);
                     }
-                    
+
                     // Check if this successful badmouthing creates an opportunity for backstabbing
                     // This would happen when the instigator has sufficient motivation and opportunity
                     TryTriggerBackstabbingOpportunity(initiator, recipient, targetPawn);
@@ -147,7 +149,7 @@ namespace SocialInteractions
         {
             // Both pawns get positive thoughts for bonding with someone who shares their negative opinion
             // This encourages future interactions between them (gossip partnerships)
-            
+
             // Use our newly defined thoughts that promote bonding over shared negative opinions
             if (SI_ThoughtDefOf.BondedOverSharedDislike != null)
             {
@@ -156,7 +158,7 @@ namespace SocialInteractions
                 {
                     initiator.needs.mood.thoughts.memories.TryGainMemory(SI_ThoughtDefOf.BondedOverSharedDislike, recipient);
                 }
-                
+
                 // Recipient bonds with initiator over shared dislike  
                 if (recipient.needs != null && recipient.needs.mood != null && recipient.needs.mood.thoughts != null && recipient.needs.mood.thoughts.memories != null)
                 {
@@ -178,7 +180,7 @@ namespace SocialInteractions
             else
             {
                 // Fallback to game's general social thoughts if custom thoughts aren't loaded
-                
+
                 // Use existing RimWorld thoughts that promote social bonding
                 ThoughtDef socialConnectionThought = DefDatabase<ThoughtDef>.GetNamedSilentFail("IncreasedChemistry");
                 if (socialConnectionThought != null)
@@ -199,21 +201,21 @@ namespace SocialInteractions
                     ThoughtDef positiveSocialThought = DefDatabase<ThoughtDef>.GetNamedSilentFail("SocialRecreationPartner");
                     if (positiveSocialThought != null)
                     {
-                    if (positiveSocialThought != null)
-                    {
-                        if (initiator.needs != null && initiator.needs.mood != null && initiator.needs.mood.thoughts != null && initiator.needs.mood.thoughts.memories != null)
+                        if (positiveSocialThought != null)
                         {
-                            initiator.needs.mood.thoughts.memories.TryGainMemory(positiveSocialThought, recipient);
+                            if (initiator.needs != null && initiator.needs.mood != null && initiator.needs.mood.thoughts != null && initiator.needs.mood.thoughts.memories != null)
+                            {
+                                initiator.needs.mood.thoughts.memories.TryGainMemory(positiveSocialThought, recipient);
+                            }
+                            if (recipient.needs != null && recipient.needs.mood != null && recipient.needs.mood.thoughts != null && recipient.needs.mood.thoughts.memories != null)
+                            {
+                                recipient.needs.mood.thoughts.memories.TryGainMemory(positiveSocialThought, initiator);
+                            }
                         }
-                        if (recipient.needs != null && recipient.needs.mood != null && recipient.needs.mood.thoughts != null && recipient.needs.mood.thoughts.memories != null)
-                        {
-                            recipient.needs.mood.thoughts.memories.TryGainMemory(positiveSocialThought, initiator);
-                        }
-                    }
                     }
                 }
             }
-            
+
             // Optionally, both gain slight negative opinion of the target (reinforcing their shared dislike)
             // Only if the target is not one of the interacting pawns
             if (targetPawn != initiator && targetPawn != recipient)
@@ -234,7 +236,7 @@ namespace SocialInteractions
                         // The primary effect is the bonding between the two interacting pawns
                     }
                 }
-                
+
                 if (initiator.relations != null && initiator.needs != null && initiator.needs.mood != null && initiator.needs.mood.thoughts != null && initiator.needs.mood.thoughts.memories != null)
                 {
                     // Apply a thought to initiator about the target to reinforce negative opinion  
@@ -251,7 +253,7 @@ namespace SocialInteractions
                 }
             }
         }
-        
+
         /// <summary>
         /// Applies thoughts for original badmouthing scenario where target receives negative thoughts
         /// </summary>
@@ -279,7 +281,7 @@ namespace SocialInteractions
                 }
             }
         }
-        
+
         /// <summary>
         /// Applies thoughts for original badmouthing scenario where initiator receives negative thoughts
         /// </summary>
@@ -319,34 +321,34 @@ namespace SocialInteractions
         }
 
 
-        
+
         private bool HasTraitThatPreventsBadmouthing(Pawn pawn)
         {
             if (pawn == null || pawn.story == null || pawn.story.traits == null)
             {
                 return false;
             }
-            
+
             // Check for Kind trait - Kind pawns would never engage in badmouthing
             Trait kindTrait = pawn.story.traits.GetTrait(TraitDefOf.Kind);
             if (kindTrait != null)
             {
                 return true;
             }
-            
+
             // Add other traits that would prevent badmouthing here
             // For example, traits like "Good Listener" or similar pro-social traits
-            
+
             return false;
         }
-        
+
         private bool HasTraitThatEncouragesBadmouthing(Pawn pawn)
         {
             if (pawn == null || pawn.story == null || pawn.story.traits == null)
             {
                 return false;
             }
-            
+
             // Check for traits that make badmouthing more likely
             // Jealous trait (if it exists)
             TraitDef jealousDef = DefDatabase<TraitDef>.GetNamedSilentFail("Jealous");
@@ -358,7 +360,7 @@ namespace SocialInteractions
                     return true;
                 }
             }
-            
+
             // Abrasive trait
             TraitDef abrasiveDef = DefDatabase<TraitDef>.GetNamedSilentFail("Abrasive");
             if (abrasiveDef != null)
@@ -369,7 +371,7 @@ namespace SocialInteractions
                     return true;
                 }
             }
-            
+
             // Psychopath trait (if it exists in the game/other mods)
             TraitDef psychopathDef = DefDatabase<TraitDef>.GetNamedSilentFail("Psychopath");
             if (psychopathDef != null)
@@ -380,10 +382,10 @@ namespace SocialInteractions
                     return true;
                 }
             }
-            
+
             // Add other traits like "Bullying", "Rigid", etc. if they exist
             // For now, we'll include any trait that tends to make a pawn antisocial
-            
+
             // Check for any trait that has "Dislike" or negative social interaction effects
             // We can also check for traits that increase the pawn's tendency toward negative social behavior
             foreach (Trait trait in pawn.story.traits.allTraits)
@@ -391,8 +393,8 @@ namespace SocialInteractions
                 if (trait != null && trait.def != null)
                 {
                     // Check if this trait affects social interactions negatively or makes them more likely to speak negatively
-                    if (trait.Label.ToLower().Contains("abrasive") || 
-                        trait.Label.ToLower().Contains("psychopath") || 
+                    if (trait.Label.ToLower().Contains("abrasive") ||
+                        trait.Label.ToLower().Contains("psychopath") ||
                         trait.Label.ToLower().Contains("jealous") ||
                         trait.Label.ToLower().Contains("mean") ||
                         trait.Label.ToLower().Contains("cold"))
@@ -401,10 +403,10 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             return false;
         }
-        
+
         /// <summary>
         /// Checks if the successful badmouthing creates an opportunity for strategic backstabbing
         /// where the instigator might approach the target's allies to turn them against the target
@@ -453,7 +455,7 @@ namespace SocialInteractions
                 ScheduleBackstabbingAttempt(initiator, bestTargetForBackstab, targetPawn);
             }
         }
-        
+
         /// <summary>
         /// Find the pawn that the target has the highest opinion of (the best target for backstabbing)
         /// </summary>
@@ -463,15 +465,15 @@ namespace SocialInteractions
             {
                 return null;
             }
-            
+
             Pawn highestOpinionOwner = null;
             int highestOpinion = int.MinValue;
-            
+
             foreach (Pawn possibleAlly in targetPawn.Map.mapPawns.FreeColonistsAndPrisoners)
             {
                 if (possibleAlly == targetPawn || possibleAlly == excludedPawn)
                     continue; // Skip the target themselves and any excluded pawn
-                
+
                 if (targetPawn.relations != null)
                 {
                     int opinion = targetPawn.relations.OpinionOf(possibleAlly);
@@ -482,11 +484,11 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             // Only return if the opinion is significantly positive
             return highestOpinion >= 30 ? highestOpinionOwner : null; // Threshold for "truly trusted"
         }
-        
+
         /// <summary>
         /// Calculate the chance for a backstabbing opportunity based on various factors
         /// </summary>
@@ -530,7 +532,7 @@ namespace SocialInteractions
 
             return baseChance;
         }
-        
+
         /// <summary>
         /// Schedule a backstabbing attempt at a future time
         /// </summary>
@@ -542,7 +544,7 @@ namespace SocialInteractions
                 // Schedule an information gathering attempt first
                 Job infoGatherJob = new Job(SI_JobDefOf.BackstabbingGatherInfo, originalTarget);
                 infoGatherJob.count = 1; // Just execute once
-                
+
                 if (initiator.jobs != null)
                 {
                     initiator.jobs.TryTakeOrderedJob(infoGatherJob);
@@ -556,7 +558,7 @@ namespace SocialInteractions
                 // Also pass the original target (the person being backstabbed/about whom negative things are being said)
                 backstabJob.SetTarget(TargetIndex.B, originalTarget);
                 backstabJob.count = 1; // Just execute once
-                
+
                 // Add the job to the initiator's queue
                 if (initiator.jobs != null)
                 {
@@ -564,7 +566,7 @@ namespace SocialInteractions
                 }
             }
         }
-        
+
         /// <summary>
         /// Determines if the initiator should gather information first before attempting backstabbing
         /// </summary>
@@ -573,11 +575,11 @@ namespace SocialInteractions
             // Check if the initiator has high social skill and manipulation traits that would make info gathering worthwhile
             int initiatorSocialSkill = initiator.skills != null ? initiator.skills.GetSkill(SkillDefOf.Social).Level : 0;
             bool hasManipulationTrait = HasTraitThatEncouragesManipulation(initiator);
-            
+
             // Only do info gathering if the pawn has the right traits and skills
             return hasManipulationTrait && initiatorSocialSkill >= 8;
         }
-        
+
         /// <summary>
         /// Check if the conditions are right for attempting backstabbing
         /// </summary>
@@ -588,13 +590,13 @@ namespace SocialInteractions
             {
                 return false;
             }
-            
+
             // Check if they're in a private enough location for a conversation
             // (This is a simplification - we could add more complex social location logic)
-            
+
             return true;
         }
-        
+
         /// <summary>
         /// Checks if a pawn has traits that encourage manipulation and strategic backstabbing
         /// </summary>
@@ -604,7 +606,7 @@ namespace SocialInteractions
             {
                 return false;
             }
-            
+
             // Check for traits that make backstabbing more likely
             foreach (Trait trait in pawn.story.traits.allTraits)
             {
@@ -612,17 +614,17 @@ namespace SocialInteractions
                 {
                     string traitLabel = trait.def.defName.ToLower();
                     string traitLabelDisplay = trait.Label.ToLower();
-                    
+
                     // Check for manipulative, strategic, or deceptive traits
-                    if (traitLabel.Contains("manipulative") || 
-                        traitLabel.Contains("deceptive") || 
+                    if (traitLabel.Contains("manipulative") ||
+                        traitLabel.Contains("deceptive") ||
                         traitLabel.Contains("calculating") ||
                         traitLabel.Contains("strategic") ||
                         traitLabel.Contains("psychopath") ||
                         traitLabel.Contains("liar") ||
                         traitLabel.Contains("smooth") ||
-                        traitLabelDisplay.Contains("manipulative") || 
-                        traitLabelDisplay.Contains("deceptive") || 
+                        traitLabelDisplay.Contains("manipulative") ||
+                        traitLabelDisplay.Contains("deceptive") ||
                         traitLabelDisplay.Contains("calculating") ||
                         traitLabelDisplay.Contains("strategic") ||
                         traitLabelDisplay.Contains("psychopath") ||
@@ -633,7 +635,7 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             return false;
         }
 

@@ -5,8 +5,11 @@ using UnityEngine;
 using System;
 using System.Linq;
 using System.Text.RegularExpressions; // Add this using directive
+using SocialInteractions;
+using SocialInteractions.UI;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Speech
 {
     public class SpeechBubbleManager : GameComponent
     {
@@ -19,7 +22,7 @@ namespace SocialInteractions
         private static HashSet<int> activeConversations = new HashSet<int>();
         private static Dictionary<int, float> activeConversationStartTimes = new Dictionary<int, float>(); // Track start times for timeouts
         private const float ConversationTimeoutSeconds = 30f; // Fail-safe timeout
-        
+
         // --- For Job Queue ---
         private static Queue<Action> pendingJobs = new Queue<Action>();
         // --- End For Job Queue ---
@@ -101,7 +104,7 @@ namespace SocialInteractions
                 {
                     SpeechBubble bubble = speechBubbleQueue.Dequeue();
                     nextQueuedBubbleDisplayTime = Time.time + bubble.duration;
-                    
+
                     try
                     {
                         // Trigger TTS when bubble pops out
@@ -155,7 +158,7 @@ namespace SocialInteractions
                                 break;
                             }
                         }
-                        
+
                         if (!hasMoreBubblesInConversation)
                         {
                             EndConversation(bubble.conversationId);
@@ -237,17 +240,17 @@ namespace SocialInteractions
         {
             return string.Format("A successful date between {0} and {1} ends with a bang!", initiator.LabelShort, recipient.LabelShort);
         }
-        
+
         public static string GetDateLovinSubject(Pawn initiator, Pawn recipient)
         {
             return string.Format("{0} and {1} are engaged in some wild lovin' after a fun date.", initiator.LabelShort, recipient.LabelShort);
         }
-        
+
         public static string GetDateRejectionSubject(Pawn initiator, Pawn recipient)
         {
             return string.Format("{0} asks {1} for a date, but {1} declines.", initiator.LabelShort, recipient.LabelShort);
         }
-        
+
         public static string GetPostDateLovinSubject(Pawn initiator, Pawn recipient)
         {
             return string.Format("{0} and {1} have finished their intimate moment and are reflecting on the experience.", initiator.LabelShort, recipient.LabelShort);
@@ -326,7 +329,7 @@ namespace SocialInteractions
             {
                 // Clear all pending speech bubbles
                 speechBubbleQueue.Clear();
-                
+
                 // Do NOT clear activeConversations or pendingJobs here.
                 // Clearing pendingJobs wipes out the high-priority jobs that were just 
                 // enqueued (like the new response we're about to show).
@@ -338,7 +341,7 @@ namespace SocialInteractions
                 // wait for the current message's display time to finish naturally
                 // before appearing, preventing visual overlap.
                 // nextQueuedBubbleDisplayTime = Time.time; 
-                
+
                 SLog.Message("[SocialInteractions] Speech bubble queue cleared. Jobs and conversations preserved to handle high-priority response.");
             }
         }
@@ -363,11 +366,11 @@ namespace SocialInteractions
             // Determine message type and color based on interaction type for proper chat log coloring
             MessageType messageType = MessageType.LLMChat; // Default
             Color messageColor = isHighPriority ? new Color(1.0f, 0.6f, 0.2f) : Color.white; // Orange for high priority, white for normal
-            
+
             // Override message type and color based on interaction definition
             if (interactionDef != null)
             {
-                if (interactionDef.defName == "Badmouthing" || 
+                if (interactionDef.defName == "Badmouthing" ||
                     interactionDef.defName == "CaughtCheating" ||
                     interactionDef.defName == "EnhancedInsult" ||
                     interactionDef.defName == "Admiration" ||
@@ -377,8 +380,8 @@ namespace SocialInteractions
                     messageType = MessageType.DramaEvent; // Red for drama/insult interactions
                     messageColor = Color.red;
                 }
-                else if (interactionDef.defName == "DateAccepted" || 
-                         interactionDef.defName == "DateRejected" || 
+                else if (interactionDef.defName == "DateAccepted" ||
+                         interactionDef.defName == "DateRejected" ||
                          interactionDef.defName == "DateLovin" ||
                          interactionDef.defName == "GoOnDate" ||
                          interactionDef.defName == "Lovin" ||
@@ -389,7 +392,7 @@ namespace SocialInteractions
                     messageColor = new Color(1f, 0.7f, 0.7f); // Pink
                 }
             }
-            
+
             if (string.IsNullOrEmpty(fallbackText))
             {
                 fallbackText = string.Format("{0} talks with {1}.", speaker.LabelShort, recipient.LabelShort);
@@ -495,12 +498,12 @@ namespace SocialInteractions
 
             // Trigger TTS
             SpeakIfEnabled(rawMessage, speaker);
-            
+
             // Add to chat log
             Color messageColor = isHighPriority ? new Color(1.0f, 0.6f, 0.2f) : Color.white; // Orange for high priority, white for normal
             string fallbackText = string.Format("{0} talks with {1}.", speaker.LabelShort, recipient.LabelShort);
             ChatLogManager.AddMessage(new ChatMessage(speaker, recipient, rawMessage, MessageType.LLMChat, -1, messageColor, fallbackText, formattedMessage));
-            
+
             float endTime;
             if (pawnBubbleEndTimes.TryGetValue(speaker, out endTime) && Time.time < endTime)
             {
@@ -532,7 +535,7 @@ namespace SocialInteractions
             EnqueueInstant(speaker, rawMessage, recipient, duration, isHighPriority);
         }
 
-        
+
 
         // For default summary bubbles
         public static void ShowDefaultBubble(Pawn speaker, string text)
@@ -551,16 +554,16 @@ namespace SocialInteractions
                 MoteMaker.ThrowText(speaker.DrawPos, speaker.Map, wrappedText, new Color(0.75f, 0.75f, 0.75f));
             }
         }
-        
+
         // Method to create a custom pauseable mote for LLM-generated text
         private static void MakeCustomMote(Pawn speaker, string text, Color color, float duration)
         {
-            if (speaker == null || speaker.Map == null) 
+            if (speaker == null || speaker.Map == null)
             {
                 SLog.Warning("[SocialInteractions] MakeCustomMote: speaker or speaker.Map is null");
                 return;
             }
-            
+
             // Create the custom mote
             PauseableMote mote = (PauseableMote)ThingMaker.MakeThing(SI_ThingDefOf.PauseableMote);
             if (mote == null)
@@ -568,33 +571,33 @@ namespace SocialInteractions
                 SLog.Warning("[SocialInteractions] MakeCustomMote: Failed to create PauseableMote");
                 return;
             }
-            
+
             mote.exactPosition = speaker.DrawPos;
             mote.exactPosition.y = AltitudeLayer.MoteOverhead.AltitudeFor() + 1f; // Add a small offset
             mote.Scale = 1.0f;
             mote.originalDuration = duration;
-            
+
             // Set the text and color
             mote.text = text;
             mote.textColor = color;
-            
+
             // Spawn the mote
             GenSpawn.Spawn(mote, speaker.Position, speaker.Map, WipeMode.Vanish);
         }
-        
+
         // Method to create a standard mote for fallback text and combat dialogue
         private static void MakeStandardMote(Pawn speaker, string text, Color color, float duration)
         {
-            if (speaker == null || speaker.Map == null) 
+            if (speaker == null || speaker.Map == null)
             {
                 SLog.Warning("[SocialInteractions] MakeStandardMote: speaker or speaker.Map is null");
                 return;
             }
-            
+
             // Use standard mote for fallback text and combat dialogue
             MoteMaker.ThrowText(speaker.DrawPos, speaker.Map, text, color, duration);
         }
-        
+
         public static bool HasPendingSpeechBubbles(int conversationId)
         {
             lock (queueLock)
@@ -610,7 +613,7 @@ namespace SocialInteractions
                 return false;
             }
         }
-        
+
         public static bool HasPendingSpeechBubblesForPawn(Pawn pawn)
         {
             lock (queueLock)
@@ -626,7 +629,7 @@ namespace SocialInteractions
                 return false;
             }
         }
-        
+
         public static bool HasActiveConversations()
         {
             return activeConversations.Count > 0;
@@ -674,7 +677,7 @@ namespace SocialInteractions
             {
                 messageText = rawMessage.Substring(speaker.LabelShort.Length + 1).Trim();
             }
-            
+
             // Format the message with speaker name and rich text
             return FormatSpeakerName(speaker, messageText, isHighPriority);
         }
@@ -731,13 +734,13 @@ namespace SocialInteractions
             if (SocialInteractions.Settings.enableTTS)
             {
                 string ttsText = text;
-                
+
                 // 1. Replace *message* with [message]
                 ttsText = Regex.Replace(ttsText, @"\*([^*]+)\*", "[$1]");
-                
+
                 // 2. Replace [message] with [message]
                 ttsText = Regex.Replace(ttsText, @"\[([^\]]+)\]", "[$1]");
-                
+
                 // 3. Replace <message> with [message], ignoring standard rich text tags
                 // Ignored tags: b, i, color, size, material, quad (and their closing tags)
                 // Pattern matches <...> but uses negative lookahead for known tags
@@ -745,7 +748,7 @@ namespace SocialInteractions
 
                 // 4. Strip remaining rich text tags (like <color=...>)
                 string cleanText = Regex.Replace(ttsText, "<.*?>", string.Empty);
-                
+
                 TTSManager.Speak(cleanText, speaker, SocialInteractions.Settings.ttsSpeed, (int)SocialInteractions.Settings.ttsVolume);
             }
         }

@@ -1,7 +1,8 @@
 using RimWorld;
 using Verse;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Dating
 {
     public class Thought_CaughtCheating : Thought_Memory
     {

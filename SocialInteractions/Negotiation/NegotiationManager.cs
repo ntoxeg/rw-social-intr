@@ -10,8 +10,13 @@ using Verse.AI;
 using RimWorld;
 using Verse.Sound;
 using Verse.AI.Group;
+using SocialInteractions.Api;
+using SocialInteractions;
+using SocialInteractions.Speech;
+using SocialInteractions.UI;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Negotiation
 {
     /// <summary>
     /// Manages the negotiation flow between two pawns with LLM integration.
@@ -22,24 +27,24 @@ namespace SocialInteractions
         private Pawn initiator;
         private Pawn target;
         private Dialog_PawnNegotiation dialog;
-        
+
         private StringBuilder conversationHistory = new StringBuilder();
         private List<string> currentChoices = new List<string>(); // Store current choices
         private string lastSelectedChoice = null;
         private int turnCount = 0;
         private const int MaxTurns = 10; // Safety limit
-        
+
         private bool isActive = false;
         public bool IsInteractionLimitReached { get { return turnCount >= MaxTurns; } }
         private bool outcomeApplied = false; // Tracks if FinalizeNegotiation has run
         private NegotiationOutcome? lastNotifiedOutcome = null; // Prevent duplicate messages
         private NegotiationOutcome? pendingOutcome = null;
-        
+
         // Store last dialogue lines for final display
         private List<DialogueLine> lastDialogueLines = new List<DialogueLine>();
         private int conversationId = -1;
         private bool waitingForLLM = false; // Add tracking here too
-        
+
         // Raid negotiation context (null if not negotiating with a raid)
         private Lord raidContext = null;
         private bool isTradeContext = false;
@@ -57,27 +62,27 @@ namespace SocialInteractions
                 if (isVisitorContext) return "Visitor Negotiation";
                 if (isSocialFightContext) return "Social Fight Intervention";
                 if (isMentalStateContext) return "Mental Break Intervention";
-                
+
                 if (target.Faction == Faction.OfPlayer)
                     return "Negotiation with Colonist";
-                
+
                 return "Negotiation with " + target.KindLabel;
             }
         }
-        
+
         public NegotiationManager(Pawn initiator, Pawn target, Dialog_PawnNegotiation dialog)
         {
             this.initiator = initiator;
             this.target = target;
             this.dialog = dialog;
-            
+
             // Check if this is a raid negotiation
             this.raidContext = RaidNegotiationContext.GetActiveRaid(initiator);
             if (raidContext != null)
             {
                 SLog.Message("[Negotiation] Raid context detected for " + initiator.LabelShort);
             }
-            
+
             // Check if this is a trade negotiation
             this.isTradeContext = target.TraderKind != null;
             if (!this.isTradeContext)
@@ -92,7 +97,7 @@ namespace SocialInteractions
             {
                 SLog.Message("[Negotiation] Trade context detected for " + target.LabelShort);
             }
-            
+
             // Check if this is a visitor/refugee negotiation
             if (!this.isTradeContext && this.raidContext == null)
             {
@@ -107,7 +112,7 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             // Check if this is a social fight negotiation
             if (target.MentalStateDef == MentalStateDefOf.SocialFighting)
             {
@@ -117,13 +122,13 @@ namespace SocialInteractions
                 {
                     this.otherFighter = socialFight.otherPawn;
                 }
-                
+
                 if (this.otherFighter != null)
                 {
                     SLog.Message("[Negotiation] Social fight context detected between " + target.LabelShort + " and " + otherFighter.LabelShort);
                 }
             }
-            
+
             // Check if this is a general mental state negotiation (but not social fighting)
             if (!this.isSocialFightContext && target.InMentalState)
             {
@@ -131,7 +136,7 @@ namespace SocialInteractions
                 SLog.Message("[Negotiation] Mental state context detected for " + target.LabelShort + " (State: " + target.MentalStateDef.defName + ")");
             }
         }
-        
+
         public void StartNegotiation()
         {
             isActive = true;
@@ -140,22 +145,22 @@ namespace SocialInteractions
             pendingOutcome = null;
             turnCount = 0;
             conversationHistory.Clear();
-            
+
             SLog.Message("[Negotiation] Starting negotiation between " + initiator.LabelShort + " and " + target.LabelShort);
-            
+
             // Apply negotiating hediff
             ApplyNegotiatingHediff();
-            
+
             // Send initial LLM request
             SendLLMRequest(null);
         }
-        
+
         public void OnChoiceSelected(int choiceIndex)
         {
             if (!isActive) return;
-            
+
             SLog.Message("[Negotiation] OnChoiceSelected called with index: " + choiceIndex + ", currentChoices.Count: " + currentChoices.Count);
-            
+
             if (choiceIndex >= 0 && choiceIndex < currentChoices.Count)
             {
                 lastSelectedChoice = currentChoices[choiceIndex];
@@ -167,16 +172,16 @@ namespace SocialInteractions
                 SLog.Warning("[Negotiation] Invalid choice index: " + choiceIndex);
             }
         }
-        
+
         public void OnCustomInput(string customText)
         {
             if (!isActive) return;
-            
+
             lastSelectedChoice = customText;
             SLog.Message("[Negotiation] Custom input: " + customText);
             SendLLMRequest(customText);
         }
-        
+
         public void EndNegotiationEarly()
         {
             SLog.Message("[Negotiation] EndNegotiationEarly called by user. Waiting: " + waitingForLLM);
@@ -191,23 +196,23 @@ namespace SocialInteractions
                 isActive = false; // Ensure background task knows window is closed
             }
         }
-        
+
         private void SendLLMRequest(string selectedChoice)
         {
             dialog.SetWaiting(true);
             turnCount++;
-            
+
             if (turnCount > MaxTurns)
             {
                 SLog.Warning("[Negotiation] Max turns reached, forcing conclusion");
                 EndNegotiation();
                 return;
             }
-            
+
             // Build prompt
             string prompt = BuildPrompt(selectedChoice);
             SLog.Message("[Negotiation] Sending prompt (turn " + turnCount + "):\n" + prompt.Substring(0, Math.Min(500, prompt.Length)) + "...");
-            
+
             // Send async LLM request
             waitingForLLM = true;
             Task.Run(async () =>
@@ -215,7 +220,7 @@ namespace SocialInteractions
                 try
                 {
                     string response = await GetLLMResponse(prompt);
-                    
+
                     // Process on main thread using Coroutine
                     ExecuteOnMainThread(() =>
                     {
@@ -246,7 +251,7 @@ namespace SocialInteractions
                 }
             });
         }
-        
+
         public static void ExecuteOnMainThread(Action action)
         {
             if (Current.Root != null)
@@ -265,9 +270,9 @@ namespace SocialInteractions
             yield return null; // Wait one frame
             if (action != null)
             {
-                try 
+                try
                 {
-                    action(); 
+                    action();
                 }
                 catch (Exception ex)
                 {
@@ -275,14 +280,14 @@ namespace SocialInteractions
                 }
             }
         }
-        
+
         /// <summary>
         /// Build the base negotiation prompt.
         /// </summary>
         private string BuildPrompt(string selectedChoice)
         {
             StringBuilder sb = new StringBuilder();
-            
+
             // System context - different for raid vs trade vs normal negotiation
             if (raidContext != null)
             {
@@ -304,31 +309,31 @@ namespace SocialInteractions
             {
                 return BuildMentalStatePrompt(selectedChoice);
             }
-            
+
             sb.AppendLine("You are writing a negotiation dialogue between two pawns in the colony survival game RimWorld.");
             sb.AppendLine();
-            
+
             // Pawn 1 context
             var pawn1Data = SocialInteractions.ExtractPawnData(initiator, "pawn1", target);
             sb.AppendLine("[Initiator - " + initiator.LabelShort + "]");
             AppendPawnContext(sb, pawn1Data, "pawn1", initiator);
             sb.AppendLine();
-            
+
             // Pawn 2 context
             var pawn2Data = SocialInteractions.ExtractPawnData(target, "pawn2", initiator);
             sb.AppendLine("[Target - " + target.LabelShort + "]");
             AppendPawnContext(sb, pawn2Data, "pawn2", target);
             sb.AppendLine();
-            
+
             // Relationship
             sb.AppendLine("[Relationship]");
             sb.AppendLine(SocialInteractions.GetRelationship(initiator, target));
             sb.AppendLine();
-            
+
             // World context
             AppendWorldContext(sb);
             sb.AppendLine();
-            
+
             // Conversation history
             if (conversationHistory.Length > 0)
             {
@@ -336,53 +341,53 @@ namespace SocialInteractions
                 sb.AppendLine(conversationHistory.ToString());
                 sb.AppendLine();
             }
-            
+
             // Selected choice
             if (!string.IsNullOrEmpty(selectedChoice))
             {
                 sb.AppendLine("[" + initiator.LabelShort + " chooses: \"" + selectedChoice + "\"]");
                 sb.AppendLine();
             }
-            
+
             // Instructions
             sb.AppendLine("Continue the dialogue. Write what " + initiator.LabelShort + " says (based on the choice if given), then " + target.LabelShort + "'s response.");
             sb.AppendLine("If the conversation has reached a natural conclusion (agreement, disagreement, or impasse), provide only the appropriate outcome:");
             sb.AppendLine("Otherwise, provide exactly 3 new action choices for " + initiator.LabelShort + ".");
             sb.AppendLine();
             AppendFormatPrompt(sb);
-            
+
             return sb.ToString();
         }
-        
+
         /// <summary>
         /// Build a raid-specific negotiation prompt.
         /// </summary>
         private string BuildRaidPrompt(string selectedChoice)
         {
             StringBuilder sb = new StringBuilder();
-            
+
             // System context for raid negotiation
             sb.AppendLine("You are writing a tense negotiation dialogue between a colonist and an enemy raider in a colony survival game.");
             sb.AppendLine("The colonist is attempting to negotiate with hostile raiders to avoid combat.");
             sb.AppendLine();
-            
+
             // Negotiator context
             var pawn1Data = SocialInteractions.ExtractPawnData(initiator, "pawn1", target);
             sb.AppendLine("[Negotiator - " + initiator.LabelShort + "]");
             AppendPawnContext(sb, pawn1Data, "pawn1", initiator);
             sb.AppendLine();
-            
+
             // Raider leader context
             var pawn2Data = SocialInteractions.ExtractPawnData(target, "pawn2", initiator);
             sb.AppendLine("[Raider Leader - " + target.LabelShort + "]");
             AppendPawnContext(sb, pawn2Data, "pawn2", target);
             sb.AppendLine();
-            
+
             // Relationship
             sb.AppendLine("[Relationship]");
             sb.AppendLine(SocialInteractions.GetRelationship(initiator, target));
             sb.AppendLine();
-            
+
             // Raid context
             sb.AppendLine("[Raid Context]");
             sb.AppendLine("- Faction: " + (raidContext.faction != null ? raidContext.faction.Name : "Unknown"));
@@ -390,17 +395,17 @@ namespace SocialInteractions
             if (raidContext.faction != null)
             {
                 int goodwill = raidContext.faction.PlayerGoodwill;
-                string relationDesc = goodwill < -80 ? "bitter enemies" : 
-                                      goodwill < -40 ? "hostile" : 
+                string relationDesc = goodwill < -80 ? "bitter enemies" :
+                                      goodwill < -40 ? "hostile" :
                                       goodwill < 0 ? "unfriendly" : "neutral";
                 sb.AppendLine("- Faction relations: " + relationDesc + " (goodwill: " + goodwill + ")");
             }
             sb.AppendLine();
-            
+
             // World context
             AppendWorldContext(sb);
             sb.AppendLine();
-            
+
             // Conversation history
             if (conversationHistory.Length > 0)
             {
@@ -408,14 +413,14 @@ namespace SocialInteractions
                 sb.AppendLine(conversationHistory.ToString());
                 sb.AppendLine();
             }
-            
+
             // Selected choice
             if (!string.IsNullOrEmpty(selectedChoice))
             {
                 sb.AppendLine("[" + initiator.LabelShort + " says: \"" + selectedChoice + "\"]");
                 sb.AppendLine();
             }
-            
+
             // Instructions for raid negotiation
             sb.AppendLine("Continue the negotiation. Write what " + initiator.LabelShort + " says, then " + target.LabelShort + "'s response.");
             sb.AppendLine();
@@ -429,28 +434,28 @@ namespace SocialInteractions
             sb.AppendLine("Otherwise, provide exactly 3 new dialogue choices for " + initiator.LabelShort + ".");
             sb.AppendLine();
             AppendFormatPrompt(sb);
-            
+
             return sb.ToString();
         }
-        
+
         /// <summary>
         /// Build a trade-specific negotiation prompt.
         /// </summary>
         private string BuildTradePrompt(string selectedChoice)
         {
             StringBuilder sb = new StringBuilder();
-            
+
             // System context for trade negotiation
             sb.AppendLine("You are writing a dialogue between a colonist and a traveling merchant in the colony survival game RimWorld.");
             sb.AppendLine("The colonist is attempting to haggle or build rapport to get better prices or find rare goods.");
             sb.AppendLine();
-            
+
             // Negotiator context
             var pawn1Data = SocialInteractions.ExtractPawnData(initiator, "pawn1", target);
             sb.AppendLine("[Negotiator - " + initiator.LabelShort + "]");
             AppendPawnContext(sb, pawn1Data, "pawn1", initiator);
             sb.AppendLine();
-            
+
             // Merchant context
             var pawn2Data = SocialInteractions.ExtractPawnData(target, "pawn2", initiator);
             sb.AppendLine("[Merchant - " + target.LabelShort + "]");
@@ -460,16 +465,16 @@ namespace SocialInteractions
                 sb.AppendLine("- Merchant Type: " + target.TraderKind.label);
             }
             sb.AppendLine();
-            
+
             // Relationship
             sb.AppendLine("[Relationship]");
             sb.AppendLine(SocialInteractions.GetRelationship(initiator, target));
             sb.AppendLine();
-            
+
             // World context
             AppendWorldContext(sb);
             sb.AppendLine();
-            
+
             // Conversation history
             if (conversationHistory.Length > 0)
             {
@@ -477,14 +482,14 @@ namespace SocialInteractions
                 sb.AppendLine(conversationHistory.ToString());
                 sb.AppendLine();
             }
-            
+
             // Selected choice
             if (!string.IsNullOrEmpty(selectedChoice))
             {
                 sb.AppendLine("[" + initiator.LabelShort + " chooses: \"" + selectedChoice + "\"]");
                 sb.AppendLine();
             }
-            
+
             // Instructions
             sb.AppendLine("Continue the dialogue. Write what " + initiator.LabelShort + " says, then " + target.LabelShort + "'s response.");
             sb.AppendLine("If the merchant is impressed, provide a POSITIVE outcome.");
@@ -494,49 +499,49 @@ namespace SocialInteractions
             sb.AppendLine("Otherwise, provide exactly 3 new action choices for " + initiator.LabelShort + ".");
             sb.AppendLine();
             AppendFormatPrompt(sb);
-            
+
             return sb.ToString();
         }
-        
+
         /// <summary>
         /// Build a visitor-specific negotiation prompt.
         /// </summary>
         private string BuildVisitorPrompt(string selectedChoice)
         {
             StringBuilder sb = new StringBuilder();
-            
+
             // System context for visitor negotiation
             sb.AppendLine("You are writing a dialogue between a colonist and a visitor/refugee/traveler in the colony survival game RimWorld.");
             sb.AppendLine("The colonist is attempting to build rapport, share news, or make a good impression on behalf of the colony.");
             sb.AppendLine();
-            
+
             // Negotiator context
             var pawn1Data = SocialInteractions.ExtractPawnData(initiator, "pawn1", target);
             sb.AppendLine("[Negotiator - " + initiator.LabelShort + "]");
             AppendPawnContext(sb, pawn1Data, "pawn1", initiator);
             sb.AppendLine();
-            
+
             // Visitor context
             var pawn2Data = SocialInteractions.ExtractPawnData(target, "pawn2", initiator);
             sb.AppendLine("[Visitor - " + target.LabelShort + "]");
             AppendPawnContext(sb, pawn2Data, "pawn2", target);
-            
+
             Lord lord = target.GetLord();
             if (lord != null && lord.LordJob != null)
             {
                 sb.AppendLine("- Activity: " + lord.LordJob.GetType().Name.Replace("LordJob_", ""));
             }
             sb.AppendLine();
-            
+
             // Relationship
             sb.AppendLine("[Relationship]");
             sb.AppendLine(SocialInteractions.GetRelationship(initiator, target));
             sb.AppendLine();
-            
+
             // World context
             AppendWorldContext(sb);
             sb.AppendLine();
-            
+
             // Conversation history
             if (conversationHistory.Length > 0)
             {
@@ -544,14 +549,14 @@ namespace SocialInteractions
                 sb.AppendLine(conversationHistory.ToString());
                 sb.AppendLine();
             }
-            
+
             // Selected choice
             if (!string.IsNullOrEmpty(selectedChoice))
             {
                 sb.AppendLine("[" + initiator.LabelShort + " chooses: \"" + selectedChoice + "\"]");
                 sb.AppendLine();
             }
-            
+
             // Instructions
             sb.AppendLine("Continue the dialogue. Write what " + initiator.LabelShort + " says, then " + target.LabelShort + "'s response.");
             sb.AppendLine("If the visitor is impressed or grateful, provide a POSITIVE outcome.");
@@ -561,33 +566,33 @@ namespace SocialInteractions
             sb.AppendLine("Otherwise, provide exactly 3 new action choices for " + initiator.LabelShort + ".");
             sb.AppendLine();
             AppendFormatPrompt(sb);
-            
+
             return sb.ToString();
         }
-        
+
         /// <summary>
         /// Build a social fight specific negotiation prompt.
         /// </summary>
         private string BuildSocialFightPrompt(string selectedChoice)
         {
             StringBuilder sb = new StringBuilder();
-            
+
             sb.AppendLine("You are writing a dialogue in the colony survival game RimWorld.");
             sb.AppendLine("A physical brawl (social fight) has broken out between two colonists. " + initiator.LabelShort + " is intervening to try and stop the fight.");
             sb.AppendLine();
-            
+
             // Negotiator context
             var pawn1Data = SocialInteractions.ExtractPawnData(initiator, "pawn1", target);
             sb.AppendLine("[Intervenor - " + initiator.LabelShort + "]");
             AppendPawnContext(sb, pawn1Data, "pawn1", initiator);
             sb.AppendLine();
-            
+
             // Target context (one of the fighters)
             var pawn2Data = SocialInteractions.ExtractPawnData(target, "pawn2", initiator);
             sb.AppendLine("[Fighter 1 - " + target.LabelShort + "]");
             AppendPawnContext(sb, pawn2Data, "pawn2", target);
             sb.AppendLine();
-            
+
             // Other fighter context
             if (otherFighter != null)
             {
@@ -596,7 +601,7 @@ namespace SocialInteractions
                 AppendPawnContext(sb, pawn3Data, "pawn3", otherFighter);
                 sb.AppendLine();
             }
-            
+
             // Relationship
             sb.AppendLine("[Relationships]");
             sb.AppendLine(initiator.LabelShort + " and " + target.LabelShort + ": " + SocialInteractions.GetRelationship(initiator, target));
@@ -606,11 +611,11 @@ namespace SocialInteractions
                 sb.AppendLine(target.LabelShort + " and " + otherFighter.LabelShort + ": " + SocialInteractions.GetRelationship(target, otherFighter));
             }
             sb.AppendLine();
-            
+
             // World context
             AppendWorldContext(sb);
             sb.AppendLine();
-            
+
             // Conversation history
             if (conversationHistory.Length > 0)
             {
@@ -618,14 +623,14 @@ namespace SocialInteractions
                 sb.AppendLine(conversationHistory.ToString());
                 sb.AppendLine();
             }
-            
+
             // Selected choice
             if (!string.IsNullOrEmpty(selectedChoice))
             {
                 sb.AppendLine("[" + initiator.LabelShort + " says: \"" + selectedChoice + "\"]");
                 sb.AppendLine();
             }
-            
+
             string punchTarget = (otherFighter != null) ? otherFighter.LabelShort : "someone";
             sb.AppendLine("Continue the dialogue. Write what " + initiator.LabelShort + " says, then " + target.LabelShort + "'s response (who is currently punching " + punchTarget + ").");
             sb.AppendLine("If the fighters are convinced to stop, provide a POSITIVE outcome.");
@@ -635,37 +640,37 @@ namespace SocialInteractions
             sb.AppendLine("Otherwise, provide exactly 3 new action choices for " + initiator.LabelShort + ".");
             sb.AppendLine();
             AppendFormatPrompt(sb);
-            
+
             return sb.ToString();
         }
-        
+
         /// <summary>
         /// Build a general mental state negotiation prompt.
         /// </summary>
         private string BuildMentalStatePrompt(string selectedChoice)
         {
             StringBuilder sb = new StringBuilder();
-            
+
             sb.AppendLine("You are writing a dialogue in the colony survival game RimWorld.");
             sb.AppendLine(target.LabelShort + " is in a mental break state: " + target.MentalStateDef.LabelCap + ". " + initiator.LabelShort + " is attempting to talk them down and help them recover.");
             sb.AppendLine();
-            
+
             // Negotiator context
             var pawn1Data = SocialInteractions.ExtractPawnData(initiator, "pawn1", target);
             sb.AppendLine("[Intervenor - " + initiator.LabelShort + "]");
             AppendPawnContext(sb, pawn1Data, "pawn1", initiator);
             sb.AppendLine();
-            
+
             // Target context (pawn in mental break)
             var pawn2Data = SocialInteractions.ExtractPawnData(target, "pawn2", initiator);
             sb.AppendLine("[Target - " + target.LabelShort + "]");
             AppendPawnContext(sb, pawn2Data, "pawn2", target);
             sb.AppendLine();
-            
+
             // World context
             AppendWorldContext(sb);
             sb.AppendLine();
-            
+
             // Conversation history
             if (conversationHistory.Length > 0)
             {
@@ -673,14 +678,14 @@ namespace SocialInteractions
                 sb.AppendLine(conversationHistory.ToString());
                 sb.AppendLine();
             }
-            
+
             // Selected choice
             if (!string.IsNullOrEmpty(selectedChoice))
             {
                 sb.AppendLine("[" + initiator.LabelShort + " says: \"" + selectedChoice + "\"]");
                 sb.AppendLine();
             }
-            
+
             // Instructions
             sb.AppendLine("Continue the dialogue. Write what " + initiator.LabelShort + " says, then " + target.LabelShort + "'s response (who is currently in a " + target.MentalStateDef.LabelCap + " state).");
             sb.AppendLine("If " + target.LabelShort + " is calmed down or shown reason, provide a POSITIVE or CRITICAL_SUCCESS outcome.");
@@ -688,7 +693,7 @@ namespace SocialInteractions
             sb.AppendLine("Otherwise, provide a NEUTRAL outcome");
             sb.AppendLine();
             AppendFormatPrompt(sb);
-            
+
             return sb.ToString();
         }
 
@@ -707,7 +712,7 @@ namespace SocialInteractions
             sb.AppendLine("3. action/statement");
             sb.AppendLine("END_CHOICES");
         }
-        
+
         private void AppendPawnContext(StringBuilder sb, Dictionary<string, string> data, string prefix, Pawn pawn)
         {
             string name = data.ContainsKey(prefix) ? data[prefix] : "Unknown";
@@ -731,7 +736,7 @@ namespace SocialInteractions
             string description = string.Format(
                 "{0} is a {1}, age {2}, a {3} of the {4} faction, following the {5} ideology, has the following traits: {6}; Xenotype: {7}; {0} is proficient in: {8}; {0} is incapable of: {9}; {0}'s mood is {10}, positives: {11} / negatives: {12}; Medical status: {13}. {0}'s family: {14}. {15}",
                 name, sex, age, title, faction, ideology, traits, genes, proficiencies, noskills, mood, likes, dislikes, afflictions, family, bio);
-            
+
             sb.AppendLine(description);
 
             // Add Social Skill context
@@ -746,26 +751,26 @@ namespace SocialInteractions
 
             sb.AppendLine(string.Format("{0} is currently {1}", name, action));
         }
-        
+
         private void AppendWorldContext(StringBuilder sb)
         {
             if (initiator.Map == null) return;
-            
+
             sb.AppendLine("[World Context]");
-            
+
             long absTicks = Find.TickManager.TicksAbs;
             float longitude = Find.WorldGrid.LongLatOf(initiator.Tile).x;
             int day = GenDate.DayOfQuadrum(absTicks, longitude);
             Quadrum quadrum = GenDate.Quadrum(absTicks, longitude);
             int year = GenDate.Year(absTicks, longitude);
             int hour = (int)(GenDate.DayPercent(absTicks, longitude) * 24f);
-            
+
             sb.AppendLine("- Date: " + day + " of " + quadrum.Label() + ", " + year);
             sb.AppendLine("- Time: " + hour.ToString("D2") + ":00");
             sb.AppendLine("- Weather: " + initiator.Map.weatherManager.curWeather.label);
             sb.AppendLine("- Location: " + SocialInteractions.GetBiomeInfo(initiator.Map));
         }
-        
+
         private async Task<string> GetLLMResponse(string prompt)
         {
             // Use existing API client infrastructure
@@ -777,7 +782,7 @@ namespace SocialInteractions
             float? topP = settings.llmTopP < 1.0f ? (float?)settings.llmTopP : null;
             float? minP = settings.llmMinP > 0.0f ? (float?)settings.llmMinP : null;
             float? repPen = settings.llmRepetitionPenalty != 1.0f ? (float?)settings.llmRepetitionPenalty : null;
-            
+
             switch (settings.llmApiType)
             {
                 case LlmApiType.KoboldCpp:
@@ -834,7 +839,7 @@ namespace SocialInteractions
                     throw new Exception("Unknown API type: " + settings.llmApiType);
             }
         }
-        
+
         private void ProcessLLMResponse(string response)
         {
             if (string.IsNullOrEmpty(response))
@@ -854,7 +859,7 @@ namespace SocialInteractions
             try
             {
                 SLog.Message("[Negotiation] Received response (" + (isActive ? "Active" : "Background") + "):\n" + response.Substring(0, Math.Min(500, response.Length)) + "...");
-                
+
                 // Check for outcome
                 var outcomeMatch = Regex.Match(response, @"OUTCOME:\s*(CRITICAL_SUCCESS|POSITIVE|NEUTRAL|NEGATIVE)", RegexOptions.IgnoreCase);
                 bool hasOutcome = outcomeMatch.Success;
@@ -876,7 +881,7 @@ namespace SocialInteractions
                     else if (outcomeStr == "NEGATIVE") outcome = NegotiationOutcome.Negative;
                     else if (outcomeStr == "CRITICAL_SUCCESS") outcome = NegotiationOutcome.CriticalSuccess;
                     else outcome = NegotiationOutcome.Neutral;
-                    
+
                     // Extract dialogue
                     ExtractAndDisplayDialogue(response);
 
@@ -886,7 +891,7 @@ namespace SocialInteractions
                     if (outcome == NegotiationOutcome.Negative)
                     {
                         MessageTypeDefOf.NegativeEvent.sound.PlayOneShotOnCamera(null);
-                        
+
                         if (isActive)
                         {
                             dialog.AddConversationEntry("System", "<color=#FF4444>Negotiation Failed.</color>", false);
@@ -900,24 +905,24 @@ namespace SocialInteractions
                     else if (outcome == NegotiationOutcome.Positive || outcome == NegotiationOutcome.CriticalSuccess)
                     {
                         MessageTypeDefOf.PositiveEvent.sound.PlayOneShotOnCamera(null);
-                        
+
                         if (isActive)
                         {
                             string colorTag = "<color=#44FF44>";
                             string statusMsg = (outcome == NegotiationOutcome.CriticalSuccess) ? "Negotiation Critical Success!" : "Negotiation Successful!";
                             dialog.AddConversationEntry("System", colorTag + statusMsg + "</color> You may continue chatting.", false);
                         }
-                        
+
                         pendingOutcome = outcome;
                         SendOutcomeNotification(outcome);
                     }
                 }
-                
+
                 if (!hasOutcome)
                 {
                     ExtractAndDisplayDialogue(response);
                 }
-                
+
                 // If the window is still active, update choices
                 if (isActive)
                 {
@@ -936,7 +941,7 @@ namespace SocialInteractions
                             currentChoices = GetDefaultChoices();
                         }
                     }
-                    
+
                     SLog.Message("[Negotiation] Setting " + currentChoices.Count + " choices");
                     dialog.SetChoices(currentChoices);
                 }
@@ -961,54 +966,54 @@ namespace SocialInteractions
                 }
             }
         }
-        
+
         private void ExtractAndDisplayDialogue(string response)
         {
             // Parse all dialogue lines in order of appearance
             // Match lines like "Name: text" for both pawns
             string initiatorName = initiator.LabelShort;
             string targetName = target.LabelShort;
-            
+
             // Use a single regex to find all dialogue lines, then determine speaker
             string pattern = @"(?:^|\n)([\w]+):\s*(.+?)(?=\n|$)";
             var allMatches = Regex.Matches(response, pattern, RegexOptions.IgnoreCase);
-            
+
             var ttsBatch = new List<DialogueLine>();
-            
+
             foreach (Match match in allMatches)
             {
                 string speaker = match.Groups[1].Value.Trim();
                 string text = match.Groups[2].Value.Trim();
-                
+
                 if (string.IsNullOrEmpty(text)) continue;
-                
+
                 // Skip if this looks like a keyword/instruction rather than dialogue
                 if (speaker.ToUpper() == "CHOICES" || speaker.ToUpper() == "OUTCOME" ||
                     speaker.ToUpper() == "END_CHOICES" || speaker.ToUpper() == "FORMAT")
                 {
                     continue;
                 }
-                
+
                 // Determine if this is initiator or target
                 bool isInitiator = speaker.Equals(initiatorName, StringComparison.OrdinalIgnoreCase);
                 bool isTarget = speaker.Equals(targetName, StringComparison.OrdinalIgnoreCase);
-                
+
                 if (isInitiator || isTarget)
                 {
                     Pawn speakerPawn = isInitiator ? initiator : target;
                     Pawn recipientPawn = isInitiator ? target : initiator;
-                    
+
                     if (isActive)
                     {
                         dialog.AddConversationEntry(speaker, text, isInitiator);
                     }
                     conversationHistory.AppendLine(speaker + ": " + text);
-                    
+
                     // Store for final display AND for TTS batching
                     var lineEntry = new DialogueLine(speakerPawn, recipientPawn, text);
                     lastDialogueLines.Add(lineEntry);
                     ttsBatch.Add(lineEntry);
-                    
+
                     // Log to ChatLogManager
                     if (conversationId < 0)
                     {
@@ -1017,7 +1022,7 @@ namespace SocialInteractions
                     string fallbackText = string.Format("{0} negotiates with {1}.", speakerPawn.Name.ToStringShort, recipientPawn.Name.ToStringShort);
                     string loggedText = speaker + ": " + text;
                     ChatLogManager.AddMessage(new ChatMessage(speakerPawn, recipientPawn, loggedText, MessageType.LLMChat, conversationId, Color.white, fallbackText, loggedText));
-                    
+
                     SLog.Message("[Negotiation] Added dialogue: " + speaker + ": " + text.Substring(0, Math.Min(50, text.Length)));
                 }
             }
@@ -1038,17 +1043,17 @@ namespace SocialInteractions
                 yield return new WaitForSecondsRealtime(0.5f);
             }
         }
-        
+
         private List<string> ExtractChoices(string response)
         {
             var choices = new List<string>();
-            
+
             // Look for CHOICES: ... END_CHOICES block
             var choicesMatch = Regex.Match(response, @"CHOICES:\s*\n([\s\S]*?)(?:END_CHOICES|OUTCOME:|$)", RegexOptions.IgnoreCase);
             if (choicesMatch.Success)
             {
                 string choicesBlock = choicesMatch.Groups[1].Value;
-                
+
                 // Extract numbered choices
                 var choiceMatches = Regex.Matches(choicesBlock, @"^\s*\d+\.\s*(.+?)$", RegexOptions.Multiline);
                 foreach (Match match in choiceMatches)
@@ -1060,10 +1065,10 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             return choices;
         }
-        
+
         private List<string> GetDefaultChoices()
         {
             return new List<string>
@@ -1073,7 +1078,7 @@ namespace SocialInteractions
                 "End the conversation"
             };
         }
-        
+
         public static NegotiationOutcome RollSkillBasedOutcome(Pawn initiator)
         {
             if (initiator.skills == null) return NegotiationOutcome.Neutral;
@@ -1092,7 +1097,7 @@ namespace SocialInteractions
             if (roll < critChance) return NegotiationOutcome.CriticalSuccess;
             if (roll < critChance + posChance) return NegotiationOutcome.Positive;
             if (roll > 1f - negChance) return NegotiationOutcome.Negative;
-            
+
             return NegotiationOutcome.Neutral;
         }
 
@@ -1105,7 +1110,7 @@ namespace SocialInteractions
             if (raidContext != null) ApplyRaidOutcomeStatic(raidContext, initiator, outcome);
             else if (isTradeContext) ApplyTradeOutcomeStatic(initiator, target, outcome);
             else if (isVisitorContext) ApplyVisitorOutcomeStatic(target, outcome, initiator);
-            
+
             // Detect social fight context (can happen alongside colonist-to-colonist)
             if (target.MentalStateDef == MentalStateDefOf.SocialFighting)
             {
@@ -1133,9 +1138,9 @@ namespace SocialInteractions
         private void HandleLLMFailure()
         {
             SLog.Warning("[Negotiation] LLM failed, using skill-based fallback");
-            
+
             NegotiationOutcome outcome = RollSkillBasedOutcome(initiator);
-            
+
             string description;
             switch (outcome)
             {
@@ -1157,15 +1162,15 @@ namespace SocialInteractions
             {
                 dialog.AddConversationEntry("System", description, false);
             }
-            
+
             EndNegotiation(outcome);
         }
-        
+
         private void EndNegotiation(NegotiationOutcome? outcomeOverride = null)
         {
             // Determine final outcome, preferring explicit overrides or successful pending outcomes over Neutral
             NegotiationOutcome finalOutcome = NegotiationOutcome.Neutral;
-            
+
             if (outcomeOverride.HasValue && (outcomeOverride.Value != NegotiationOutcome.Neutral || !pendingOutcome.HasValue))
             {
                 finalOutcome = outcomeOverride.Value;
@@ -1174,25 +1179,25 @@ namespace SocialInteractions
             {
                 finalOutcome = pendingOutcome.Value;
             }
-            
+
             // Negative outcome always takes priority as it signifies a break in communication/faction hostility
             if (outcomeOverride == NegotiationOutcome.Negative || pendingOutcome == NegotiationOutcome.Negative)
             {
                 finalOutcome = NegotiationOutcome.Negative;
             }
-            
+
             SLog.Message("[Negotiation] EndNegotiation called. Override: " + outcomeOverride + ", Pending: " + pendingOutcome + " -> Final: " + finalOutcome);
-            
+
             FinalizeNegotiation(finalOutcome);
-            
+
             // Note: CloseDialog() is now called by Dialog_PawnNegotiation after the delay 
             // set by InitiateDelayedClose inside FinalizeNegotiation.
         }
-        
+
         public void Cleanup()
         {
             // Called when window is closed
-            
+
             // Immediately stop the "standing around" hediff so pawns are free
             // Move this out of if(isActive) to ensure it's always called when window closes
             RemoveNegotiatingHediff();
@@ -1201,7 +1206,7 @@ namespace SocialInteractions
             {
                 SLog.Message("[Negotiation] Cleanup called (Manual Close). Pending: " + pendingOutcome);
                 isActive = false; // Stop UI updates
-                
+
                 // If NOT waiting for an LLM response, finalize with what we have
                 if (!waitingForLLM)
                 {
@@ -1213,7 +1218,7 @@ namespace SocialInteractions
                 }
             }
         }
-        
+
         private void FinalizeNegotiation(NegotiationOutcome outcome)
         {
             if (outcomeApplied)
@@ -1222,16 +1227,16 @@ namespace SocialInteractions
                 return;
             }
             outcomeApplied = true;
-            
+
             // Set isActive to false if it wasn't already (e.g. if ending normally)
             // But we might want it to stay true for the delayed close UI.
             // Let's rely on Cleanup to set it to false for manual close.
-            
+
             SLog.Message("[Negotiation] Finalizing with outcome: " + outcome + " (Initiator: " + initiator.LabelShort + ")");
-            
+
             // Send global notification message
             SendOutcomeNotification(outcome);
-            
+
             // Apply outcome
             ApplyUniversalOutcome(initiator, target, outcome, raidContext, isTradeContext, isVisitorContext);
 
@@ -1245,7 +1250,7 @@ namespace SocialInteractions
                     DialogueLine line = lastDialogueLines[i];
                     totalDuration += SpeechBubbleManager.EstimateReadingTime(line.Text);
                 }
-                
+
                 // Initiate delayed close
                 dialog.InitiateDelayedClose(totalDuration);
             }
@@ -1257,7 +1262,7 @@ namespace SocialInteractions
                 SpeechBubbleManager.EndConversation(conversationId);
             }
         }
-        
+
         private void ApplyNegotiatingHediff()
         {
             if (initiator.health != null && SI_HediffDefOf.SI_Negotiating != null)
@@ -1267,7 +1272,7 @@ namespace SocialInteractions
                 SLog.Message("[Negotiation] Applied SI_Negotiating hediff to " + initiator.LabelShort);
             }
         }
-        
+
         private void RemoveNegotiatingHediff()
         {
             if (initiator.health != null)
@@ -1280,7 +1285,7 @@ namespace SocialInteractions
                 }
             }
         }
-        
+
         private void ApplyOutcome(NegotiationOutcome outcome)
         {
             ApplyMoodOutcome(initiator, outcome);
@@ -1292,9 +1297,9 @@ namespace SocialInteractions
             if (initiator.needs.mood == null) { SLog.Warning("[Negotiation] Cannot apply outcome: initiator.needs.mood is null"); return; }
             if (initiator.needs.mood.thoughts == null) { SLog.Warning("[Negotiation] Cannot apply outcome: initiator.needs.mood.thoughts is null"); return; }
             if (initiator.needs.mood.thoughts.memories == null) { SLog.Warning("[Negotiation] Cannot apply outcome: initiator.needs.mood.thoughts.memories is null"); return; }
-            
+
             SLog.Message("[Negotiation] Applying mood effects for outcome: " + outcome);
-            
+
             switch (outcome)
             {
                 case NegotiationOutcome.Positive:
@@ -1314,7 +1319,7 @@ namespace SocialInteractions
                     break;
             }
         }
-        
+
         private void SetCooldown()
         {
             SetCooldownStatic(initiator, target, raidContext, isTradeContext);
@@ -1349,7 +1354,7 @@ namespace SocialInteractions
                 comp.SetCooldown(target, hours);
             }
         }
-        
+
         /// <summary>
         /// Apply raid-specific outcome.
         /// </summary>
@@ -1361,7 +1366,7 @@ namespace SocialInteractions
         public static void ApplyRaidOutcomeStatic(Lord raidContext, Pawn initiator, NegotiationOutcome outcome)
         {
             if (raidContext == null) return;
-            
+
             // Map NegotiationOutcome to NegotiatedRaidOutcome
             NegotiatedRaidOutcome raidOutcome;
             switch (outcome)
@@ -1379,14 +1384,14 @@ namespace SocialInteractions
                     raidOutcome = NegotiatedRaidOutcome.Neutral;
                     break;
             }
-            
+
             // Apply the raid outcome
             RaidOutcomeUtility.ApplyRaidOutcome(raidContext, raidOutcome);
-            
+
             // Clear the raid context
             RaidNegotiationContext.ClearActiveRaid(initiator);
         }
-        
+
         /// <summary>
         /// Apply trade-specific outcome.
         /// </summary>
@@ -1402,7 +1407,7 @@ namespace SocialInteractions
                 case NegotiationOutcome.Positive:
                 case NegotiationOutcome.CriticalSuccess:
                     if (initiator.mindState == null || initiator.mindState.inspirationHandler == null) break;
-                    
+
                     // Grant Trade Inspiration
                     if (InspirationDefOf.Inspired_Trade != null)
                     {
@@ -1413,14 +1418,14 @@ namespace SocialInteractions
                         }
                     }
                     break;
-                    
+
                 case NegotiationOutcome.Negative:
                     // Find the lord and make them leave
                     Lord lord = target.GetLord();
                     if (lord != null)
                     {
                         Messages.Message("SI_TraderLeavingNegative".Translate(target.LabelShort), target, MessageTypeDefOf.NegativeEvent);
-                        
+
                         // Set the dismissal flag on the main trader of the caravan
                         // This triggers the vanilla dismissal logic in LordJob_TradeWithColony
                         Pawn trader = TraderCaravanUtility.FindTrader(lord);
@@ -1435,7 +1440,7 @@ namespace SocialInteractions
                             lord.ReceiveMemo("TravelerJoyDone");
                             SLog.Message("[Negotiation] No specific career trader found, sent TravelerJoyDone memo.");
                         }
-                        
+
                         SLog.Message("[Negotiation] Trader " + target.LabelShort + " group is leaving due to negative outcome.");
                     }
                     break;
@@ -1474,7 +1479,7 @@ namespace SocialInteractions
                         SLog.Message("[Negotiation] Faction " + target.Faction.Name + " goodwill improved by " + amount);
                     }
                     break;
-                    
+
                 case NegotiationOutcome.Negative:
                     if (target.Faction != null && !target.Faction.IsPlayer && !target.Faction.HostileTo(Faction.OfPlayer))
                     {
@@ -1484,7 +1489,7 @@ namespace SocialInteractions
                         SLog.Message("[Negotiation] Faction " + target.Faction.Name + " goodwill reduced by " + amount + " due to negative outcome with " + target.LabelShort);
                     }
                     break;
-                    
+
                 default:
                     break;
             }
@@ -1648,7 +1653,7 @@ namespace SocialInteractions
             }
         }
     }
-    
+
     public enum NegotiationOutcome
     {
         Positive,
@@ -1665,7 +1670,7 @@ namespace SocialInteractions
         public Pawn Speaker { get; set; }
         public Pawn Recipient { get; set; }
         public string Text { get; set; }
-        
+
         public DialogueLine(Pawn speaker, Pawn recipient, string text)
         {
             Speaker = speaker;

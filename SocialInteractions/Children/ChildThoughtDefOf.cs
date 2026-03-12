@@ -1,7 +1,8 @@
 using RimWorld;
 using Verse;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Children
 {
     [DefOf]
     public static class ChildThoughtDefOf

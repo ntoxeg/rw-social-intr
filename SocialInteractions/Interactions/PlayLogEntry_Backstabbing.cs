@@ -1,8 +1,9 @@
 using RimWorld;
 using Verse;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Interactions
 {
     /// <summary>
     /// Custom PlayLogEntry for Backstabbing interactions that includes target pawn and success information

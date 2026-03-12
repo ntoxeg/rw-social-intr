@@ -5,8 +5,12 @@ using Verse.AI;
 using System.Collections.Generic;
 using System.Reflection;
 using Verse.AI.Group;
+using SocialInteractions.Children;
+using SocialInteractions.Negotiation;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(ThingWithComps), "PreApplyDamage")]
     public static class Pawn_TakeDamage_Patch
@@ -47,7 +51,7 @@ namespace SocialInteractions
                         pawn.LabelShort, fleeChance, Rand.Value));
                 }
             }
-            
+
             // Check for Raid Negotiation Aggression Trigger
             if (pawn != null && pawn.GetLord() != null)
             {

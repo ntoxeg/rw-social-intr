@@ -1,8 +1,9 @@
 using RimWorld;
 using Verse;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Components
 {
     /// <summary>
     /// GameComponent to handle saving and loading of custom pawn flavor texts across the entire game
@@ -23,7 +24,7 @@ namespace SocialInteractions
         public override void ExposeData()
         {
             base.ExposeData();
-            
+
             // Expose the dictionary for saving/loading
             Scribe_Collections.Look(ref pawnFlavorTexts, "pawnFlavorTexts", LookMode.Value, LookMode.Value);
         }
@@ -65,14 +66,14 @@ namespace SocialInteractions
             {
                 SocialInteractions.PawnFlavorTexts[kvp.Key] = kvp.Value;
             }
-            
+
             // Also save any data that might have been set in the static dictionary
             foreach (var kvp in SocialInteractions.PawnFlavorTexts)
             {
                 pawnFlavorTexts[kvp.Key] = kvp.Value;
             }
         }
-        
+
         public override void FinalizeInit()
         {
             base.FinalizeInit();

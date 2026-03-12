@@ -1,8 +1,9 @@
 using System.Collections.Generic;
 using RimWorld;
 using Verse;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Interactions
 {
     public class InteractionWorker_TendPatient : InteractionWorker
     {

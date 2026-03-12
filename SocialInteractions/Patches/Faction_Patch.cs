@@ -1,8 +1,9 @@
 using HarmonyLib;
 using RimWorld;
 using Verse;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(Faction), "TryGenerateNewLeader")]
     public static class Faction_Patch

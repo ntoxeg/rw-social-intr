@@ -4,8 +4,10 @@ using Verse;
 using Verse.AI;
 using Verse.AI.Group;
 using System.Reflection;
+using SocialInteractions.Speech;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     // Patch the transition from gathering to actual ceremony to trigger LLM once at the beginning
     [HarmonyPatch(typeof(LordJob_Joinable_MarriageCeremony), "CreateGraph")]
@@ -22,7 +24,7 @@ namespace SocialInteractions
                 if (transition.target is LordToil_MarriageCeremony)
                 {
                     SLog.Message("[SocialInteractions] Found transition to LordToil_MarriageCeremony");
-                    
+
                     // This is the transition from party to marriage ceremony - add our LLM trigger
                     transition.AddPreAction(new TransitionAction_Custom(() =>
                     {
@@ -59,11 +61,11 @@ namespace SocialInteractions
                 return;
             }
 
-            SLog.Message(string.Format("[SocialInteractions] Marriage ceremony beginning detected for {0} and {1}", 
+            SLog.Message(string.Format("[SocialInteractions] Marriage ceremony beginning detected for {0} and {1}",
                 firstPawn.LabelShort, secondPawn.LabelShort));
 
             // Create a subject for the marriage ceremony based on the pawn names and context
-            string subject = string.Format("{0} and {1} are exchanging vows in their marriage ceremony.", 
+            string subject = string.Format("{0} and {1} are exchanging vows in their marriage ceremony.",
                 firstPawn.LabelShort, secondPawn.LabelShort);
 
             // Handle the interaction using the same approach as other LLM interactions

@@ -3,8 +3,9 @@ using RimWorld;
 using Verse;
 using Verse.AI;
 using Verse.AI.Group;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Negotiation
 {
     /// <summary>
     /// A more persistent version of LordToil_StealCover that doesn't revert to assault 

@@ -8,8 +8,9 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.IO;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Api
 {
     [DataContract]
     public class GeminiApiPart
@@ -117,10 +118,10 @@ namespace SocialInteractions
             // Trim whitespace which can cause header issues
             _apiKey = (apiKey != null) ? apiKey.Trim() : null;
             _httpClient = SharedHttpClient;
-            
+
             // Clear any existing default request headers
             _httpClient.DefaultRequestHeaders.Clear();
-            
+
             // Add required headers for Gemini API
             _httpClient.DefaultRequestHeaders.Add("x-goog-api-key", _apiKey);
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "SocialInteractionsMod/1.0");
@@ -134,7 +135,7 @@ namespace SocialInteractions
             try
             {
                 var request = new GeminiApiRequest();
-                
+
                 // Add generation config
                 var stopSequences = stopSequence ?? new List<string>(SocialInteractions.Settings.llmStoppingStrings.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries));
                 // Gemini API supports a maximum of 5 stop sequences
@@ -167,7 +168,7 @@ namespace SocialInteractions
                 {
                     Text = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary. Do not include tags like <thinking> or explanations."
                 });
-                
+
                 // Add the prompt as a user message content part
                 var content = new GeminiApiContent();
                 content.Role = "user";
@@ -193,23 +194,23 @@ namespace SocialInteractions
                 {
                     geminiModel = "gemini-2.5-flash";  // Default model
                 }
-                
+
                 string fullUrl = string.Format("{0}/v1beta/models/{1}:generateContent", _apiUrl.TrimEnd('/'), geminiModel);
 
                 var response = await _httpClient.PostAsync(fullUrl, httpContent);
-                
+
                 // Get response body BEFORE checking success status to capture error details
                 var responseBody = await response.Content.ReadAsStringAsync();
-                
+
                 // Log the response status code and body for debugging
                 SLog.Message(string.Format("[SocialInteractions] Gemini API Response Status: {0}", response.StatusCode));
                 if (!response.IsSuccessStatusCode)
                 {
                     SLog.Warning(string.Format("[SocialInteractions] Gemini API Error Body: {0}", responseBody));
                 }
-                
+
                 response.EnsureSuccessStatusCode(); // Throws an exception if the HTTP response status is an error code
-                
+
                 // Log the response body for debugging
                 SLog.Message(string.Format("[SocialInteractions] Gemini API Response Body: {0}", responseBody));
 
@@ -221,7 +222,7 @@ namespace SocialInteractions
                 {
                     // Extract the text from the first candidate's content
                     var candidate = apiResponse.Candidates[0];
-                    
+
                     if (candidate.FinishReason == "MAX_TOKENS")
                     {
                         SLog.Warning("[SocialInteractions] Gemini API response was truncated due to MAX_TOKENS. Consider increasing 'llmMaxTokens' in mod settings.");
@@ -255,10 +256,10 @@ namespace SocialInteractions
             response = System.Text.RegularExpressions.Regex.Replace(response, @"<thinking>.*?</thinking>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             response = System.Text.RegularExpressions.Regex.Replace(response, @"<think>.*?</think>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             response = System.Text.RegularExpressions.Regex.Replace(response, @"\[thinking\].*?\[/thinking\]", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            
+
             // Trim whitespace
             response = response.Trim();
-            
+
             return response;
         }
 

@@ -3,8 +3,9 @@ using Verse;
 using Verse.AI;
 using UnityEngine;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Dating
 {
     public class JobDriver_AbusiveThreesomeParticipant : JobDriver
     {
@@ -41,9 +42,9 @@ namespace SocialInteractions
                     else if (Abuser.CurJobDef == null) reason = "Abuser CurJobDef is null";
                     else reason = "Abuser CurJobDef is " + Abuser.CurJobDef.defName;
 
-                    SLog.Message(string.Format("[SocialInteractions] JobDriver_AbusiveThreesomeParticipant: {0} ending job because abuser {1} is no longer abusing. Reason: {2}", 
+                    SLog.Message(string.Format("[SocialInteractions] JobDriver_AbusiveThreesomeParticipant: {0} ending job because abuser {1} is no longer abusing. Reason: {2}",
                         this.pawn.LabelShort, Abuser != null ? Abuser.LabelShort : "NULL", reason));
-                    
+
                     this.EndJobWith(JobCondition.Succeeded);
                     return;
                 }
@@ -115,9 +116,9 @@ namespace SocialInteractions
                 {
                     animationSpeed = 0.3f;
                 }
-                
+
                 float baseTime = progress * 8.0f * (totalTicks / 60.0f);
-                
+
                 if (this.pawn == Victim)
                 {
                     // Victim bounces vertically (standard lovin half-sine pulse)

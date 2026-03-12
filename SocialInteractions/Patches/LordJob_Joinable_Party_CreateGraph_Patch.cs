@@ -4,8 +4,9 @@ using RimWorld;
 using Verse;
 using Verse.AI.Group;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(LordJob_Joinable_Party), "CreateGraph")]
     public static class LordJob_Joinable_Party_CreateGraph_Patch

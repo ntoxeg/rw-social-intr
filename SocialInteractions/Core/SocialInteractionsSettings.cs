@@ -3,6 +3,9 @@ using UnityEngine;
 using System.Collections.Generic; // New using directive
 using System;
 using RimWorld;
+using SocialInteractions.Api;
+using SocialInteractions.Speech;
+using SocialInteractions.UI;
 
 namespace SocialInteractions
 {
@@ -87,7 +90,7 @@ It's currently [time], on [date] and the weather is [weather].
 Current event: [subject]
 
 ";
-        
+
         public const string DEFAULT_MONOLOGUE_TEMPLATE = @"The following is a [topic] by a RimWorld character, [pawn1]. It's a brutal world out there so feel free to use swearing, explicit or rough language freely where appropriate.
 
 [pawn1] is a [pawn1_sex], age [pawn1_age], a [pawn1_title] of the [pawn1_faction] faction, following the [pawn1_ideology] ideology, has the following traits: [pawn1_traits]; Xenotype: [pawn1_genes]; [pawn1] is proficient in: [pawn1_proficiencies]; [pawn1] is incapable of: [pawn1_noskills]; [pawn1]'s mood is [pawn1_mood], positives: [pawn1_likes] / negatives: [pawn1_dislikes]; Medical status: [pawn1_afflictions]. [pawn1_bio]
@@ -130,19 +133,19 @@ Current event: [pawn1] [subject]
         // API settings
         public LlmApiType llmApiType = LlmApiType.KoboldCpp; // Default to KoboldCpp
         public string llmApiUrl = "http://localhost:5001";
-        
+
         // Feature enablement settings
         public bool pawnsStopOnInteraction = true;
         public bool enableCombatTaunts = true;
         public bool enableDatingFeature = true;
         public bool enableXtcSampling = false;
         public bool enableDrama = false; // New setting for drama interactions like badmouthing
-        
+
         public bool verboseLogging = false;
         public bool showDefaultBubbles = true; // Toggle for default interaction bubbles
         public bool showLlmBubbles = true; // Toggle for LLM dialogue bubbles
         public bool useBackgroundTextRendering = false; // False = drop shadow (current), True = background style
-        
+
         // Interaction type settings
         public bool enableChitchat = true;
         public bool enableManualChat = true; // New setting for manual chat
@@ -164,7 +167,7 @@ Current event: [pawn1] [subject]
         public bool enableIdeologyConversionInteractions = true; // Whether ideology conversion interactions are enabled
         public bool enableKindWordsInteractions = true; // Whether kind words interactions are enabled
         public bool enableRaidNegotiation = true; // Whether negotiation with enemy raids is enabled
-        
+
         // New interaction toggles
         public bool enableFlirt = true;
         public bool enableSlight = true;
@@ -180,7 +183,7 @@ Current event: [pawn1] [subject]
         public bool enableInspirationMonologue = true; // Monologue when receiving inspiration
 
         public float negotiationCooldownHours = 24.0f; // New setting for negotiation cooldown
-        
+
         // String settings
         public string llmStoppingStrings = @"<end>
 </end>
@@ -190,7 +193,7 @@ Current event: [pawn1] [subject]
 <END>
 **end**
 (end)";
-        
+
         // Magic number settings (not exposed in UI)
         public float meleeTauntProbability = 0.35f;
         public float shootTauntProbability = 0.15f;
@@ -203,13 +206,13 @@ Current event: [pawn1] [subject]
         public int initialToleranceTicks = 60;
         public int goOnDateCooldownTicks = 600;
         public int cheatingConfrontationTicks = 300;
-        
+
         // Dating lovin' settings
         public float baseLovinChance = 0.95f;
         public int dateLovinTicks = 2500;
         public int dateLovinTimeoutTicks = 600; // 10 seconds
         public float maxDistanceToLovinSpot = 50f; // Maximum distance to accept a bed for lovin'
-        
+
         // Dating partner selection weights/penalties
         public float spouseDateWeight = 100f;
         public float fianceDateWeight = 90f;
@@ -218,12 +221,12 @@ Current event: [pawn1] [subject]
         public float nonRelatedPartnerWeightFactor = 0.7f; // General weight factor for non-related partners
         public float cheatingPenalty = 30f;
         public float opinionDifferenceThreshold = 20f; // Opinion difference needed to eliminate cheating penalty
-        
+
         // Badmouthing interaction settings (for debugging/tweaking)
         public float baseBadmouthingChance = 0.05f; // Base chance for pawns without encouraging traits
         public float traitEncouragedBadmouthingChance = 0.25f; // Chance for pawns with encouraging traits
         public float badOpinionAdditionalChance = 0.15f; // Additional chance when pawn has low opinion of someone else
-        
+
         // Enhanced Chitchat Insult settings (for debugging/tweaking)
         public float baseEnhancedChitchatInsultChance = 0.05f; // Base chance (5%)
         public float enhancedChitchatInsultMoodMultiplierBad = 1.5f; // Multiplier when mood is low (< 40%)
@@ -232,17 +235,17 @@ Current event: [pawn1] [subject]
         public float enhancedChitchatInsultOpinionMultiplierVeryPositive = 0.6f; // Multiplier when opinion is very positive (> 30)
         public float enhancedChitchatInsultTraitMultiplier = 1.8f; // Multiplier for pawns with encouraging traits
         public float enhancedChitchatInsultOpinionDifferenceMultiplier = 0.5f; // Multiplier scale for opinion differences
-        
+
         // Badmouthing opinion adjustment settings
         public int badmouthingOpinionReductionForTarget = -5; // How much to reduce recipient's opinion of the target
         public int badmouthingOpinionReductionForInitiator = -8; // How much to reduce recipient's opinion of the initiator when it's inappropriate
         public int badmouthingLowOpinionThreshold = 0; // Threshold for considering an opinion "low"
-        
+
         // Admiration interaction settings (for debugging/tweaking)
         public float baseAdmirationChance = 0.03f; // Base chance for admiration interactions
         public float admirationAttractionMultiplier = 2.0f; // Multiplier when initiator shares traits/skills with recipient
         public float admirationPositiveOpinionMultiplier = 1.5f; // Multiplier when opinion is positive
-        
+
         // Admiration opinion impact settings
         public float admirationOpinionIncreaseOnSuccess = 3f; // Opinion increase when admiration successfully boosts standing
         public float admirationOpinionDecreaseOnFail = -1f; // Opinion change when admiration fails poorly
@@ -276,7 +279,7 @@ Current event: [pawn1] [subject]
         public float baseMakeUpChance = 0.08f; // Base chance for make-up/apologizing attempts
         public float makeUpPositiveOpinionMultiplier = 1.5f; // Multiplier when opinion is positive
         public float makeUpNegativeOpinionMultiplier = 0.7f; // Multiplier when opinion is negative
-        
+
         // Pester Prisoner/Slave settings
         public bool enablePesterPrisonerFeature = true; // Whether pester prisoner feature is enabled
         public int pesterPrisonerDuration = 7200; // Duration in ticks (2 minutes)
@@ -285,7 +288,7 @@ Current event: [pawn1] [subject]
         public float pesterJoyGainRate = 0.0001f; // Joy gain per tick
         public float pesterSuppressionAmount = 0.1f; // Default suppression increase per insult
 
-        
+
         public override void ExposeData()
         {
             base.ExposeData();
@@ -303,7 +306,7 @@ Current event: [pawn1] [subject]
             Scribe_Values.Look(ref wordsPerLineLimit, "wordsPerLineLimit", 10);
             Scribe_Values.Look(ref wordsPerSecond, "wordsPerSecond", 3.0f);
             Scribe_Values.Look(ref llmMaxDialogueLines, "llmMaxDialogueLines", 10);
-            
+
             Scribe_Values.Look(ref llmTemperature, "llmTemperature", 0.7f);
             Scribe_Values.Look(ref llmMaxTokens, "llmMaxTokens", 300);
             Scribe_Values.Look(ref llmTopK, "llmTopK", 40);
@@ -341,7 +344,7 @@ Current event: [pawn1] [subject]
             Scribe_Values.Look(ref enableIdeologyConversionInteractions, "enableIdeologyConversionInteractions", true);
             Scribe_Values.Look(ref enableKindWordsInteractions, "enableKindWordsInteractions", true);
             Scribe_Values.Look(ref enableRaidNegotiation, "enableRaidNegotiation", true);
-            
+
             // New interaction toggles
             Scribe_Values.Look(ref enableFlirt, "enableFlirt", true);
             Scribe_Values.Look(ref enableSlight, "enableSlight", true);
@@ -364,9 +367,9 @@ Current event: [pawn1] [subject]
             Scribe_Values.Look(ref joyThresholdForDate, "joyThresholdForDate", 0.8f);
             Scribe_Values.Look(ref verboseLogging, "verboseLogging", false);
             Scribe_Values.Look(ref forceChatCompletion, "forceChatCompletion", true);
-            
+
             Scribe_Values.Look(ref useBackgroundTextRendering, "useBackgroundTextRendering", false);
-            
+
             // Magic number settings (not exposed in UI)
             Scribe_Values.Look(ref meleeTauntProbability, "meleeTauntProbability", 0.35f);
             Scribe_Values.Look(ref shootTauntProbability, "shootTauntProbability", 0.15f);
@@ -380,11 +383,11 @@ Current event: [pawn1] [subject]
             Scribe_Values.Look(ref jobCheckIntervalTicks, "jobCheckIntervalTicks", 60);
             Scribe_Values.Look(ref initialToleranceTicks, "initialToleranceTicks", 60);
             Scribe_Values.Look(ref goOnDateCooldownTicks, "goOnDateCooldownTicks", 600);
-            
+
             // Dating lovin' settings
             Scribe_Values.Look(ref dateLovinTimeoutTicks, "dateLovinTimeoutTicks", 300);
             Scribe_Values.Look(ref maxDistanceToLovinSpot, "maxDistanceToLovinSpot", 50f);
-            
+
             // Dating partner selection weights/penalties
             Scribe_Values.Look(ref spouseDateWeight, "spouseDateWeight", 100f);
             Scribe_Values.Look(ref fianceDateWeight, "fianceDateWeight", 90f);
@@ -393,7 +396,7 @@ Current event: [pawn1] [subject]
             Scribe_Values.Look(ref nonRelatedPartnerWeightFactor, "nonRelatedPartnerWeightFactor", 1.0f);
             Scribe_Values.Look(ref cheatingPenalty, "cheatingPenalty", 30f);
             Scribe_Values.Look(ref opinionDifferenceThreshold, "opinionDifferenceThreshold", 20f);
-            
+
             // Badmouthing interaction settings (for debugging/tweaking)
             Scribe_Values.Look(ref baseBadmouthingChance, "baseBadmouthingChance", 0.05f);
             Scribe_Values.Look(ref traitEncouragedBadmouthingChance, "traitEncouragedBadmouthingChance", 0.25f);
@@ -401,7 +404,7 @@ Current event: [pawn1] [subject]
             Scribe_Values.Look(ref badmouthingOpinionReductionForTarget, "badmouthingOpinionReductionForTarget", -5);
             Scribe_Values.Look(ref badmouthingOpinionReductionForInitiator, "badmouthingOpinionReductionForInitiator", -8);
             Scribe_Values.Look(ref badmouthingLowOpinionThreshold, "badmouthingLowOpinionThreshold", 0);
-            
+
             // Enhanced Chitchat Insult settings (for debugging/tweaking)
             Scribe_Values.Look(ref baseEnhancedChitchatInsultChance, "baseEnhancedChitchatInsultChance", 0.05f);
             Scribe_Values.Look(ref enhancedChitchatInsultMoodMultiplierBad, "enhancedChitchatInsultMoodMultiplierBad", 1.5f);
@@ -410,17 +413,17 @@ Current event: [pawn1] [subject]
             Scribe_Values.Look(ref enhancedChitchatInsultOpinionMultiplierVeryPositive, "enhancedChitchatInsultOpinionMultiplierVeryPositive", 0.6f);
             Scribe_Values.Look(ref enhancedChitchatInsultTraitMultiplier, "enhancedChitchatInsultTraitMultiplier", 1.8f);
             Scribe_Values.Look(ref enhancedChitchatInsultOpinionDifferenceMultiplier, "enhancedChitchatInsultOpinionDifferenceMultiplier", 0.5f);
-            
+
             // Admiration interaction settings (for debugging/tweaking)
             Scribe_Values.Look(ref baseAdmirationChance, "baseAdmirationChance", 0.05f);
             Scribe_Values.Look(ref admirationAttractionMultiplier, "admirationAttractionMultiplier", 2.0f);
             Scribe_Values.Look(ref admirationPositiveOpinionMultiplier, "admirationPositiveOpinionMultiplier", 1.5f);
-            
+
             // Admiration opinion impact settings
             Scribe_Values.Look(ref admirationOpinionIncreaseOnSuccess, "admirationOpinionIncreaseOnSuccess", 3f);
             Scribe_Values.Look(ref admirationOpinionDecreaseOnFail, "admirationOpinionDecreaseOnFail", -1f);
             Scribe_Values.Look(ref admirationNegativeImpactChance, "admirationNegativeImpactChance", 0.1f);
-            
+
             // Backstabbing interaction settings
             Scribe_Values.Look(ref enableBackstabbing, "enableBackstabbing", true);
             Scribe_Values.Look(ref baseBackstabbingChance, "baseBackstabbingChance", 0.05f);
@@ -465,7 +468,7 @@ Current event: [pawn1] [subject]
                 // This ensures we reset templates to support the new API-specific endings
                 Version currentVer;
                 Version loadedVer;
-                
+
                 bool currentParsed = Version.TryParse(CURRENT_VERSION, out currentVer);
                 bool loadedParsed = Version.TryParse(modVersion, out loadedVer);
 
@@ -474,7 +477,7 @@ Current event: [pawn1] [subject]
                     SLog.Message(string.Format("[SocialInteractions] Detected mod update to {0}. Resetting prompt templates to default to support new API features.", CURRENT_VERSION));
                     llmPromptTemplate = DEFAULT_DIALOGUE_TEMPLATE;
                     llmMonologuePromptTemplate = DEFAULT_MONOLOGUE_TEMPLATE;
-                    
+
                     // Update the version to current so we don't reset again
                     modVersion = CURRENT_VERSION;
                 }
@@ -486,7 +489,7 @@ Current event: [pawn1] [subject]
                         SLog.Message(string.Format("[SocialInteractions] Detected mod update to {0}. Resetting prompt templates to default to support new API features.", CURRENT_VERSION));
                         llmPromptTemplate = DEFAULT_DIALOGUE_TEMPLATE;
                         llmMonologuePromptTemplate = DEFAULT_MONOLOGUE_TEMPLATE;
-                        
+
                         // Update the version to current so we don't reset again
                         modVersion = CURRENT_VERSION;
                     }
@@ -524,7 +527,7 @@ Current event: [pawn1] [subject]
         private string llmPromptTemplateBuffer;
         private string llmMonologuePromptTemplateBuffer;
         private string openAiModelNameBuffer;
-        
+
         // TTS Buffers
         private string ttsApiUrlBuffer;
         private string ttsApiKeyBuffer;
@@ -558,7 +561,7 @@ Current event: [pawn1] [subject]
             listingStandard.Begin(viewRect);
             string settingsTitle = string.Format("{0} v{1}", "SocialInteractions_SettingsTitle".Translate(), SocialInteractions.Settings.modVersion);
             listingStandard.Label(settingsTitle);
-            
+
             listingStandard.Gap();
             listingStandard.CheckboxLabeled("SocialInteractions_EnableVerboseLogging".Translate(), ref SocialInteractions.Settings.verboseLogging, "SocialInteractions_EnableVerboseLoggingDesc".Translate());
 
@@ -584,7 +587,7 @@ Current event: [pawn1] [subject]
             SocialInteractions.Settings.joyThresholdForDate = listingStandard.Slider(SocialInteractions.Settings.joyThresholdForDate, 0f, 1f);
             listingStandard.Label(string.Format("SocialInteractions_BaseLovinChance".Translate() + " {0}", SocialInteractions.Settings.baseLovinChance.ToString("F2")));
             SocialInteractions.Settings.baseLovinChance = listingStandard.Slider(SocialInteractions.Settings.baseLovinChance, 0f, 1f);
-            
+
             // Children misbehavior settings
             listingStandard.Gap();
             listingStandard.CheckboxLabeled("SocialInteractions_EnableChildrenMisbehavior".Translate(), ref SocialInteractions.Settings.enableChildrenMisbehavior, "SocialInteractions_EnableChildrenMisbehaviorDesc".Translate());
@@ -626,22 +629,22 @@ Current event: [pawn1] [subject]
             listingStandard.Label("SocialInteractions_EnhancedChitchatInsultSettings".Translate());
             listingStandard.Label(string.Format("SocialInteractions_BaseChance".Translate() + ": {0:F3}", SocialInteractions.Settings.baseEnhancedChitchatInsultChance));
             SocialInteractions.Settings.baseEnhancedChitchatInsultChance = listingStandard.Slider(SocialInteractions.Settings.baseEnhancedChitchatInsultChance, 0f, 1f);
-            
+
             // listingStandard.Label(string.Format("Mood multiplier (bad mood): {0:F2}", SocialInteractions.Settings.enhancedChitchatInsultMoodMultiplierBad));
             // SocialInteractions.Settings.enhancedChitchatInsultMoodMultiplierBad = listingStandard.Slider(SocialInteractions.Settings.enhancedChitchatInsultMoodMultiplierBad, 0.1f, 5f);
-            
+
             // listingStandard.Label(string.Format("Mood multiplier (good mood): {0:F2}", SocialInteractions.Settings.enhancedChitchatInsultMoodMultiplierGood));
             // SocialInteractions.Settings.enhancedChitchatInsultMoodMultiplierGood = listingStandard.Slider(SocialInteractions.Settings.enhancedChitchatInsultMoodMultiplierGood, 0.1f, 1f);
-            
+
             // listingStandard.Label(string.Format("Opinion multiplier (very negative): {0:F2}", SocialInteractions.Settings.enhancedChitchatInsultOpinionMultiplierVeryNegative));
             // SocialInteractions.Settings.enhancedChitchatInsultOpinionMultiplierVeryNegative = listingStandard.Slider(SocialInteractions.Settings.enhancedChitchatInsultOpinionMultiplierVeryNegative, 0.5f, 5f);
-            
+
             // listingStandard.Label(string.Format("Opinion multiplier (very positive): {0:F2}", SocialInteractions.Settings.enhancedChitchatInsultOpinionMultiplierVeryPositive));
             // SocialInteractions.Settings.enhancedChitchatInsultOpinionMultiplierVeryPositive = listingStandard.Slider(SocialInteractions.Settings.enhancedChitchatInsultOpinionMultiplierVeryPositive, 0.1f, 1f);
-            
+
             // listingStandard.Label(string.Format("Trait multiplier: {0:F2}", SocialInteractions.Settings.enhancedChitchatInsultTraitMultiplier));
             // SocialInteractions.Settings.enhancedChitchatInsultTraitMultiplier = listingStandard.Slider(SocialInteractions.Settings.enhancedChitchatInsultTraitMultiplier, 0.5f, 5f);
-            
+
             // listingStandard.Label(string.Format("Opinion difference impact: {0:F2}", SocialInteractions.Settings.enhancedChitchatInsultOpinionDifferenceMultiplier));
             // SocialInteractions.Settings.enhancedChitchatInsultOpinionDifferenceMultiplier = listingStandard.Slider(SocialInteractions.Settings.enhancedChitchatInsultOpinionDifferenceMultiplier, 0f, 2f);
 
@@ -650,10 +653,10 @@ Current event: [pawn1] [subject]
             listingStandard.Label("SocialInteractions_AdmirationSettings".Translate());
             listingStandard.Label(string.Format("SocialInteractions_BaseChance".Translate() + ": {0:F3}", SocialInteractions.Settings.baseAdmirationChance));
             SocialInteractions.Settings.baseAdmirationChance = listingStandard.Slider(SocialInteractions.Settings.baseAdmirationChance, 0f, 1f);
-            
+
             // listingStandard.Label(string.Format("Attraction multiplier: {0:F2}", SocialInteractions.Settings.admirationAttractionMultiplier));
             // SocialInteractions.Settings.admirationAttractionMultiplier = listingStandard.Slider(SocialInteractions.Settings.admirationAttractionMultiplier, 0.5f, 5f);
-            
+
             // listingStandard.Label(string.Format("Positive opinion multiplier: {0:F2}", SocialInteractions.Settings.admirationPositiveOpinionMultiplier));
             // SocialInteractions.Settings.admirationPositiveOpinionMultiplier = listingStandard.Slider(SocialInteractions.Settings.admirationPositiveOpinionMultiplier, 0.5f, 3f);
 
@@ -662,10 +665,10 @@ Current event: [pawn1] [subject]
             // listingStandard.Label("Admiration Opinion Impact:");
             // listingStandard.Label(string.Format("Opinion increase on success: {0:F1}", SocialInteractions.Settings.admirationOpinionIncreaseOnSuccess));
             // SocialInteractions.Settings.admirationOpinionIncreaseOnSuccess = listingStandard.Slider(SocialInteractions.Settings.admirationOpinionIncreaseOnSuccess, 0f, 10f);
-            
+
             // listingStandard.Label(string.Format("Negative impact chance: {0:F2}", SocialInteractions.Settings.admirationNegativeImpactChance));
             // SocialInteractions.Settings.admirationNegativeImpactChance = listingStandard.Slider(SocialInteractions.Settings.admirationNegativeImpactChance, 0f, 0.5f);
-            
+
             // listingStandard.Label(string.Format("Opinion change on failure: {0:F1}", SocialInteractions.Settings.admirationOpinionDecreaseOnFail));
             // SocialInteractions.Settings.admirationOpinionDecreaseOnFail = listingStandard.Slider(SocialInteractions.Settings.admirationOpinionDecreaseOnFail, -5f, 0f);
 
@@ -685,7 +688,7 @@ Current event: [pawn1] [subject]
             listingStandard.Gap();
             bool oldEnableTTS = SocialInteractions.Settings.enableTTS;
             listingStandard.CheckboxLabeled("SocialInteractions_EnableTTS".Translate(), ref SocialInteractions.Settings.enableTTS, "SocialInteractions_EnableTTSDesc".Translate());
-            
+
             if (SocialInteractions.Settings.enableTTS && !oldEnableTTS)
             {
                 // Auto-fetch when enabled
@@ -700,22 +703,22 @@ Current event: [pawn1] [subject]
                 {
                     ttsDef.buttonVisible = SocialInteractions.Settings.enableTTS;
                     // Force refresh of main buttons
-                    MainButtonDef rDef = DefDatabase<MainButtonDef>.GetNamed("Research", false); 
+                    MainButtonDef rDef = DefDatabase<MainButtonDef>.GetNamed("Research", false);
                     // Hacky: Changing buttonVisible usually requires a refresh. 
                     // RimWorld checks VisibleMainButtons frequently.
                 }
             }
-            
+
             if (SocialInteractions.Settings.enableTTS)
             {
                 listingStandard.Label(string.Format("SocialInteractions_TTSVolume".Translate() + ": {0}%", (int)SocialInteractions.Settings.ttsVolume));
                 SocialInteractions.Settings.ttsVolume = listingStandard.Slider(SocialInteractions.Settings.ttsVolume, 0f, 200f);
-                    
+
                 listingStandard.Label(string.Format("SocialInteractions_TTSSpeed".Translate() + ": {0}x", SocialInteractions.Settings.ttsSpeed.ToString("F2")));
                 SocialInteractions.Settings.ttsSpeed = listingStandard.Slider(SocialInteractions.Settings.ttsSpeed, 0.25f, 4.0f);
-                    
+
                 listingStandard.Gap();
-                
+
                 // TTS API Type Selection (Mirroring LLM style)
                 listingStandard.Label("SocialInteractions_TtsApiType".Translate());
                 string[] ttsTypeNames = new string[] {
@@ -750,7 +753,7 @@ Current event: [pawn1] [subject]
                         }
                     }
                 }
-                
+
                 listingStandard.Gap();
                 listingStandard.Label("SocialInteractions_TTSApiUrl".Translate());
                 ttsApiUrlBuffer = Widgets.TextField(listingStandard.GetRect(Text.LineHeight), ttsApiUrlBuffer);
@@ -763,9 +766,9 @@ Current event: [pawn1] [subject]
                 listingStandard.Label("SocialInteractions_TTSModel".Translate());
                 ttsModelBuffer = Widgets.TextField(listingStandard.GetRect(Text.LineHeight), ttsModelBuffer);
                 SocialInteractions.Settings.ttsModel = ttsModelBuffer;
-                
 
-                    
+
+
                 if (listingStandard.ButtonText("SocialInteractions_RemapVoices".Translate()))
                 {
                     if (Current.Game != null)
@@ -778,7 +781,8 @@ Current event: [pawn1] [subject]
                             Messages.Message("Voice allocations reset and fetching new voices...", MessageTypeDefOf.PositiveEvent, false);
 
                             // Also assign voices proactively to all colonists to make them visible
-                            LongEventHandler.ExecuteWhenFinished(() => {
+                            LongEventHandler.ExecuteWhenFinished(() =>
+                            {
                                 // Fetch all colonists and ensure they have voices assigned
                                 if (Find.CurrentMap != null)
                                 {
@@ -835,14 +839,14 @@ Current event: [pawn1] [subject]
                         }
                     }
                 }
-                    
+
                 int voiceCount = TTSManager.GetVoices().Count;
                 if (voiceCount > 0)
                 {
                     listingStandard.Label("SocialInteractions_VoicesAvailable".Translate(voiceCount));
                 }
             }
-            
+
             listingStandard.Gap();
             listingStandard.Label("SocialInteractions_LLMConfiguration".Translate());
 
@@ -863,7 +867,7 @@ Current event: [pawn1] [subject]
             };
             LlmApiType[] apiTypeValues = (LlmApiType[])System.Enum.GetValues(typeof(LlmApiType));
             int currentApiTypeIndex = System.Array.IndexOf(apiTypeValues, SocialInteractions.Settings.llmApiType);
-            
+
             // Use a horizontal row of buttons instead of SelectionGrid
             Rect rowRect = listingStandard.GetRect(30f);
             float buttonWidth = rowRect.width / apiTypeNames.Length;
@@ -961,7 +965,7 @@ Current event: [pawn1] [subject]
                     SocialInteractions.Settings.ollamaModelName = newOllamaModel;
                 }
             }
-            
+
             // LM Studio-specific settings
             if (SocialInteractions.Settings.llmApiType == LlmApiType.LMStudio)
             {
@@ -973,7 +977,7 @@ Current event: [pawn1] [subject]
                     SocialInteractions.Settings.lmStudioModelName = newLMStudioModel;
                 }
             }
-            
+
             // OpenAI-specific settings
             if (SocialInteractions.Settings.llmApiType == LlmApiType.OpenAI)
             {
@@ -986,7 +990,7 @@ Current event: [pawn1] [subject]
                     SocialInteractions.Settings.openAiModelName = newOpenAiModel;
                 }
             }
-            
+
             // Gemini-specific settings
             if (SocialInteractions.Settings.llmApiType == LlmApiType.Gemini)
             {
@@ -998,7 +1002,7 @@ Current event: [pawn1] [subject]
                     SocialInteractions.Settings.geminiModelName = newGeminiModel;
                 }
             }
-            
+
             // Qwen-specific settings
             if (SocialInteractions.Settings.llmApiType == LlmApiType.Qwen)
             {
@@ -1010,7 +1014,7 @@ Current event: [pawn1] [subject]
                     SocialInteractions.Settings.qwenModelName = newQwenModel;
                 }
             }
-            
+
             // Deepseek-specific settings
             if (SocialInteractions.Settings.llmApiType == LlmApiType.Deepseek)
             {
@@ -1022,7 +1026,7 @@ Current event: [pawn1] [subject]
                     SocialInteractions.Settings.deepseekModelName = newDeepseekModel;
                 }
             }
-            
+
             // Grok-specific settings
             if (SocialInteractions.Settings.llmApiType == LlmApiType.Grok)
             {
@@ -1034,7 +1038,7 @@ Current event: [pawn1] [subject]
                     SocialInteractions.Settings.grokModelName = newGrokModel;
                 }
             }
-            
+
             // Claude-specific settings
             if (SocialInteractions.Settings.llmApiType == LlmApiType.Claude)
             {
@@ -1046,7 +1050,7 @@ Current event: [pawn1] [subject]
                     SocialInteractions.Settings.claudeModelName = newClaudeModel;
                 }
             }
-            
+
             // Player2-specific settings
             if (SocialInteractions.Settings.llmApiType == LlmApiType.Player2)
             {
@@ -1062,8 +1066,8 @@ Current event: [pawn1] [subject]
             listingStandard.Gap();
             listingStandard.CheckboxLabeled("SocialInteractions_DisableLlmThinking".Translate(), ref SocialInteractions.Settings.disableLlmThinking, "SocialInteractions_DisableLlmThinkingDesc".Translate());
 
-            if (SocialInteractions.Settings.llmApiType == LlmApiType.KoboldCpp || 
-                SocialInteractions.Settings.llmApiType == LlmApiType.Ollama || 
+            if (SocialInteractions.Settings.llmApiType == LlmApiType.KoboldCpp ||
+                SocialInteractions.Settings.llmApiType == LlmApiType.Ollama ||
                 SocialInteractions.Settings.llmApiType == LlmApiType.LMStudio)
             {
                 listingStandard.Gap();

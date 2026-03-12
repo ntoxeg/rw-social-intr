@@ -3,8 +3,9 @@ using UnityEngine;
 using Verse;
 using Verse.AI;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Children
 {
     public class JobDriver_ChildPlayWithItem : JobDriver
     {
@@ -66,7 +67,7 @@ namespace SocialInteractions
                 isPlaying = true;
                 Pawn child = pawn;
                 Thing item = (Thing)job.GetTarget(TargetIndex.A).Thing;
-                
+
                 if (item == null)
                 {
                     SLog.Warning("[SocialInteractions] JobDriver_ChildPlayWithItem: Item is null, ending job");
@@ -75,15 +76,15 @@ namespace SocialInteractions
                 }
 
                 // Log the play session
-                SLog.Message(string.Format("[SocialInteractions] Child {0} started playing with item {1}", 
+                SLog.Message(string.Format("[SocialInteractions] Child {0} started playing with item {1}",
                     child.LabelShort, item.Label));
             };
-            
+
             firstHalfPlayToil.tickAction = delegate
             {
                 // Animation is handled in JobDriver_ModifyCarriedThingDrawPos_Patch
             };
-            
+
             firstHalfPlayToil.defaultCompleteMode = ToilCompleteMode.Delay;
             firstHalfPlayToil.defaultDuration = BasePlayDuration / 2; // Half the duration
             firstHalfPlayToil.socialMode = RandomSocialMode.Off;
@@ -95,7 +96,7 @@ namespace SocialInteractions
             {
                 Pawn child = pawn;
                 Thing item = (Thing)job.GetTarget(TargetIndex.A).Thing;
-                
+
                 if (item == null)
                 {
                     SLog.Warning("[SocialInteractions] JobDriver_ChildPlayWithItem: Item is null at midpoint, ending job");
@@ -166,31 +167,31 @@ namespace SocialInteractions
             conditionalToil.initAction = delegate
             {
                 bool itemBroke = (job.count == 1);
-                
+
                 if (itemBroke)
                 {
                     // Item broke - drop it and flee
                     Pawn child = pawn;
                     Thing item = child.carryTracker.CarriedThing;
-                    
+
                     if (item != null)
                     {
                         // Drop the item
                         IntVec3 dropLocation = child.Position;
                         Thing droppedThing;
                         child.carryTracker.TryDropCarriedThing(dropLocation, ThingPlaceMode.Near, out droppedThing);
-                        
+
                         SLog.Message(string.Format("[SocialInteractions] Child {0} dropped broken item {1} and is fleeing",
                             child.LabelShort, item.Label));
                     }
-                    
+
                     isPlaying = false;
-                    
+
                     // Add exclamation mote
                     MoteMaker.MakeColonistActionOverlay(pawn, ThingDefOf.Mote_ColonistFleeing);
-                    
+
                     // Flee to a nearby location (not too far)
-                    IntVec3 fleeDest = CellFinderLoose.GetFleeDest(pawn, new List<Thing>{item}, 20f);
+                    IntVec3 fleeDest = CellFinderLoose.GetFleeDest(pawn, new List<Thing> { item }, 20f);
                     if (fleeDest != IntVec3.Invalid)
                     {
                         Job fleeJob = JobMaker.MakeJob(JobDefOf.Goto, fleeDest);
@@ -217,21 +218,21 @@ namespace SocialInteractions
             {
                 // Animation is handled in JobDriver_ModifyCarriedThingDrawPos_Patch
             };
-            
+
             secondHalfPlayToil.AddFinishAction(() => isPlaying = false);
-            
+
             secondHalfPlayToil.defaultCompleteMode = ToilCompleteMode.Delay;
             secondHalfPlayToil.defaultDuration = BasePlayDuration / 2; // Remaining half
             secondHalfPlayToil.socialMode = RandomSocialMode.Off;
             yield return secondHalfPlayToil;
-            
+
             // Drop the item where the child is (only reached if item didn't break)
             Toil dropToil = new Toil();
             dropToil.initAction = delegate
             {
                 Pawn child = pawn;
                 Thing item = child.carryTracker.CarriedThing;
-                
+
                 if (item == null)
                 {
                     SLog.Warning("[SocialInteractions] JobDriver_ChildPlayWithItem: Item is null during drop, ending job");
@@ -250,7 +251,7 @@ namespace SocialInteractions
                         child.LabelShort, droppedThing.Label, dropLocation));
                 }
             };
-            
+
             yield return dropToil;
         }
     }

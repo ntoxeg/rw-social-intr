@@ -6,8 +6,9 @@ using System;
 using System.Linq;
 using System.Threading.Tasks;
 using UnityEngine;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Children
 {
     public class JobDriver_ChildPlayWithRadio : JobDriver
     {
@@ -56,9 +57,9 @@ namespace SocialInteractions
             decisionToil.initAction = () =>
             {
                 leakLocation = DetermineLeakOutcome();
-                
-                string subject = leakLocation 
-                    ? "talking to stranger on radio, accidentally reveals location." 
+
+                string subject = leakLocation
+                    ? "talking to stranger on radio, accidentally reveals location."
                     : "talking to stranger on radio, chatting innocently or outsmarting them.";
 
                 // Use helper for LLM monologue
@@ -74,8 +75,8 @@ namespace SocialInteractions
                     QueuedIncident qi = new QueuedIncident(new FiringIncident(IncidentDefOf.RaidEnemy, null, parms), Find.TickManager.TicksGame + 60000);
                     Find.Storyteller.incidentQueue.Add(qi);
 
-                    Find.LetterStack.ReceiveLetter("Location Leaked!", 
-                        string.Format("{0} has accidentally revealed your location to raiders while playing with the radio! Expect a raid in about a day.", pawn.LabelShort), 
+                    Find.LetterStack.ReceiveLetter("Location Leaked!",
+                        string.Format("{0} has accidentally revealed your location to raiders while playing with the radio! Expect a raid in about a day.", pawn.LabelShort),
                         LetterDefOf.ThreatBig, pawn);
                 }
             };

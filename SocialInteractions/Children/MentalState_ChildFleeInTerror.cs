@@ -2,8 +2,10 @@ using RimWorld;
 using System;
 using Verse;
 using Verse.AI;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Children
 {
     public class MentalState_ChildFleeInTerror : MentalState
     {

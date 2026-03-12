@@ -8,8 +8,9 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.IO;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Api
 {
     [DataContract]
     public class OpenAiApiMessage
@@ -35,7 +36,7 @@ namespace SocialInteractions
         public bool Stream { get; set; }
         [DataMember(Name = "stop")]
         public List<string> Stop { get; set; }
-        
+
         // Extended sampler settings for OpenAI-compatible servers
         [DataMember(Name = "top_p", EmitDefaultValue = false)]
         public float? TopP { get; set; }
@@ -101,10 +102,10 @@ namespace SocialInteractions
             // Trim whitespace which can cause header issues
             _apiKey = (apiKey != null) ? apiKey.Trim() : null;
             _httpClient = SharedHttpClient;
-            
+
             // Clear any existing default request headers
             _httpClient.DefaultRequestHeaders.Clear();
-            
+
             // Add default request headers for OpenAI
             if (!string.IsNullOrEmpty(_apiKey))
             {
@@ -125,7 +126,7 @@ namespace SocialInteractions
                     SLog.Warning(string.Format("[SocialInteractions] Failed to add Authorization header for OpenAI. Error: {0}", ex.Message));
                 }
             }
-            
+
             // Add required content type header
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "SocialInteractionsMod/1.0");
         }
@@ -160,7 +161,7 @@ namespace SocialInteractions
                     MaxTokens = maxLength ?? SocialInteractions.Settings.llmMaxTokens,
                     Stream = false,
                     Stop = stopSequence ?? new List<string>(SocialInteractions.Settings.llmStoppingStrings.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries)),
-                    
+
                     // Populate extended sampler settings
                     TopK = topK ?? (SocialInteractions.Settings.llmTopK > 0 ? (int?)SocialInteractions.Settings.llmTopK : null),
                     TopP = topP ?? (SocialInteractions.Settings.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.llmTopP : null),
@@ -213,16 +214,16 @@ namespace SocialInteractions
                     }
                     fullUrl = fullUrl + "/chat/completions";
                 }
-                
+
                 var response = await _httpClient.PostAsync(fullUrl, httpContent);
-                
+
                 // Log the response status code for debugging
                 SLog.Message(string.Format("[SocialInteractions] OpenAI API Response Status: {0}", response.StatusCode));
-                
+
                 response.EnsureSuccessStatusCode(); // Throws an exception if the HTTP response status is an error code
 
                 var responseBody = await response.Content.ReadAsStringAsync();
-                
+
                 // Log the response body for debugging
                 SLog.Message(string.Format("[SocialInteractions] OpenAI API Response Body: {0}", responseBody));
 
@@ -257,10 +258,10 @@ namespace SocialInteractions
             response = System.Text.RegularExpressions.Regex.Replace(response, @"<thinking>.*?</thinking>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             response = System.Text.RegularExpressions.Regex.Replace(response, @"<think>.*?</think>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             response = System.Text.RegularExpressions.Regex.Replace(response, @"\[thinking\].*?\[/thinking\]", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            
+
             // Trim whitespace
             response = response.Trim();
-            
+
             return response;
         }
 

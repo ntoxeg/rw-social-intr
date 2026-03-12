@@ -2,8 +2,10 @@ using RimWorld;
 using Verse;
 using Verse.AI;
 using System.Collections.Generic;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Dating
 {
     public class JobDriver_PesterPrisonerPartner : JobDriver
     {
@@ -76,7 +78,7 @@ namespace SocialInteractions
                 // However, the user's snippet includes it, so I'll keep it for now, but it will always be true
                 // if the previous check passed.
                 bool initiatorPestering = this.Initiator.CurJobDef != null && (this.Initiator.CurJobDef.defName == "PesterPrisoner" || this.Initiator.CurJobDef.defName == "AbusiveThreesome");
-                
+
                 // If the initiator is not pestering, wait a few ticks before giving up, to handle job transitions
                 // This block is now effectively replaced by the new check at the top of tickAction.
                 // If the initiator's job is not PesterPrisoner, the job will end immediately.
@@ -144,7 +146,7 @@ namespace SocialInteractions
                         this.pawn.pather.StartPath(this.Target, PathEndMode.Touch);
                     }
                 }
-                
+
                 if (this.Target != null)
                 {
                     // Face the target

@@ -1,8 +1,9 @@
 using RimWorld;
 using Verse;
 using Verse.AI;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Jobs
 {
     public class Job_HaveDeepTalk : Job
     {

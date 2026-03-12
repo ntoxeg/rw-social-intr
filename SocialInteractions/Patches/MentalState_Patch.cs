@@ -3,8 +3,9 @@ using RimWorld;
 using Verse;
 using Verse.AI;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(Verse.AI.MentalStateHandler), "TryStartMentalState")]
     public static class MentalState_Patch

@@ -3,8 +3,9 @@ using System.Collections.Generic;
 using System.Linq;
 using Verse;
 using RimWorld;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Speech
 {
     public class VoiceAssignmentManager : GameComponent
     {
@@ -13,7 +14,7 @@ namespace SocialInteractions
 
         // Cache for available voices (runtime only, not saved)
         private static List<string> availableVoices = new List<string>();
-        
+
         public static List<string> AvailableVoices
         {
             get { return availableVoices; }
@@ -176,20 +177,20 @@ namespace SocialInteractions
 
             // Manual handling to prevent "Null key" errors during load
             // This replaces Scribe_Collections.Look(ref voiceMapping...) which crashes on null keys
-            
+
             if (Scribe.mode == LoadSaveMode.Saving)
             {
                 if (voiceMapping != null)
                 {
                     // Remove null keys before saving just in case
                     List<Pawn> keysToRemove = new List<Pawn>();
-                    foreach(var key in voiceMapping.Keys)
+                    foreach (var key in voiceMapping.Keys)
                     {
                         if (key == null) keysToRemove.Add(key);
                     }
-                    foreach(var key in keysToRemove)
+                    foreach (var key in keysToRemove)
                     {
-                         voiceMapping.Remove(key);
+                        voiceMapping.Remove(key);
                     }
 
                     scribeKeys = new List<Pawn>(voiceMapping.Keys);
@@ -248,7 +249,7 @@ namespace SocialInteractions
             // because we don't know what's available.
             // But we can fallback to "alloy" (generic) without saving it, 
             // OR we can try to trigger a load?
-            
+
             if (availableVoices == null || availableVoices.Count == 0)
             {
                 // Fallback to default, do NOT save it yet
@@ -259,20 +260,20 @@ namespace SocialInteractions
             string newVoice = AssignNewVoice(pawn);
             if (!string.IsNullOrEmpty(newVoice))
             {
-                 voiceMapping[pawn] = newVoice;
-                 return newVoice;
+                voiceMapping[pawn] = newVoice;
+                return newVoice;
             }
 
             return "alloy";
         }
-        
+
         private string AssignNewVoice(Pawn pawn)
         {
             // Filter available voices based on gender
             List<string> candidates = new List<string>();
             // Include both American and British voice variants
-            string[] prefixes = pawn.gender == Gender.Female 
-                ? new string[] { "af_", "bf_", "f_", "[Female]" } 
+            string[] prefixes = pawn.gender == Gender.Female
+                ? new string[] { "af_", "bf_", "f_", "[Female]" }
                 : new string[] { "am_", "bm_", "m_", "[Male]" };
 
             foreach (var voice in availableVoices)
@@ -304,7 +305,7 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             // If no gender-specific matches, maybe use any voice?
             if (candidates.Count == 0 && availableVoices.Count > 0)
             {
@@ -313,9 +314,9 @@ namespace SocialInteractions
                 // For now, let's strict filter, but fallback to ANY if none match prefix? 
                 // User said: "make sure... voices starting with af_ are female..."
                 // Implies we SHOULD respect it.
-                
+
                 // If no matching gender voices found, return default (don't assign random mismatch)
-                return "alloy"; 
+                return "alloy";
             }
 
             if (candidates.Count > 0)

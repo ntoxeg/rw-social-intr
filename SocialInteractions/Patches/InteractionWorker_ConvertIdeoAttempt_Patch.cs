@@ -2,8 +2,9 @@ using HarmonyLib;
 using RimWorld;
 using System.Collections.Generic;
 using Verse;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(InteractionWorker_ConvertIdeoAttempt), "Interacted")]
     public static class InteractionWorker_ConvertIdeoAttempt_Patch
@@ -12,7 +13,7 @@ namespace SocialInteractions
         {
             if (SocialInteractions.Settings.verboseLogging)
             {
-                SLog.Message(string.Format("[SocialInteractions] InteractionWorker_ConvertIdeoAttempt_Patch called. Initiator: {0}, Recipient: {1}", 
+                SLog.Message(string.Format("[SocialInteractions] InteractionWorker_ConvertIdeoAttempt_Patch called. Initiator: {0}, Recipient: {1}",
                     initiator?.LabelShort ?? "null", recipient?.LabelShort ?? "null"));
             }
 
@@ -71,18 +72,18 @@ namespace SocialInteractions
             // Trigger the LLM interaction
             // We use HandleNonStoppingInteraction because this interaction happens instantly and doesn't have a sustained job like Deep Talk
             // But we want it to be treated as a social interaction
-            
+
             // Create a temporary interaction def or use a generic one if needed, but HandleInteraction expects one.
             // We can pass null and let GenerateDeepTalkPrompt handle it if we modified it to accept null, 
             // but HandleInteraction might rely on it.
             // Let's check HandleInteraction in SocialInteractions.cs.
-            
+
             // Actually, looking at SocialInteractions.cs, HandleInteraction takes an InteractionDef.
             // We should probably use a dummy def or the actual interaction def if we can get it.
             // InteractionWorker doesn't know its own Def usually.
             // We can use InteractionDefOf.Chitchat as a placeholder or create a custom one.
             // Or we can use HandleMonologue if we just want the initiator to speak, but conversion is a dialogue.
-            
+
             // Use the proper ideology conversion interaction def
             SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, InteractionDefOf.ConvertIdeoAttempt, subject);
         }

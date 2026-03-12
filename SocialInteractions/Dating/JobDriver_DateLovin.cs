@@ -4,8 +4,9 @@ using Verse.AI;
 using UnityEngine;
 using System.Collections.Generic;
 using System;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Dating
 {
     public class JobDriver_DateLovin : JobDriver
     {
@@ -22,44 +23,44 @@ namespace SocialInteractions
                 SLog.Warning("[SocialInteractions] IsPawnValidForDating: pawn is null.");
                 return false;
             }
-            
+
             if (pawn.Destroyed || pawn.Dead || pawn.Downed)
             {
                 return false;
             }
-            
+
             if (pawn.InMentalState)
             {
                 return false;
             }
-            
+
             // Add null checks for health properties
             if (pawn.health == null)
             {
                 SLog.Warning(string.Format("[SocialInteractions] IsPawnValidForDating: pawn {0} has null health.", pawn.LabelShort));
                 return false;
             }
-            
+
             if (pawn.health.capacities == null)
             {
                 SLog.Warning(string.Format("[SocialInteractions] IsPawnValidForDating: pawn {0} has null health.capacities.", pawn.LabelShort));
                 return false;
             }
-            
+
             // Check if the pawn is capable of being awake (basic health check)
             if (!pawn.health.capacities.CanBeAwake)
             {
                 return false;
             }
-            
+
             // Check if the pawn is drafted
             if (pawn.Drafted)
             {
                 return false;
             }
-            
-            
-            
+
+
+
             return true;
         }
         public int ticksLeft; // Initialize to 0 by default
@@ -67,21 +68,21 @@ namespace SocialInteractions
         private TargetIndex PartnerInd = TargetIndex.A;
         private TargetIndex BedPosInd = TargetIndex.B;
 
-        private Pawn Partner 
-        { 
-            get 
-            { 
+        private Pawn Partner
+        {
+            get
+            {
                 if (job == null) return null;
-                return (Pawn)(Thing)job.GetTarget(PartnerInd); 
-            } 
+                return (Pawn)(Thing)job.GetTarget(PartnerInd);
+            }
         }
-        private IntVec3 BedPos 
-        { 
-            get 
-            { 
+        private IntVec3 BedPos
+        {
+            get
+            {
                 if (job == null) return IntVec3.Invalid;
-                return job.GetTarget(BedPosInd).Cell; 
-            } 
+                return job.GetTarget(BedPosInd).Cell;
+            }
         }
 
         public override void ExposeData()
@@ -93,14 +94,14 @@ namespace SocialInteractions
         public override void Notify_Starting()
         {
             base.Notify_Starting();
-            
+
             // Add comprehensive null checks
             if (pawn == null)
             {
                 SLog.Warning("[SocialInteractions] JobDriver_DateLovin: pawn is null in Notify_Starting.");
                 return;
             }
-            
+
             // When starting a DateLovin job, we want to make sure the pawn doesn't get interrupted by non-critical jobs
             // We'll clear any queued jobs and set the job as player-forced to increase its priority
             if (pawn.jobs != null)
@@ -117,7 +118,7 @@ namespace SocialInteractions
         public override bool TryMakePreToilReservations(bool errorOnFailed)
         {
             // Add comprehensive null checks at the beginning
-            if (pawn == null || Partner == null) 
+            if (pawn == null || Partner == null)
             {
                 SLog.Warning("[SocialInteractions] JobDriver_DateLovin: pawn or Partner is null in TryMakePreToilReservations.");
                 return false;
@@ -188,7 +189,7 @@ namespace SocialInteractions
                     this.EndJobWith(JobCondition.Incompletable);
                     return;
                 }
-                
+
                 // Check if both pawns are within a generous distance of each other
                 try
                 {
@@ -225,21 +226,21 @@ namespace SocialInteractions
                     this.EndJobWith(JobCondition.Incompletable);
                     return;
                 }
-                
+
                 // Check if the pawn is still on a date in the Lovin stage
                 if (!DatingManager.IsOnDate(pawn))
                 {
                     this.EndJobWith(JobCondition.Incompletable);
                     return;
                 }
-                
+
                 Date date = DatingManager.GetDateWith(pawn);
                 if (date == null || date.Stage != DateStage.Lovin)
                 {
                     this.EndJobWith(JobCondition.Incompletable);
                     return;
                 }
-                
+
                 ticksLeft = SocialInteractions.Settings.dateLovinTicks;
                 // Don't add the SI_Naked hediff here - wait until the pawns actually start the lovin activity
             };
@@ -263,20 +264,20 @@ namespace SocialInteractions
                     {
                         // The pawn should still be in the DateLovin job
                         // Let's log this situation but continue processing
-                        SLog.Message(string.Format("[SocialInteractions] JobDriver_DateLovin: Initiator {0} is on a date in Lovin stage but curDriver is not this job. Continuing processing.", 
+                        SLog.Message(string.Format("[SocialInteractions] JobDriver_DateLovin: Initiator {0} is on a date in Lovin stage but curDriver is not this job. Continuing processing.",
                             initiator.LabelShort != null ? initiator.LabelShort : "NULL"));
                     }
                     else
                     {
                         // The pawn is no longer on a date in the Lovin stage
                         // End the toil
-                        SLog.Message(string.Format("[SocialInteractions] JobDriver_DateLovin: Initiator {0} is no longer on a date in Lovin stage, ending job.", 
+                        SLog.Message(string.Format("[SocialInteractions] JobDriver_DateLovin: Initiator {0} is no longer on a date in Lovin stage, ending job.",
                             initiator.LabelShort != null ? initiator.LabelShort : "NULL"));
                         ReadyForNextToil();
                         return;
                     }
                 }
-                
+
                 // Re-validate partner reference
                 Pawn currentPartner = Partner;
                 if (currentPartner == null)
@@ -326,7 +327,7 @@ namespace SocialInteractions
                             // "Got some lovin" thoughts, pregnancy, and post-lovin LLM call are now handled in DatingManager.HandleDateStage when stage is Finished
 
                             // Post-lovin LLM call is now handled in DatingManager.HandleDateStage when stage is Finished
-                            
+
                             // Advance the date stage
                             if (date.Stage == DateStage.Lovin)
                             {
@@ -350,7 +351,7 @@ namespace SocialInteractions
                         {
                             FleckMaker.ThrowMetaIcon(initiator.Position, initiator.Map, FleckDefOf.Heart);
                         }
-                        
+
                         if (initiator.needs != null && initiator.needs.joy != null)
                         {
                             initiator.needs.joy.GainJoy(0.05f, JoyKindDefOf.Social);
@@ -376,7 +377,7 @@ namespace SocialInteractions
                         SLog.Warning("[SocialInteractions] JobDriver_DateLovin: pawn is null in cleanupToil.initAction.");
                         return;
                     }
-                    
+
                     // Re-validate partner reference
                     Pawn currentPartner = Partner;
                     if (currentPartner == null)
@@ -384,16 +385,16 @@ namespace SocialInteractions
                         SLog.Warning("[SocialInteractions] JobDriver_DateLovin: Partner is null in cleanupToil.initAction.");
                         return;
                     }
-                    
+
                     // Additional checks to ensure pawns are still valid
                     if (pawn.Destroyed || currentPartner.Destroyed)
                     {
                         SLog.Warning("[SocialInteractions] JobDriver_DateLovin: One or both pawns are destroyed in cleanupToil.initAction.");
                         return;
                     }
-                    
+
                     // Post-lovin LLM call has been moved to the lovinToil.tickAction where the date is still active
-                    
+
                     // Try to remove SI_Naked hediff from initiator (pawn)
                     if (pawn.health != null && pawn.health.hediffSet != null)
                     {
@@ -407,7 +408,7 @@ namespace SocialInteractions
                         }
                         catch (Exception ex)
                         {
-                            SLog.Warning(string.Format("[SocialInteractions] Exception removing SI_Naked hediff from initiator {0}: {1}", 
+                            SLog.Warning(string.Format("[SocialInteractions] Exception removing SI_Naked hediff from initiator {0}: {1}",
                                 pawn.LabelShort != null ? pawn.LabelShort : "NULL", ex.Message));
                         }
                     }
@@ -425,7 +426,7 @@ namespace SocialInteractions
                         }
                         catch (Exception ex)
                         {
-                            SLog.Warning(string.Format("[SocialInteractions] Exception removing SI_Naked hediff from partner {0}: {1}", 
+                            SLog.Warning(string.Format("[SocialInteractions] Exception removing SI_Naked hediff from partner {0}: {1}",
                                 currentPartner.LabelShort != null ? currentPartner.LabelShort : "NULL", ex.Message));
                         }
                     }
@@ -456,7 +457,7 @@ namespace SocialInteractions
                 }
 
                 int totalTicks = SocialInteractions.Settings.dateLovinTicks;
-                
+
                 // Make sure we don't divide by zero
                 if (totalTicks <= 0)
                 {
@@ -478,14 +479,14 @@ namespace SocialInteractions
                     // Drop to 20% speed for the remaining time
                     animationSpeed = 0.3f;
                 }
-                
+
                 // Calculate the base time parameter
                 float baseTime = progress * 8.0f * (totalTicks / 60.0f);
-                
+
                 // Apply the animation speed to effectively change the frequency
                 // To double the speed, we double the frequency (multiply time by speed)
                 float adjustedTime = baseTime * animationSpeed;
-                
+
                 float num = Mathf.Sin(adjustedTime);
                 Pawn initiator = DatingManager.GetInitiatorOfDateWith(pawn);
 

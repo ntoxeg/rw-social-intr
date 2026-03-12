@@ -10,6 +10,13 @@ using System.Text;
 using UnityEngine;
 using System.Linq;
 using System.Text.RegularExpressions;
+using SocialInteractions.Api;
+using SocialInteractions.Dating;
+using SocialInteractions.Speech;
+using SocialInteractions.UI;
+using SocialInteractions.Patches;
+using SocialInteractions.DefOfs;
+using SocialInteractions.Components;
 
 namespace SocialInteractions
 {
@@ -18,16 +25,16 @@ namespace SocialInteractions
     {
         public static SocialInteractionsModSettings Settings { get; set; }
         public static bool isShowingBubble = false;
-        
+
         // Static dictionary to store date partners for cheaters
         public static Dictionary<string, Pawn> CheaterPartners = new Dictionary<string, Pawn>();
-        
+
         // Static field to store the conversation ID for the last cheating interaction
         public static int lastCheatingInteractionConversationId = -1;
-        
+
         // Static dictionary to store custom flavor text for each pawn
         public static Dictionary<int, string> PawnFlavorTexts = new Dictionary<int, string>();
-        
+
         // --- For LLM Efficiency ---
         private static float lastResponseTimeSeconds = 1.0f; // Initial estimate
         // --- End For LLM Efficiency ---
@@ -36,18 +43,18 @@ namespace SocialInteractions
         {
             var harmony = new Harmony("com.gemini.socialinteractions");
             harmony.PatchAll();
-            
+
             // Initialize TTS Manager (reset sequence IDs)
             TTSManager.Initialize();
-            
+
             // Start Player2 health heartbeat if configured
-            if (Settings != null && Settings.llmInteractionsEnabled && 
-                Settings.llmApiType == LlmApiType.Player2 && 
+            if (Settings != null && Settings.llmInteractionsEnabled &&
+                Settings.llmApiType == LlmApiType.Player2 &&
                 !string.IsNullOrEmpty(Settings.player2GameClientId))
             {
                 Player2ApiClient.StartHealthHeartbeat(Settings.llmApiUrl, Settings.player2GameClientId);
             }
-            
+
             // Log that patches were applied
             SLog.Message("[SocialInteractions] Harmony patches applied");
         }
@@ -63,14 +70,14 @@ namespace SocialInteractions
             {
                 return string.Empty;
             }
-            
+
             // Try to get from the game component first, fall back to static dictionary
             PawnFlavorText_GameComponent gameComp = null;
             if (Current.Game != null)
             {
                 gameComp = Current.Game.GetComponent<PawnFlavorText_GameComponent>();
             }
-            
+
             if (gameComp != null)
             {
                 return gameComp.GetFlavorText(pawn.thingIDNumber);
@@ -83,7 +90,7 @@ namespace SocialInteractions
                     return PawnFlavorTexts[pawn.thingIDNumber];
                 }
             }
-            
+
             return string.Empty;
         }
 
@@ -98,14 +105,14 @@ namespace SocialInteractions
             {
                 return;
             }
-            
+
             // Update the game component if available, otherwise update the static dictionary
             PawnFlavorText_GameComponent gameComp = null;
             if (Current.Game != null)
             {
                 gameComp = Current.Game.GetComponent<PawnFlavorText_GameComponent>();
             }
-            
+
             if (gameComp != null)
             {
                 gameComp.SetFlavorText(pawn.thingIDNumber, flavorText);
@@ -130,7 +137,7 @@ namespace SocialInteractions
             //SLog.Message(string.Format("[SocialInteractions] IsLlmInteractionEnabled called for: {0}", interactionDef.defName));
             if (!Settings.llmInteractionsEnabled) return false;
 
-            
+
             if (interactionDef == InteractionDefOf.Chitchat && Settings.enableChitchat) return true;
             if (interactionDef == InteractionDefOf.DeepTalk && Settings.enableDeepTalk) return true;
             if (interactionDef == InteractionDefOf.Insult && Settings.enableInsult) return true;
@@ -200,8 +207,8 @@ namespace SocialInteractions
             string pawn2Name = recipient != null ? recipient.LabelShort : "Pawn2";
 
             // Determine if using text completion or chat completion API
-            bool isLocalApi = Settings.llmApiType == LlmApiType.KoboldCpp || 
-                              Settings.llmApiType == LlmApiType.LMStudio || 
+            bool isLocalApi = Settings.llmApiType == LlmApiType.KoboldCpp ||
+                              Settings.llmApiType == LlmApiType.LMStudio ||
                               Settings.llmApiType == LlmApiType.Ollama;
             bool isTextCompletion = isLocalApi && !Settings.forceChatCompletion;
 
@@ -225,7 +232,7 @@ namespace SocialInteractions
             {
                 return null;
             }
-            
+
             if (interactionDef == null && subject == null)
             {
                 return null;
@@ -242,7 +249,7 @@ namespace SocialInteractions
             }
 
             bool isEnabled = false;
-            
+
             if (interactionDef == null)
             {
                 // If interactionDef is null, we assume the caller has already checked specific permissions
@@ -395,8 +402,8 @@ namespace SocialInteractions
 
             // Add API-specific ending for monologue
             string pawnName = pawn != null ? pawn.Name.ToStringShort : "Pawn";
-            bool isLocalApi = Settings.llmApiType == LlmApiType.KoboldCpp || 
-                              Settings.llmApiType == LlmApiType.LMStudio || 
+            bool isLocalApi = Settings.llmApiType == LlmApiType.KoboldCpp ||
+                              Settings.llmApiType == LlmApiType.LMStudio ||
                               Settings.llmApiType == LlmApiType.Ollama;
             bool isTextCompletion = isLocalApi && !Settings.forceChatCompletion;
 
@@ -471,12 +478,12 @@ namespace SocialInteractions
 
             // Extract pawn data using the existing helper method
             var pawnData = ExtractPawnData(pawn, "target");
-            
+
             // Get the key information
             string sex = pawnData.ContainsKey("target_sex") ? pawnData["target_sex"].ToLower() : "unknown";
             string ageStr = pawnData.ContainsKey("target_age") ? pawnData["target_age"] : "unknown";
             string title = pawnData.ContainsKey("target_title") ? pawnData["target_title"] : "outsider";
-            
+
             // Parse age to get the main age value
             string age = "unknown age";
             if (ageStr != "Unknown")
@@ -491,7 +498,7 @@ namespace SocialInteractions
                     age = ageStr + " years old";
                 }
             }
-            
+
             return string.Format("{0}, {1}, {2}", sex, age, title);
         }
 
@@ -541,7 +548,7 @@ namespace SocialInteractions
                 data[prefix + "_age"] = biologicalAge.ToString();
             }
             data[prefix + "_sex"] = pawn.gender.ToString();
-            
+
             // Title (colonist/prisoner/slave/outsider/guest/animal) with optional royalty title
             string title = "outsider"; // Default to outsider
             if (!pawn.RaceProps.Humanlike)
@@ -630,7 +637,7 @@ namespace SocialInteractions
             {
                 title = (pawn.story != null && !pawn.story.TitleShort.NullOrEmpty()) ? pawn.story.TitleShort : "guest";
             }
-            
+
             // Append royalty title if the pawn has one
             if (pawn.royalty != null)
             {
@@ -638,7 +645,7 @@ namespace SocialInteractions
                 if (royalTitle != null)
                 {
                     title += " (" + royalTitle.GetLabelCapFor(pawn);
-                    
+
                     // If the pawn has a noble rank and belongs to a faction, add the faction name
                     // Check the title's faction first, then fall back to pawn's faction
                     Faction titleFaction = null;
@@ -654,13 +661,13 @@ namespace SocialInteractions
                             }
                         }
                     }
-                    
+
                     // If we couldn't get the title's faction, fall back to pawn's faction
                     if (titleFaction == null && pawn.Faction != null && !pawn.Faction.IsPlayer)
                     {
                         titleFaction = pawn.Faction;
                     }
-                    
+
                     if (titleFaction != null)
                     {
                         // Add more detailed logging to help debug faction name issues
@@ -675,35 +682,35 @@ namespace SocialInteractions
                             title += " of " + titleFaction.def.label;
                         }
                     }
-                    
+
                     title += ")";
                 }
             }
-            
+
             data[prefix + "_title"] = title;
 
             // Faction
             string faction = "Unknown";
             if (pawn.Faction != null)
             {
-               faction = pawn.Faction.Name;
+                faction = pawn.Faction.Name;
             }
             data[prefix + "_faction"] = faction;
-            
+
             // Ideology
             string ideology = "None";
             string ideologyDesc = "None";
             if (pawn.Ideo != null)
             {
                 ideology = pawn.Ideo.name;
-                
+
                 // Build detailed description with memes
                 List<string> memesList = new List<string>();
                 foreach (MemeDef meme in pawn.Ideo.memes)
                 {
                     memesList.Add(meme.LabelCap);
                 }
-                
+
                 if (memesList.Count > 0)
                 {
                     ideologyDesc = string.Format("{0} (Memes: {1})", ideology, string.Join(", ", memesList.ToArray()));
@@ -713,7 +720,7 @@ namespace SocialInteractions
                     ideologyDesc = ideology;
                 }
             }
-            
+
             data[prefix + "_ideology"] = ideology;
             data[prefix + "_ideology_desc"] = ideologyDesc;
 
@@ -762,7 +769,7 @@ namespace SocialInteractions
 
             // Proficiencies (top skills)
             data[prefix + "_proficiencies"] = GetProficiencies(pawn);
-            
+
             // Cannot do (disabled skills)
             data[prefix + "_noskills"] = GetNoSkills(pawn);
 
@@ -801,10 +808,10 @@ namespace SocialInteractions
 
             // Add social log information
             data[prefix + "_journal"] = GetLastSocialLogEntry(pawn, target);
-            
+
             // Add attire information (what they're wearing on chest/body)
             data[prefix + "_attire"] = GetAttire(pawn);
-            
+
             // Add custom flavor text (bio) for the pawn
             data[prefix + "_bio"] = GetPawnFlavorText(pawn);
 
@@ -827,7 +834,7 @@ namespace SocialInteractions
             {
                 // Split by common line endings
                 string[] lines = rawReasons.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries);
-                
+
                 // Skip the first line (header) and process the rest
                 List<string> cleanedReasons = new List<string>();
                 for (int i = 1; i < lines.Length; i++)
@@ -842,7 +849,7 @@ namespace SocialInteractions
                     {
                         line = line.Substring(1);
                     }
-                    
+
                     if (!string.IsNullOrEmpty(line))
                     {
                         cleanedReasons.Add(line);
@@ -906,8 +913,8 @@ namespace SocialInteractions
                 if (letter != null && letter.def != null)
                 {
                     // Check against known negative letter defs
-                    if (letter.def == LetterDefOf.ThreatBig || 
-                        letter.def == LetterDefOf.ThreatSmall || 
+                    if (letter.def == LetterDefOf.ThreatBig ||
+                        letter.def == LetterDefOf.ThreatSmall ||
                         letter.def == LetterDefOf.Death)
                     {
                         int ticksSince = Find.TickManager.TicksAbs - letter.arrivalTick;
@@ -947,7 +954,7 @@ namespace SocialInteractions
 
             // Define the torso body part group (chest area)
             BodyPartGroupDef torsoGroup = BodyPartGroupDefOf.Torso;
-            
+
             // Find the outermost apparel that covers the torso
             Apparel torsoApparel = null;
             foreach (Apparel apparel in wornApparel)
@@ -961,10 +968,10 @@ namespace SocialInteractions
                     {
                         // For layer-based priority, we want to find the outermost visible layer
                         // We'll prioritize outer layers (Shell > Middle > OnSkin)
-                        if (torsoApparel == null || 
-                            (apparel.def.apparel.layers.Contains(ApparelLayerDefOf.Shell) && 
+                        if (torsoApparel == null ||
+                            (apparel.def.apparel.layers.Contains(ApparelLayerDefOf.Shell) &&
                              !torsoApparel.def.apparel.layers.Contains(ApparelLayerDefOf.Shell)) ||
-                            (apparel.def.apparel.layers.Contains(ApparelLayerDefOf.Middle) && 
+                            (apparel.def.apparel.layers.Contains(ApparelLayerDefOf.Middle) &&
                              torsoApparel.def.apparel.layers.Contains(ApparelLayerDefOf.OnSkin)))
                         {
                             torsoApparel = apparel;
@@ -978,7 +985,7 @@ namespace SocialInteractions
             {
                 return torsoApparel.Label;
             }
-            
+
             // If no apparel covers the torso/chest area specifically, they are naked on the upper body
             return "naked";
         }
@@ -1051,7 +1058,7 @@ namespace SocialInteractions
 
                             bool concernsPawn = (bool)concernsMethod.Invoke(entry, new object[] { pawn });
                             bool concernsTarget = (bool)concernsMethod.Invoke(entry, new object[] { target });
-                            
+
                             // Only return entries that involve BOTH pawns
                             if (concernsPawn && concernsTarget)
                             {
@@ -1068,7 +1075,7 @@ namespace SocialInteractions
             }
             catch (Exception ex)
             {
-                SLog.Warning(string.Format("[SocialInteractions] GetLastSocialLogEntry: Exception while getting social log for {0}: {1}", 
+                SLog.Warning(string.Format("[SocialInteractions] GetLastSocialLogEntry: Exception while getting social log for {0}: {1}",
                     pawn != null ? pawn.LabelShort : "null", ex.Message));
             }
 
@@ -1089,7 +1096,7 @@ namespace SocialInteractions
             {
                 var relationsList = initiator.GetRelations(recipient).ToList(); // Force enumeration here
                 PawnRelationDef relationDef = relationsList.FirstOrDefault();
-                if (relationDef != null) 
+                if (relationDef != null)
                 {
                     // Use gender-specific label if available
                     string genderedLabel = relationDef.GetGenderSpecificLabel(recipient);
@@ -1171,7 +1178,7 @@ namespace SocialInteractions
             var missingParts = pawn.health.hediffSet.GetMissingPartsCommonAncestors()
                 .Where(mp => mp.Part != null && mp.Part.depth == BodyPartDepth.Outside)
                 .Select(mp => mp.Part.LabelCap + " " + mp.Label);
-            
+
             afflictionsList.AddRange(missingParts);
 
             // 2. Get significant bad hediffs (excluding implants and missing parts which are handled above)
@@ -1320,13 +1327,13 @@ namespace SocialInteractions
         public static void HandleInteraction(Pawn initiator, Pawn recipient, InteractionDef interactionDef, string defaultText)
         {
             // If pawns stop on interaction, let the job-based system handle it
-            if (Settings.pawnsStopOnInteraction && 
-                (interactionDef == InteractionDefOf.Chitchat || 
-                 interactionDef == InteractionDefOf.DeepTalk || 
-                 interactionDef == InteractionDefOf.Insult || 
-                 interactionDef == InteractionDefOf.RomanceAttempt || 
-                 interactionDef == InteractionDefOf.MarriageProposal || 
-                 interactionDef == InteractionDefOf.Reassure || 
+            if (Settings.pawnsStopOnInteraction &&
+                (interactionDef == InteractionDefOf.Chitchat ||
+                 interactionDef == InteractionDefOf.DeepTalk ||
+                 interactionDef == InteractionDefOf.Insult ||
+                 interactionDef == InteractionDefOf.RomanceAttempt ||
+                 interactionDef == InteractionDefOf.MarriageProposal ||
+                 interactionDef == InteractionDefOf.Reassure ||
                  interactionDef == InteractionDefOf.DisturbingChat))
             {
                 // For these interactions, when pawnsStopOnInteraction is true, 
@@ -1334,7 +1341,7 @@ namespace SocialInteractions
                 // We don't need to do anything here.
                 return;
             }
-            
+
             if (IsLlmInteractionEnabled(interactionDef))
             {
                 HandleNonStoppingInteraction(initiator, recipient, interactionDef, defaultText);
@@ -1360,7 +1367,7 @@ namespace SocialInteractions
             string subject;
             if (partner != null)
             {
-                subject = string.Format("{0} caught {1} cheating with {2}", 
+                subject = string.Format("{0} caught {1} cheating with {2}",
                     initiator.LabelShort, recipient.LabelShort, partner.LabelShort);
             }
             else
@@ -1368,31 +1375,31 @@ namespace SocialInteractions
                 Pawn foundPartner = DatingManager.GetPartnerOfDateWith(recipient);
                 if (foundPartner != null)
                 {
-                    subject = string.Format("{0} caught {1} cheating with {2}", 
+                    subject = string.Format("{0} caught {1} cheating with {2}",
                         initiator.LabelShort, recipient.LabelShort, foundPartner.LabelShort);
                 }
                 else
                 {
-                    subject = string.Format("{0} caught {1} cheating", 
+                    subject = string.Format("{0} caught {1} cheating",
                         initiator.LabelShort, recipient.LabelShort);
                 }
             }
-                
+
             // Trigger the LLM interaction and return the conversation ID
             int conversationId = HandleNonStoppingInteraction(initiator, recipient, SI_InteractionDefOf.CaughtCheating, subject, true, true);
-            
+
             // Store the conversation ID for this cheating interaction
             lastCheatingInteractionConversationId = conversationId;
-            
+
             return conversationId;
         }
 
         public static int HandleThreewayLovinInteraction(Pawn spouse, Pawn cheater, Pawn partner)
         {
             // Generate a descriptive subject line for the LLM
-            string subject = string.Format("{0} caught {1} cheating with {2}, but instead of getting mad they join in a 3p lovin' session", 
+            string subject = string.Format("{0} caught {1} cheating with {2}, but instead of getting mad they join in a 3p lovin' session",
                 spouse.LabelShort, cheater.LabelShort, partner.LabelShort);
-                
+
             // Trigger the LLM interaction and return the conversation ID
             // We'll use the DateLovin interaction def for this
             // Only if lovin interactions are enabled in settings
@@ -1401,16 +1408,16 @@ namespace SocialInteractions
             {
                 conversationId = HandleNonStoppingInteraction(spouse, cheater, SI_InteractionDefOf.DateLovin, subject, true, true);
             }
-            
+
             return conversationId;
         }
 
         public static int HandleAbusiveThreesomePrompt(Pawn initiator, Pawn partner, Pawn victim)
         {
             // Generate a descriptive subject line for the LLM
-            string subject = string.Format("After bullying {2}, {0} and {1} decide to have some 'fun' with {2}", 
+            string subject = string.Format("After bullying {2}, {0} and {1} decide to have some 'fun' with {2}",
                 initiator.LabelShort, partner.LabelShort, victim.LabelShort);
-                
+
             // Trigger the LLM interaction and return the conversation ID
             // We'll try to use DateLovin first if available, otherwise fallback to generic DeepTalk
             InteractionDef def = SI_InteractionDefOf.DateLovin;
@@ -1418,9 +1425,9 @@ namespace SocialInteractions
             {
                 def = InteractionDefOf.DeepTalk;
             }
-            
+
             int conversationId = HandleNonStoppingInteraction(initiator, partner, def, subject, true, true);
-            
+
             return conversationId;
         }
 
@@ -1477,7 +1484,8 @@ namespace SocialInteractions
             int conversationId = SpeechBubbleManager.StartConversation();
             // SLog.Message(string.Format("[SocialInteractions] Started conversation ID: {0} for monologue by {1}", conversationId, pawn.LabelShort));
 
-            Task.Run(async () => {
+            Task.Run(async () =>
+            {
                 // --- For LLM Efficiency Timing ---
                 DateTime startTime = DateTime.UtcNow;
                 // --- End For LLM Efficiency Timing ---
@@ -1493,7 +1501,8 @@ namespace SocialInteractions
                         float responseSeconds = (float)responseTime.TotalSeconds;
                         lastResponseTimeSeconds = responseSeconds;
                         // Log on main thread
-                        SpeechBubbleManager.EnqueueJob(() => {
+                        SpeechBubbleManager.EnqueueJob(() =>
+                        {
                             // SLog.Message(string.Format("[SocialInteractions] LLM Response time for monologue by {0}: {1:F2}s", pawn.LabelShort, responseSeconds));
                         });
                         // --- End For LLM Efficiency Timing ---
@@ -1532,7 +1541,7 @@ namespace SocialInteractions
                                         // Format the message for a monologue
                                         string formattedMessage = SpeechBubbleManager.FormatMonologueMessage(rawMessage, pawn, true);
                                         string wrappedMessage = SocialInteractions.WrapText(formattedMessage, SocialInteractions.Settings.wordsPerLineLimit);
-                                        
+
                                         // Extract clean text for TTS (removing potential pawn name prefix)
                                         string ttsText = rawMessage;
                                         if (rawMessage.StartsWith(pawn.LabelShort + ":", StringComparison.OrdinalIgnoreCase))
@@ -1656,7 +1665,8 @@ namespace SocialInteractions
             int conversationId = SpeechBubbleManager.StartConversation();
             // SLog.Message(string.Format("[SocialInteractions] Started conversation ID: {0} for interaction {1}", conversationId, defName));
 
-            Task.Run(async () => {
+            Task.Run(async () =>
+            {
                 // --- For LLM Efficiency Timing ---
                 DateTime startTime = DateTime.UtcNow;
                 // --- End For LLM Efficiency Timing ---
@@ -1672,7 +1682,8 @@ namespace SocialInteractions
                         float responseSeconds = (float)responseTime.TotalSeconds;
                         lastResponseTimeSeconds = responseSeconds;
                         // Log on main thread
-                        SpeechBubbleManager.EnqueueJob(() => {
+                        SpeechBubbleManager.EnqueueJob(() =>
+                        {
                             // SLog.Message(string.Format("[SocialInteractions] LLM Response time for interaction {0}: {1:F2}s", interactionDef.defName, responseSeconds));
                         });
                         // --- End For LLM Efficiency Timing ---
@@ -1692,7 +1703,8 @@ namespace SocialInteractions
                         // This ensures the interruption happens precisely when the high-impact content is ready.
                         if (clearQueueOnResponse)
                         {
-                            SpeechBubbleManager.EnqueueJob(() => {
+                            SpeechBubbleManager.EnqueueJob(() =>
+                            {
                                 SLog.Message(string.Format("[SocialInteractions] Clearing speech queue for high-priority response from interaction: {0}", (interactionDef != null) ? interactionDef.defName : "Unknown"));
                                 SpeechBubbleManager.ClearQueues();
                             });
@@ -1750,10 +1762,11 @@ namespace SocialInteractions
 
                                 // --- For LLM Efficiency Unlock ---
                                 // Calculate unlock delay based on last response time estimate and current display time
-								// With ScheduleUnlock removed, the isLlmBusy flag will be managed by the queue state
+                                // With ScheduleUnlock removed, the isLlmBusy flag will be managed by the queue state
                                 // No need to calculate or log unlock delays anymore
                                 // Log on main thread
-                                SpeechBubbleManager.EnqueueJob(() => {
+                                SpeechBubbleManager.EnqueueJob(() =>
+                                {
                                     // SLog.Message(string.Format("[SocialInteractions] Total Display Time: {0:F2}s, Estimated Next Response Time: {1:F2}s", totalDisplaySeconds, lastResponseTimeSeconds));
                                 });
 
@@ -1840,7 +1853,8 @@ namespace SocialInteractions
 
             if (Settings.preventSpam && SpeechBubbleManager.IsLlmCurrentlyBusy()) return;
 
-            Task.Run(async () => {
+            Task.Run(async () =>
+            {
                 KoboldApiClient client = null;
                 try
                 {
@@ -1850,7 +1864,7 @@ namespace SocialInteractions
                     {
                         string llmResponse = await GenerateTextWithApiClient(prompt);
                         SLog.Message(string.Format("[SocialInteractions] LLM Response: {0}", llmResponse != null ? llmResponse.Substring(0, Math.Min(llmResponse.Length, 200)) : "NULL"));
-                        
+
                         if (llmResponse == null)
                         {
                             Log.Warning(string.Format("[SocialInteractions] HandleJobGiverInteraction: LLM API returned null response for interaction {0}", interactionDef.defName));
@@ -1859,7 +1873,7 @@ namespace SocialInteractions
                             SpeechBubbleManager.EnqueueInstant(initiator, fallbackText, 2f, Color.grey); // Use standard mote for fallback
                             return;
                         }
-                        
+
                         if (!string.IsNullOrEmpty(llmResponse))
                         {
                             // Split the response using multiple possible line break characters
@@ -1951,26 +1965,26 @@ namespace SocialInteractions
             {
                 List<string> relatives = new List<string>();
                 HashSet<int> addedRelativeIds = new HashSet<int>(); // Track pawn IDs to prevent duplicates
-                
+
                 // Get direct relations (spouse, lover, etc.)
                 foreach (var relation in pawn.relations.PotentiallyRelatedPawns)
                 {
                     if (relation == null || relation == pawn) continue;
-                    
+
                     // Only include living relatives
                     if (relation.Dead || !relation.Spawned) continue;
-                    
+
                     // Skip if already added (use thingIDNumber as unique identifier)
                     if (addedRelativeIds.Contains(relation.thingIDNumber)) continue;
-                    
+
                     PawnRelationDef relationDef = pawn.GetMostImportantRelation(relation);
                     if (relationDef != null)
                     {
                         // Include first-degree relatives: parents/children/siblings/spouse/fiance/lover
-                        if (relationDef == PawnRelationDefOf.Parent || 
+                        if (relationDef == PawnRelationDefOf.Parent ||
                             relationDef == PawnRelationDefOf.Child ||
                             relationDef == PawnRelationDefOf.Sibling ||
-                            relationDef == PawnRelationDefOf.Spouse || 
+                            relationDef == PawnRelationDefOf.Spouse ||
                             relationDef == PawnRelationDefOf.Fiance ||
                             relationDef == PawnRelationDefOf.Lover)
                         {
@@ -1980,23 +1994,23 @@ namespace SocialInteractions
                         }
                     }
                 }
-                
+
                 // Add ex-relations (ex-lovers, ex-spouses, etc.) to the list by finding all direct relations of ex-types
                 if (pawn.relations != null && pawn.relations.DirectRelations != null)
                 {
                     foreach (DirectPawnRelation relation in pawn.relations.DirectRelations)
                     {
                         if (relation == null || relation.otherPawn == null) continue;
-                        
+
                         // Check if this relation is an ex-relation type
                         if (relation.def == PawnRelationDefOf.ExLover || relation.def == PawnRelationDefOf.ExSpouse)
                         {
                             // Only include living ex-relations
                             if (relation.otherPawn.Dead || !relation.otherPawn.Spawned) continue;
-                            
+
                             // Skip if already added
                             if (addedRelativeIds.Contains(relation.otherPawn.thingIDNumber)) continue;
-                            
+
                             // Get the appropriate label for the relation type
                             string relationLabel = relation.def.GetGenderSpecificLabelCap(relation.otherPawn);
                             if (relationLabel == null || relationLabel.ToString().ToLower() == "null") // Check if label is not properly formatted
@@ -2011,7 +2025,7 @@ namespace SocialInteractions
                                     relationLabel = "ex-spouse";
                                 }
                             }
-                            
+
                             // Add ex-relation to the list
                             relatives.Add(string.Format("{0} ({1})", relation.otherPawn.Name.ToStringShort, relationLabel));
                             addedRelativeIds.Add(relation.otherPawn.thingIDNumber); // Mark this pawn as added
@@ -2026,13 +2040,13 @@ namespace SocialInteractions
             }
             catch (Exception ex)
             {
-                SLog.Warning(string.Format("[SocialInteractions] GetFamily: Exception while getting family for {0}: {1}", 
+                SLog.Warning(string.Format("[SocialInteractions] GetFamily: Exception while getting family for {0}: {1}",
                     pawn != null ? pawn.LabelShort : "null", ex.Message));
             }
 
             return "None";
         }
-        
+
         /// <summary>
         /// Removes rich text tags from a string
         /// </summary>
@@ -2267,7 +2281,7 @@ namespace SocialInteractions
             }
             return null;
         }
-        
+
         /// <summary>
         /// Gets a random selection of the least favorite pawn from the bottom 5 most disliked pawns
         /// Enhanced to consider social power dynamics to promote natural group formation
@@ -2288,7 +2302,7 @@ namespace SocialInteractions
             List<Pawn> pawnsSnapshot = new List<Pawn>(pawn.Map.mapPawns.FreeColonistsAndPrisoners);
 
             // SLog.Message(string.Format("[SocialInteractions] GetWeightedLeastFavoritePawn: {0} considering {1} pawns", 
-                // pawn.LabelShort, pawnsSnapshot.Count));
+            // pawn.LabelShort, pawnsSnapshot.Count));
 
             foreach (Pawn otherPawn in pawnsSnapshot)
             {
@@ -2305,14 +2319,14 @@ namespace SocialInteractions
 
                 // Get raw opinion value (negative is worse for the target)
                 int opinion = pawn.relations != null ? pawn.relations.OpinionOf(otherPawn) : 0;
-                
+
                 // Calculate social influence of this pawn (how well-regarded they are by others) -  0-1
                 // This replicates the logic from DramaInteractionPatches.cs for use here
                 float SocialInfluence = SocialInfluenceUtility.CalculateSocialInfluence(otherPawn, pawnsSnapshot);
-                
+
                 // Calculate integration with initiator's social network ( 0-1) - similar to method in DramaInteractionPatches.cs
                 float Integration = SocialInfluenceUtility.CalculateSocialIntegration(pawn, otherPawn, pawnsSnapshot);
-                
+
                 // Create a base score (lower = more likely to be targeted initially based on negative opinion)
                 // Negative opinion = better target for badmouthing
                 float baseScore = -opinion; // Invert so that negative opinions (disliked) result in positive scores (higher = more targeted)
@@ -2322,16 +2336,16 @@ namespace SocialInteractions
                 float socialVulnerability = 1.0f - SocialInfluence; // 0.0 = high influence, 1.0 = no influence
                 // Pawns with low integration are more vulnerable (1.0 - Integration)
                 float integrationVulnerability = 1.0f - Integration; // 0.0 = high integration, 1.0 = no integration
-                
+
                 // Calculate combined vulnerability where higher values = more vulnerable
                 float combinedVulnerability = (socialVulnerability + integrationVulnerability) / 2f;
-                
+
                 // Calculate final score: base score (based on negative opinion) + vulnerability component
                 // More negative opinions and higher vulnerability = higher final score = more likely to be targeted
                 float finalScore = baseScore + (combinedVulnerability * 100f); // Scale vulnerability to match opinion scale
 
                 // SLog.Message(string.Format("[SocialInteractions] GetWeightedLeastFavoritePawn: {0} -> opinion: {1}, baseScore: {2}, SocialInfluence: {3}, Integration: {4}, socialVulnerability: {5}, integrationVulnerability: {6}, combinedVulnerability: {7}, finalScore: {8}", 
-                    // otherPawn.LabelShort, opinion, baseScore, SocialInfluence, Integration, socialVulnerability, integrationVulnerability, combinedVulnerability, finalScore));
+                // otherPawn.LabelShort, opinion, baseScore, SocialInfluence, Integration, socialVulnerability, integrationVulnerability, combinedVulnerability, finalScore));
 
                 pawnScores.Add(new KeyValuePair<Pawn, float>(otherPawn, finalScore));
             }
@@ -2356,8 +2370,8 @@ namespace SocialInteractions
             // SLog.Message(string.Format("[SocialInteractions] GetWeightedLeastFavoritePawn: Top {0} candidates after sorting:", countToConsider));
             // for (int i = 0; i < candidates.Count; i++)
             // {
-                // float score = pawnScores[i].Value;
-                // SLog.Message(string.Format("  {0}. {1} (score: {2})", i + 1, candidates[i].LabelShort, score));
+            // float score = pawnScores[i].Value;
+            // SLog.Message(string.Format("  {0}. {1} (score: {2})", i + 1, candidates[i].LabelShort, score));
             // }
 
             if (candidates.Count == 0)
@@ -2370,7 +2384,7 @@ namespace SocialInteractions
             int randomIndex = Rand.Range(0, candidates.Count);
             Pawn selected = candidates[randomIndex];
             // SLog.Message(string.Format("[SocialInteractions] GetWeightedLeastFavoritePawn: Selected {0} (index {1}) from {2} candidates", 
-                // selected.LabelShort, randomIndex, candidates.Count));
+            // selected.LabelShort, randomIndex, candidates.Count));
 
             return selected;
         }
@@ -2401,6 +2415,55 @@ namespace SocialInteractions
 
             // Open the voice selection dialog
             Find.WindowStack.Add(new VoiceSelectionDialog(pawn));
+        }
+
+        public static string GetVoiceForPawn(Pawn pawn)
+        {
+            if (pawn == null || Current.Game == null)
+            {
+                return null;
+            }
+
+            var manager = Current.Game.GetComponent<VoiceAssignmentManager>();
+            return manager != null ? manager.GetVoiceForPawn(pawn) : null;
+        }
+
+        public static List<string> GetAvailableVoices()
+        {
+            if (Current.Game == null)
+            {
+                return new List<string>();
+            }
+
+            var manager = Current.Game.GetComponent<VoiceAssignmentManager>();
+            if (manager == null || VoiceAssignmentManager.AvailableVoices == null)
+            {
+                return new List<string>();
+            }
+
+            return new List<string>(VoiceAssignmentManager.AvailableVoices);
+        }
+
+        public static bool SetVoiceForPawn(Pawn pawn, string voice)
+        {
+            if (pawn == null || string.IsNullOrEmpty(voice) || Current.Game == null)
+            {
+                return false;
+            }
+
+            var manager = Current.Game.GetComponent<VoiceAssignmentManager>();
+            if (manager == null)
+            {
+                return false;
+            }
+
+            manager.SetVoiceForPawn(pawn, voice);
+            return true;
+        }
+
+        public static void StopTtsPlayback()
+        {
+            TTSManager.Stop();
         }
 
         /// <summary>

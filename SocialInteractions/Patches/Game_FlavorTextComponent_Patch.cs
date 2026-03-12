@@ -1,8 +1,11 @@
 using HarmonyLib;
 using RimWorld;
 using Verse;
+using SocialInteractions.Speech;
+using SocialInteractions;
+using SocialInteractions.Components;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(Game), "InitNewGame")]
     public static class Game_InitNewGame_Patch
@@ -11,12 +14,12 @@ namespace SocialInteractions
         {
             // Create and add the game component for handling pawn flavor text persistence
             Current.Game.components.Add(new PawnFlavorText_GameComponent());
-            
+
             // Reset TTS Manager state on new game
             TTSManager.Initialize();
         }
     }
-    
+
     [HarmonyPatch(typeof(Game), "LoadGame")]
     public static class Game_LoadGame_Patch
     {
@@ -27,7 +30,7 @@ namespace SocialInteractions
             {
                 Current.Game.components.Add(new PawnFlavorText_GameComponent());
             }
-            
+
             // Reset TTS Manager state on load game
             TTSManager.Initialize();
         }

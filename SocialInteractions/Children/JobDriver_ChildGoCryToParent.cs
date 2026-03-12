@@ -2,8 +2,9 @@ using RimWorld;
 using Verse;
 using Verse.AI;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Children
 {
     public class JobDriver_ChildGoCryToParent : JobDriver
     {
@@ -188,7 +189,7 @@ namespace SocialInteractions
             int comfortReasonType = job.count;  // 0 = after insult, 1 = after damage
 
             string reason = "";
-            switch(comfortReasonType)
+            switch (comfortReasonType)
             {
                 case 0: // After being insulted
                     reason = GetMostRecentInsultReason(child, parent);

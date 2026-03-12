@@ -2,8 +2,10 @@
 using HarmonyLib;
 using RimWorld;
 using Verse;
+using SocialInteractions.Dating;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(Pawn_DraftController))]
     public static class Pawn_DraftController_Drafted_Patch

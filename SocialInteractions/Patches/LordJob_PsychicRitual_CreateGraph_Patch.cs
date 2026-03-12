@@ -7,8 +7,9 @@ using HarmonyLib;
 using Verse;
 using Verse.AI.Group;
 using UnityEngine;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(LordJob_PsychicRitual), "CreateGraph")]
     public static class LordJob_PsychicRitual_CreateGraph_Patch
@@ -32,19 +33,19 @@ namespace SocialInteractions
                     PsychicRitualDef_InvocationCircle invocationCircle = (PsychicRitualDef_InvocationCircle)__instance.def;
                     invokerRole = invocationCircle.InvokerRole;
                 }
-                
+
                 Pawn invoker = null;
                 if (invokerRole != null)
                 {
                     invoker = __instance.assignments.FirstAssignedPawn(invokerRole);
                 }
-                
+
                 // If we couldn't get the invoker through the role, try to get the first assigned pawn
                 if (invoker == null && __instance.assignments.AssignedPawnCount > 0)
                 {
                     invoker = __instance.assignments.AllAssignedPawns.FirstOrDefault();
                 }
-                
+
                 if (invoker == null)
                 {
                     SLog.Message("[SocialInteractions] LordJob_PsychicRitual_CreateGraph_Patch: No invoker found");
@@ -55,7 +56,7 @@ namespace SocialInteractions
 
                 // Generate a subject for the monologue based on the ritual type
                 string subject = GenerateRitualSubject(__instance.def, invoker);
-                
+
                 // Trigger a monologue for the invoker
                 SocialInteractions.HandleMonologue(invoker, subject, true, "speech");
             }

@@ -4,8 +4,10 @@ using Verse.AI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Interactions
 {
     /// <summary>
     /// Interaction worker for planned backstabbing after successful badmouthing where the instigator targets the original target's allies
@@ -14,10 +16,10 @@ namespace SocialInteractions
     {
         // Property to store the target pawn when it's known from job scheduling
         private Pawn scheduledTargetPawn = null;
-        public Pawn ScheduledTargetPawn 
-        { 
-            get { return scheduledTargetPawn; } 
-            set { scheduledTargetPawn = value; } 
+        public Pawn ScheduledTargetPawn
+        {
+            get { return scheduledTargetPawn; }
+            set { scheduledTargetPawn = value; }
         }
         public override void Interacted(Pawn initiator, Pawn recipient, List<RulePackDef> extraSentencePacks, out string letterText, out string letterLabel, out LetterDef letterDef, out LookTargets lookTargets)
         {
@@ -38,7 +40,7 @@ namespace SocialInteractions
                 lookTargets = LookTargets.Invalid;
                 return;
             }
-            
+
             // Check if the same pawn is both initiator and recipient (self-interaction not allowed)
             if (initiator == recipient)
             {
@@ -49,7 +51,7 @@ namespace SocialInteractions
                 lookTargets = LookTargets.Invalid;
                 return;
             }
-            
+
             // Check if backstabbing is enabled in settings
             if (!SocialInteractions.Settings.enableBackstabbing)
             {
@@ -60,20 +62,20 @@ namespace SocialInteractions
                 lookTargets = LookTargets.Invalid;
                 return;
             }
-            
+
             // For the first implementation, we'll use a simpler approach where the interaction
             // is either an information gathering attempt or a backstabbing attempt
             // Use social skill and manipulation traits to determine approach
-            
+
             int initiatorSocialSkill = initiator.skills != null ? initiator.skills.GetSkill(SkillDefOf.Social).Level : 0;
             bool hasManipulationTrait = HasTraitThatEncouragesManipulation(initiator);
-            
+
             // If the initiator has high social skill and manipulation traits, attempt information gathering
             if (hasManipulationTrait && initiatorSocialSkill >= 8)
             {
                 // Execute information gathering phase - interact with the target to learn about their relationships
                 ExecuteInfoGatheringPhase(initiator, recipient, extraSentencePacks);
-                    
+
                 // Call the base method for the info gathering interaction
                 base.Interacted(initiator, recipient, extraSentencePacks, out letterText, out letterLabel, out letterDef, out lookTargets);
             }
@@ -94,22 +96,22 @@ namespace SocialInteractions
             // The "recipient" in this phase is actually the target whose relationships we're investigating
             // Try to get information about who the recipient values most
             Pawn bestFriend = TryExtractBestFriendInfo(initiator, recipient);
-            
+
             if (bestFriend != null)
             {
                 // Successfully gathered information - now we can plan the backstabbing
                 // Handle the LLM interaction for the information gathering
-                string subject = string.Format("A subtle conversation where {0} skillfully extracts information from {1} about their closest relationships, learning that {1} values and trusts {2}.", 
+                string subject = string.Format("A subtle conversation where {0} skillfully extracts information from {1} about their closest relationships, learning that {1} values and trusts {2}.",
                     initiator.LabelShort, recipient.LabelShort, bestFriend.LabelShort);
-                    
+
                 // Skip spam protection for backstabbing as these are rare, important events that should be witnessed
                 SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, SI_InteractionDefOf.Backstabbing, subject, true, false);
-                
+
                 // Create a custom log entry for the information gathering
                 try
                 {
                     PlayLogEntry_Backstabbing infoGatherLogEntry = new PlayLogEntry_Backstabbing(SI_InteractionDefOf.Backstabbing, initiator, recipient, extraSentencePacks, bestFriend, true);
-                    
+
                     // Add the entry to the play log to update the social history
                     if (Find.PlayLog != null)
                     {
@@ -160,11 +162,11 @@ namespace SocialInteractions
             letterLabel = null;
             letterDef = null;
             lookTargets = LookTargets.Invalid;
-            
+
             // For the backstabbing phase, 'recipient' should be the ally of the original target
             // We need to identify the target pawn for the backstabbing attempt
             Pawn targetPawn = null;
-            
+
             // First, try to get the target from the ScheduledTargetPawn property if this is coming from a scheduled backstabbing attempt
             if (ScheduledTargetPawn != null)
             {
@@ -178,13 +180,13 @@ namespace SocialInteractions
                 // This means they don't know the relationships and should target randomly.
                 targetPawn = SelectRandomTargetForBackstabbing(initiator, recipient);
             }
-            
+
             if (targetPawn == null)
             {
                 SLog.Warning("[SocialInteractions] InteractionWorker_Backstabbing: Could not determine target pawn for backstabbing, skipping.");
                 return;
             }
-            
+
             // Validate that we don't have the same pawn in multiple roles
             if (targetPawn == initiator || targetPawn == recipient)
             {
@@ -192,18 +194,18 @@ namespace SocialInteractions
                     initiator.LabelShort, recipient.LabelShort, targetPawn.LabelShort));
                 return;
             }
-            
+
             // Send a warning notification to the player about the backstabbing attempt
-            string backstabMessage = string.Format("{0} is attempting to manipulate {1} against {2}.", 
+            string backstabMessage = string.Format("{0} is attempting to manipulate {1} against {2}.",
                 initiator.LabelShort, recipient.LabelShort, targetPawn.LabelShort);
             Messages.Message(backstabMessage, new LookTargets(initiator, recipient, targetPawn), MessageTypeDefOf.ThreatBig);
-            
+
             // Determine if the backstab attempt succeeds based on social skill comparison
             bool backstabSuccessful = AttemptBackstab(initiator, recipient, targetPawn);
-            
+
             // Apply effects based on success/failure
             string subject = GenerateBackstabSubject(initiator, recipient, targetPawn, backstabSuccessful);
-            
+
             if (backstabSuccessful)
             {
                 // Apply massive opinion reversal to recipient's opinion of target
@@ -218,12 +220,12 @@ namespace SocialInteractions
             // Handle the LLM interaction with the generated subject
             // Skip spam protection for backstabbing as these are rare, important events that should be witnessed
             SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, SI_InteractionDefOf.Backstabbing, subject, true, false);
-            
+
             // Create a custom log entry for the backstabbing interaction to ensure it's properly recorded in social history
             try
             {
                 PlayLogEntry_Backstabbing backstabLogEntry = new PlayLogEntry_Backstabbing(SI_InteractionDefOf.Backstabbing, initiator, recipient, extraSentencePacks, targetPawn, backstabSuccessful);
-                
+
                 // Add the entry to the play log to update the social history
                 if (Find.PlayLog != null)
                 {
@@ -234,11 +236,11 @@ namespace SocialInteractions
             {
                 SLog.Warning(string.Format("[SocialInteractions] InteractionWorker_Backstabbing: Failed to add backstabbing to play log: {0}", ex.Message));
             }
-            
+
             // Call the base Interacted method to create the normal log entry using XML rules
             base.Interacted(initiator, recipient, extraSentencePacks, out letterText, out letterLabel, out letterDef, out lookTargets);
         }
-        
+
         /// <summary>
         /// Try to extract information about the recipient's best friend through conversation
         /// </summary>
@@ -247,39 +249,39 @@ namespace SocialInteractions
             // Calculate success chance based on social skill and traits
             int initiatorSocialSkill = initiator.skills != null ? initiator.skills.GetSkill(SkillDefOf.Social).Level : 0;
             int recipientSocialSkill = recipient.skills != null ? recipient.skills.GetSkill(SkillDefOf.Social).Level : 0;
-            
+
             // Base chance of success - use the settings value instead of hardcoded 0.3
             float baseChance = SocialInteractions.Settings.baseBackstabbingChance; // Base chance from settings
-            
+
             // Adjust for skill difference
             float skillDifference = (initiatorSocialSkill - recipientSocialSkill) * 0.05f; // 5% per skill difference
             baseChance += skillDifference;
-            
+
             // Adjust for manipulation traits
             bool hasDeceptionTrait = HasTraitThatEnhancesDeception(initiator);
             if (hasDeceptionTrait)
             {
                 baseChance += 0.2f;
             }
-            
+
             bool hasPerceptiveTrait = HasTraitThatPreventsDeception(recipient);
             if (hasPerceptiveTrait)
             {
                 baseChance -= 0.2f;
             }
-            
+
             // Ensure chance is within bounds
             baseChance = Math.Max(0.1f, Math.Min(0.8f, baseChance));
-            
+
             // Roll for success
             float roll = Rand.Value;
             bool success = roll < baseChance;
-            
+
             if (success)
             {
                 // Success! Find the recipient's most valued pawn to return as their "best friend"
                 Pawn bestFriend = FindMostTrustedTargetForRecipient(null, recipient);
-                
+
                 if (bestFriend != null)
                 {
                     return bestFriend;
@@ -289,10 +291,10 @@ namespace SocialInteractions
                     return null; // No good targets to backstab
                 }
             }
-            
+
             return null; // Failed to extract information
         }
-        
+
         /// <summary>
         /// Identify the target pawn for backstabbing based on social relationships
         /// </summary>
@@ -300,20 +302,20 @@ namespace SocialInteractions
         {
             // The "potentialAlly" is the pawn who we're trying to turn against their friend
             // We need to find who that pawn has the highest opinion of (their friend to be backstabbed)
-            
+
             if (potentialAlly.Map == null || potentialAlly.Map.mapPawns.FreeColonistsAndPrisoners.Count == 0)
             {
                 return null;
             }
-            
+
             Pawn highestOpinionTarget = null;
             int highestOpinion = int.MinValue;
-            
+
             foreach (Pawn potentialTarget in potentialAlly.Map.mapPawns.FreeColonistsAndPrisoners)
             {
                 if (potentialTarget == initiator || potentialTarget == potentialAlly)
                     continue; // Skip the instigator and the ally themselves
-                
+
                 if (potentialAlly.relations != null)
                 {
                     int opinion = potentialAlly.relations.OpinionOf(potentialTarget);
@@ -324,11 +326,11 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             // Only return if the opinion is significantly positive
             return highestOpinion >= 30 ? highestOpinionTarget : null; // Threshold for "truly trusted"
         }
-        
+
         /// <summary>
         /// Select a random target pawn for backstabbing when the instigator doesn't know relationships
         /// </summary>
@@ -338,38 +340,38 @@ namespace SocialInteractions
             {
                 return null;
             }
-            
+
             // Create a list of potential targets (excluding the initiator and recipient themselves)
             List<Pawn> potentialTargets = new List<Pawn>();
-            
+
             foreach (Pawn potentialTarget in recipient.Map.mapPawns.FreeColonistsAndPrisoners)
             {
                 if (potentialTarget == initiator || potentialTarget == recipient)
                     continue; // Skip the instigator and the recipient themselves
-                
+
                 // Only consider conscious pawns who are not in mental states
                 if (potentialTarget.Dead || potentialTarget.Downed || potentialTarget.InMentalState)
                     continue;
-                    
+
                 potentialTargets.Add(potentialTarget);
             }
-            
+
             // If we have no valid targets, return null
             if (potentialTargets.Count == 0)
             {
                 SLog.Message(string.Format("[SocialInteractions] InteractionWorker_Backstabbing: No valid targets available for random backstabbing selection"));
                 return null;
             }
-            
+
             // Randomly select a target from the list
             Pawn randomTarget = potentialTargets[Rand.Range(0, potentialTargets.Count)];
-            
-            SLog.Message(string.Format("[SocialInteractions] InteractionWorker_Backstabbing: Randomly selected target {0} from {1} possible targets", 
+
+            SLog.Message(string.Format("[SocialInteractions] InteractionWorker_Backstabbing: Randomly selected target {0} from {1} possible targets",
                 randomTarget.LabelShort, potentialTargets.Count));
-                
+
             return randomTarget;
         }
-        
+
         /// <summary>
         /// Find the pawn that recipient has the highest opinion of (the one being targeted in the backstab)
         /// </summary>
@@ -379,15 +381,15 @@ namespace SocialInteractions
             {
                 return null;
             }
-            
+
             Pawn highestOpinionTarget = null;
             int highestOpinion = int.MinValue;
-            
+
             foreach (Pawn potentialTarget in recipient.Map.mapPawns.FreeColonistsAndPrisoners)
             {
                 if (potentialTarget == initiator || potentialTarget == recipient)
                     continue; // Skip the instigator and recipient themselves
-                
+
                 if (recipient.relations != null)
                 {
                     int opinion = recipient.relations.OpinionOf(potentialTarget);
@@ -398,7 +400,7 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             return highestOpinionTarget;
         }
 
@@ -445,12 +447,12 @@ namespace SocialInteractions
 
             return Rand.Value < baseChance;
         }
-        
+
         private string GenerateBackstabSubject(Pawn initiator, Pawn recipient, Pawn targetPawn, bool success)
         {
             // Get detailed target description for LLM context
             string targetDescription = SocialInteractions.GetPawnDescription(targetPawn);
-            
+
             if (success)
             {
                 // Get original trust level to customize the subject
@@ -475,7 +477,7 @@ namespace SocialInteractions
                     initiator.LabelShort, recipient.LabelShort, targetPawn.LabelShort, targetDescription);
             }
         }
-        
+
         /// <summary>
         /// Apply massive opinion reversal effects when backstabbing succeeds
         /// </summary>
@@ -483,7 +485,7 @@ namespace SocialInteractions
         {
             // Get original trust level between recipient and target
             int originalTrust = recipient.relations != null ? recipient.relations.OpinionOf(targetPawn) : 0;
-            
+
             // Apply the opinion change based on original trust level
             if (recipient.needs != null && recipient.needs.mood != null)
             {
@@ -512,7 +514,7 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             // Apply thoughts to all parties
             // Initiator gets positive thoughts for successful manipulation
             if (initiator.needs != null && initiator.needs.mood != null)
@@ -523,12 +525,12 @@ namespace SocialInteractions
                     initiator.needs.mood.thoughts.memories.TryGainMemory(successfulManipulationThought, recipient);
                 }
             }
-            
+
             // Target pawn does not immediately realize they were backstabbed
             // The revelation should happen later when they interact with the friend who now hates them
             // This creates more realistic and dramatic social dynamics
         }
-        
+
         /// <summary>
         /// Apply effects when backstabbing fails
         /// </summary>
@@ -544,7 +546,7 @@ namespace SocialInteractions
                     recipient.needs.mood.thoughts.memories.TryGainMemory(failedManipulationThought, initiator);
                 }
             }
-            
+
             // Apply negative thoughts to instigator for failing their manipulation attempt
             if (initiator.needs != null && initiator.needs.mood != null)
             {
@@ -554,7 +556,7 @@ namespace SocialInteractions
                     initiator.needs.mood.thoughts.memories.TryGainMemory(failedAttemptThought, recipient);
                 }
             }
-            
+
             // Target gets slight positive thoughts about recipient (for seeing through the deception)
             if (targetPawn.needs != null && targetPawn.needs.mood != null)
             {
@@ -566,7 +568,7 @@ namespace SocialInteractions
                 }
             }
         }
-        
+
         /// <summary>
         /// Calculate the massive negative opinion based on original trust level
         /// </summary>
@@ -576,20 +578,20 @@ namespace SocialInteractions
             // Formula: -(originalTrust * multiplier) with limits
             float multiplier = 1.8f; // Adjust this to control severity
             int betrayalValue = (int)(-originalTrust * multiplier);
-            
+
             // Set reasonable limits
             betrayalValue = Math.Max(-100, Math.Min(-10, betrayalValue)); // Between -100 and -10
-            
+
             return betrayalValue;
         }
-        
+
         private bool HasTraitThatEnhancesDeception(Pawn pawn)
         {
             if (pawn == null || pawn.story == null || pawn.story.traits == null)
             {
                 return false;
             }
-            
+
             // Check for traits that enhance social manipulation
             foreach (Trait trait in pawn.story.traits.allTraits)
             {
@@ -597,15 +599,15 @@ namespace SocialInteractions
                 {
                     string traitLabel = trait.def.defName.ToLower();
                     string traitLabelDisplay = trait.Label.ToLower();
-                    
+
                     // Check for traits that enhance deception
-                    if (traitLabel.Contains("deceptive") || 
-                        traitLabel.Contains("charming") || 
+                    if (traitLabel.Contains("deceptive") ||
+                        traitLabel.Contains("charming") ||
                         traitLabel.Contains("liar") ||
                         traitLabel.Contains("manipulative") ||
                         traitLabel.Contains("smooth") ||
-                        traitLabelDisplay.Contains("deceptive") || 
-                        traitLabelDisplay.Contains("charming") || 
+                        traitLabelDisplay.Contains("deceptive") ||
+                        traitLabelDisplay.Contains("charming") ||
                         traitLabelDisplay.Contains("liar") ||
                         traitLabelDisplay.Contains("manipulative") ||
                         traitLabelDisplay.Contains("smooth talker"))
@@ -614,17 +616,17 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             return false;
         }
-        
+
         private bool HasTraitThatPreventsDeception(Pawn pawn)
         {
             if (pawn == null || pawn.story == null || pawn.story.traits == null)
             {
                 return false;
             }
-            
+
             // Check for traits that make one perceptive to deception
             foreach (Trait trait in pawn.story.traits.allTraits)
             {
@@ -632,23 +634,23 @@ namespace SocialInteractions
                 {
                     string traitLabel = trait.def.defName.ToLower();
                     string traitLabelDisplay = trait.Label.ToLower();
-                    
+
                     // Check for traits that enhance perception of deception
-                    if (traitLabel.Contains("perceptive") || 
-                        traitLabel.Contains("observant") || 
+                    if (traitLabel.Contains("perceptive") ||
+                        traitLabel.Contains("observant") ||
                         traitLabel.Contains("insightful") ||
-                        traitLabelDisplay.Contains("perceptive") || 
-                        traitLabelDisplay.Contains("observant") || 
+                        traitLabelDisplay.Contains("perceptive") ||
+                        traitLabelDisplay.Contains("observant") ||
                         traitLabelDisplay.Contains("insightful"))
                     {
                         return true;
                     }
                 }
             }
-            
+
             return false;
         }
-        
+
         /// <summary>
         /// Checks if a pawn has traits that encourage manipulation and strategic backstabbing
         /// </summary>
@@ -658,7 +660,7 @@ namespace SocialInteractions
             {
                 return false;
             }
-            
+
             // Check for traits that make backstabbing more likely
             foreach (Trait trait in pawn.story.traits.allTraits)
             {
@@ -666,17 +668,17 @@ namespace SocialInteractions
                 {
                     string traitLabel = trait.def.defName.ToLower();
                     string traitLabelDisplay = trait.Label.ToLower();
-                    
+
                     // Check for manipulative, strategic, or deceptive traits
-                    if (traitLabel.Contains("manipulative") || 
-                        traitLabel.Contains("deceptive") || 
+                    if (traitLabel.Contains("manipulative") ||
+                        traitLabel.Contains("deceptive") ||
                         traitLabel.Contains("calculating") ||
                         traitLabel.Contains("strategic") ||
                         traitLabel.Contains("psychopath") ||
                         traitLabel.Contains("liar") ||
                         traitLabel.Contains("smooth") ||
-                        traitLabelDisplay.Contains("manipulative") || 
-                        traitLabelDisplay.Contains("deceptive") || 
+                        traitLabelDisplay.Contains("manipulative") ||
+                        traitLabelDisplay.Contains("deceptive") ||
                         traitLabelDisplay.Contains("calculating") ||
                         traitLabelDisplay.Contains("strategic") ||
                         traitLabelDisplay.Contains("psychopath") ||
@@ -687,17 +689,17 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             return false;
         }
-        
+
         private bool HasTraitThatEnjoysManipulation(Pawn pawn)
         {
             if (pawn == null || pawn.story == null || pawn.story.traits == null)
             {
                 return false;
             }
-            
+
             // Check for traits that would make someone enjoy manipulation
             foreach (Trait trait in pawn.story.traits.allTraits)
             {
@@ -705,14 +707,14 @@ namespace SocialInteractions
                 {
                     string traitLabel = trait.def.defName.ToLower();
                     string traitLabelDisplay = trait.Label.ToLower();
-                    
+
                     // Check for traits that enjoy negative interactions
-                    if (traitLabel.Contains("sadist") || 
-                        traitLabel.Contains("manipulative") || 
+                    if (traitLabel.Contains("sadist") ||
+                        traitLabel.Contains("manipulative") ||
                         traitLabel.Contains("psychopath") ||
                         traitLabel.Contains("bully") ||
-                        traitLabelDisplay.Contains("sadist") || 
-                        traitLabelDisplay.Contains("manipulative") || 
+                        traitLabelDisplay.Contains("sadist") ||
+                        traitLabelDisplay.Contains("manipulative") ||
                         traitLabelDisplay.Contains("psychopath") ||
                         traitLabelDisplay.Contains("bully"))
                     {
@@ -720,7 +722,7 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             return false;
         }
     }

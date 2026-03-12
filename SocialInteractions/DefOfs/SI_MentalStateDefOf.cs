@@ -1,7 +1,8 @@
 using RimWorld;
 using Verse;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.DefOfs
 {
     [DefOf]
     public static class SI_MentalStateDefOf

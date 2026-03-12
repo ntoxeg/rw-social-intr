@@ -8,10 +8,11 @@ using System.Runtime.Serialization;
 using System.Runtime.Serialization.Json;
 using System.IO;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Api
 {
-// Text completion classes (Legacy)
+    // Text completion classes (Legacy)
     [DataContract]
     public class KoboldApiRequest
     {
@@ -123,7 +124,7 @@ namespace SocialInteractions
             // Trim whitespace which can cause header issues
             _apiKey = (apiKey != null) ? apiKey.Trim() : null;
             _httpClient = SharedHttpClient;
-            
+
             // Add default request headers if needed, e.g., for API key
             if (!string.IsNullOrEmpty(_apiKey))
             {
@@ -164,7 +165,7 @@ namespace SocialInteractions
         private bool IsValidHeaderValue(string value)
         {
             if (string.IsNullOrEmpty(value)) return false;
-            
+
             // Check for control characters and other invalid characters
             foreach (char c in value)
             {
@@ -202,13 +203,13 @@ namespace SocialInteractions
 
                 if (enableXtcSampling ?? SocialInteractions.Settings.enableXtcSampling)
                 {
-                    request.SamplerOrder = new int[] { 6,0,1,3,4,2,5 };
+                    request.SamplerOrder = new int[] { 6, 0, 1, 3, 4, 2, 5 };
                     request.XtcProbability = 0.5f;
                     request.XtcThreshold = 0.1f;
                 }
                 else
                 {
-                    request.SamplerOrder = new int[] { 6,0,1,3,4,2,5 };
+                    request.SamplerOrder = new int[] { 6, 0, 1, 3, 4, 2, 5 };
                 }
 
                 DataContractJsonSerializer serializer = new DataContractJsonSerializer(typeof(KoboldApiRequest));
@@ -234,7 +235,7 @@ namespace SocialInteractions
                     // Log the API request and response
                     // SLog.Message(string.Format("[SocialInteractions] LLM API Request: {0}", prompt));
                     // SLog.Message(string.Format("[SocialInteractions] LLM API Response: {0}", apiResponse.Results[0].Text));
-                    
+
                     return CleanChatResponse(apiResponse.Results[0].Text);
                 }
                 return null;
@@ -306,10 +307,10 @@ namespace SocialInteractions
             response = System.Text.RegularExpressions.Regex.Replace(response, @"<thinking>.*?</thinking>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             response = System.Text.RegularExpressions.Regex.Replace(response, @"<think>.*?</think>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             response = System.Text.RegularExpressions.Regex.Replace(response, @"\[thinking\].*?\[/thinking\]", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            
+
             // Trim whitespace
             response = response.Trim();
-            
+
             return response;
         }
 

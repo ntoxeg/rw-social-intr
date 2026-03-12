@@ -1,7 +1,8 @@
 using RimWorld;
 using Verse;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.DefOfs
 {
     [DefOf]
     public static class SI_InteractionDefOf
@@ -17,11 +18,11 @@ namespace SocialInteractions
         public static InteractionDef Lovin;
         public static InteractionDef Rescue;
         public static InteractionDef VisitSickPawn;
-        
+
         public static InteractionDef DateLovin;
         public static InteractionDef CaughtCheating;
         public static InteractionDef ManualChat;
-        
+
         public static InteractionDef Badmouthing;
         public static InteractionDef EnhancedInsult;
         public static InteractionDef Admiration;

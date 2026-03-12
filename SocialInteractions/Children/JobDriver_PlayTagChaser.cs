@@ -2,8 +2,10 @@ using System.Collections.Generic;
 using RimWorld;
 using Verse;
 using Verse.AI;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Children
 {
     public class JobDriver_PlayTagChaser : JobDriver
     {
@@ -25,7 +27,7 @@ namespace SocialInteractions
         protected override IEnumerable<Toil> MakeNewToils()
         {
             this.FailOnDespawnedOrNull(TargetIndex.A);
-            
+
             // Wait for runner to start their job (prevent race condition)
             Toil startWait = Toils_General.Wait(30);
             yield return startWait;

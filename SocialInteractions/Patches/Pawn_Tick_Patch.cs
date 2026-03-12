@@ -3,15 +3,18 @@ using RimWorld;
 using Verse;
 using Verse.AI;
 using System.Collections.Generic;
+using SocialInteractions.Dating;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(Pawn), "Tick")]
     public static class Pawn_Tick_Patch
     {
         // Dictionary to track cooldowns for caught cheaters to prevent repeated detections
         private static Dictionary<Pawn, int> caughtCheatersCooldowns = new Dictionary<Pawn, int>();
-        
+
         public static void Postfix(Pawn __instance)
         {
             Pawn pawn = __instance;
@@ -19,7 +22,7 @@ namespace SocialInteractions
             {
                 return;
             }
-            
+
             // Only check for cheating once per second (60 ticks) instead of every tick
             // Check from the perspective of pawns who are on a date
             if (pawn.IsHashIntervalTick(60))
@@ -40,7 +43,7 @@ namespace SocialInteractions
                             {
                                 // Get the partner this pawn is on a date with
                                 Pawn datePartner = DatingManager.GetPartnerOfDateWith(pawn);
-                                
+
                                 // If we have a date partner, check if we're cheating
                                 if (datePartner != null)
                                 {
@@ -54,7 +57,7 @@ namespace SocialInteractions
                                     {
                                         officialPartner = pawn.relations.GetFirstDirectRelationPawn(PawnRelationDefOf.Lover);
                                     }
-                                    
+
                                     // If the pawn has an official partner and it's not the same as the date partner, we're cheating
                                     if (officialPartner != null && officialPartner != datePartner)
                                     {
@@ -63,17 +66,17 @@ namespace SocialInteractions
                                         {
                                             // Put the cheater on cooldown for 2 minutes (12000 ticks)
                                             caughtCheatersCooldowns[pawn] = Find.TickManager.TicksGame + 12000;
-                                            
+
                                             // We found a cheater! The pawn is on a date with someone other than their official partner
                                             // and their official partner is nearby to witness it
                                             SLog.Message(string.Format(
-                                                "[SocialInteractions] Cheating detected: {0} is on a date with {1} but is married to {2} who is nearby", 
+                                                "[SocialInteractions] Cheating detected: {0} is on a date with {1} but is married to {2} who is nearby",
                                                 pawn.LabelShort, datePartner.LabelShort, officialPartner.LabelShort));
-                                            
+
                                             // Register the interaction in the social log first
                                             Find.PlayLog.Add(new PlayLogEntry_Interaction(
                                                 SI_InteractionDefOf.CaughtCheating, officialPartner, pawn, null));
-                                            
+
                                             // Trigger the special cheating event
                                             HandleCheatingEvent(officialPartner, pawn, datePartner);
                                         }
@@ -84,7 +87,7 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             // Periodically clean up the cooldown dictionary to prevent it from growing indefinitely
             if (pawn.IsHashIntervalTick(1800)) // Check every 30 seconds
             {
@@ -106,11 +109,11 @@ namespace SocialInteractions
                 }
             }
         }
-        
+
         private static void HandleCheatingEvent(Pawn angryPartner, Pawn cheater, Pawn datePartner)
         {
             // Show a top screen notice message when cheating is discovered
-            string message = string.Format("{0} caught {1} cheating with {2}!", 
+            string message = string.Format("{0} caught {1} cheating with {2}!",
                 angryPartner.LabelShort, cheater.LabelShort, datePartner.LabelShort);
             Messages.Message(message, new LookTargets(angryPartner, cheater), MessageTypeDefOf.NegativeEvent);
 
@@ -135,7 +138,7 @@ namespace SocialInteractions
                 gotoJob.checkOverrideOnExpire = false;
                 gotoJob.expiryInterval = 300; // 5 seconds
                 gotoJob.collideWithPawns = true;
-                
+
                 // Start the job with InterruptForced to ensure it interrupts current activities
                 angryPartner.jobs.StartJob(gotoJob, JobCondition.InterruptForced);
             }
@@ -144,22 +147,22 @@ namespace SocialInteractions
             Job followUpJob = JobMaker.MakeJob(SI_JobDefOf.CaughtCheatingInteraction, cheater);
             angryPartner.jobs.jobQueue.EnqueueFirst(followUpJob);
         }
-        
+
         private static string GetRelationshipLabel(Pawn pawn, Pawn partner)
         {
             if (pawn.relations == null || partner == null)
                 return "partner";
-                
+
             if (pawn.relations.DirectRelationExists(PawnRelationDefOf.Spouse, partner))
                 return "spouse";
             if (pawn.relations.DirectRelationExists(PawnRelationDefOf.Fiance, partner))
                 return "fiancee";
             if (pawn.relations.DirectRelationExists(PawnRelationDefOf.Lover, partner))
                 return "lover";
-                
+
             return "partner";
         }
-        
+
         public static void HoldPawnInPlace(Pawn pawn, IntVec3 position)
         {
             if (pawn != null && pawn.jobs != null)
@@ -171,7 +174,7 @@ namespace SocialInteractions
                 holdJob.canBashFences = false;
                 holdJob.checkOverrideOnExpire = false;
                 holdJob.playerForced = true; // Make it a forced job so it can interrupt other jobs
-                
+
                 // Start the job with InterruptForced to ensure it interrupts current activities
                 pawn.jobs.StartJob(holdJob, JobCondition.InterruptForced);
             }

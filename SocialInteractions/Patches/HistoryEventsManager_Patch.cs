@@ -2,8 +2,9 @@ using HarmonyLib;
 using RimWorld;
 using Verse;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(HistoryEventsManager), "RecordEvent")]
     public static class HistoryEventsManager_Patch

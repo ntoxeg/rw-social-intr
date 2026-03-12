@@ -3,8 +3,10 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 using Verse.AI;
+using SocialInteractions.Children;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(JobDriver), "ModifyCarriedThingDrawPos")]
     public static class JobDriver_ModifyCarriedThingDrawPos_Patch
@@ -34,11 +36,11 @@ namespace SocialInteractions
                     }
                     else
                     {
-                         // Reset rotation when on ground
-                         if (playDriver.pawn.carryTracker.CarriedThing != null)
-                         {
-                             playDriver.pawn.carryTracker.CarriedThing.Rotation = Rot4.South;
-                         }
+                        // Reset rotation when on ground
+                        if (playDriver.pawn.carryTracker.CarriedThing != null)
+                        {
+                            playDriver.pawn.carryTracker.CarriedThing.Rotation = Rot4.South;
+                        }
                     }
                 }
             }

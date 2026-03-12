@@ -3,8 +3,14 @@ using RimWorld;
 using Verse;
 using Verse.AI;
 using System.Collections.Generic;
+using SocialInteractions.Dating;
+using SocialInteractions.Children;
+using SocialInteractions.Speech;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
+using SocialInteractions.Jobs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(InteractionWorker), "Interacted")]
     public static class InteractionWorker_Interacted_Patch
@@ -81,7 +87,7 @@ namespace SocialInteractions
 
                             // Check if either pawn is on a date OR doing a specialized activity.
                             bool eitherOnDate = DatingManager.IsOnDate(initiator) || (recipient != null && DatingManager.IsOnDate(recipient));
-                            
+
                             bool eitherDoingSpecializedJob = (initiator.CurJobDef != null && (initiator.CurJobDef.defName == "PesterPrisoner" || initiator.CurJobDef.defName == "PesterPrisonerPartner" || initiator.CurJobDef.defName == "AbusiveThreesome" || initiator.CurJobDef.defName == "AbusiveThreesomeParticipant" || initiator.CurJobDef.defName == "SocialRelaxDate" || initiator.CurJobDef.defName == "DateLovin")) ||
                                                              (recipient != null && recipient.CurJobDef != null && (recipient.CurJobDef.defName == "PesterPrisoner" || recipient.CurJobDef.defName == "PesterPrisonerPartner" || recipient.CurJobDef.defName == "AbusiveThreesome" || recipient.CurJobDef.defName == "AbusiveThreesomeParticipant" || recipient.CurJobDef.defName == "SocialRelaxDate" || recipient.CurJobDef.defName == "DateLovin"));
 

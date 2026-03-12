@@ -2,8 +2,9 @@ using RimWorld;
 using UnityEngine;
 using Verse;
 using System.Threading.Tasks;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.UI
 {
     /// <summary>
     /// Dialog window for editing a pawn's custom flavor text.

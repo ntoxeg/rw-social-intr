@@ -4,8 +4,9 @@ using Verse;
 using Verse.AI.Group;
 using System.Linq;
 using System.Collections.Generic;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(RimWorld.JobDriver_GiveSpeech), "MakeNewToils")]
     public static class JobDriver_GiveSpeech_Patch
@@ -75,7 +76,7 @@ namespace SocialInteractions
                                 SLog.Message("[SocialInteractions] JobDriver_GiveSpeech_Patch: executioner is null");
                             if (prisoner == null)
                                 SLog.Message("[SocialInteractions] JobDriver_GiveSpeech_Patch: prisoner is null");
-                            
+
                             subject = "is giving a speech for the " + ritual.LabelCap + " ritual";
                             SLog.Message("[SocialInteractions] JobDriver_GiveSpeech_Patch: Using fallback subject: " + subject);
                         }

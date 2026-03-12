@@ -4,8 +4,9 @@ using System.Linq;
 using UnityEngine;
 using Verse;
 using RimWorld;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.UI
 {
     public class VoiceSelectionDialog : Window
     {
@@ -20,18 +21,10 @@ namespace SocialInteractions
             targetPawn = pawn;
 
             // Get available voices from the voice assignment manager
-            var manager = Current.Game.GetComponent<VoiceAssignmentManager>();
-            if (manager != null)
-            {
-                availableVoices = VoiceAssignmentManager.AvailableVoices.ToList();
-            }
-            else
-            {
-                availableVoices = new List<string>();
-            }
+            availableVoices = SocialInteractions.GetAvailableVoices().ToList();
 
             // Get currently assigned voice
-            selectedVoice = manager != null ? manager.GetVoiceForPawn(targetPawn) : null;
+            selectedVoice = SocialInteractions.GetVoiceForPawn(targetPawn);
 
             // Set window properties
             doCloseButton = false;
@@ -56,15 +49,10 @@ namespace SocialInteractions
             Widgets.Label(new Rect(0, 0, inRect.width, 30), title);
 
             // Re-fetch available voices in case they changed since dialog opened
-            var voiceManager = Current.Game.GetComponent<VoiceAssignmentManager>();
-            if (voiceManager != null)
+            availableVoices = SocialInteractions.GetAvailableVoices().ToList();
+            if (selectedVoice == null)
             {
-                availableVoices = VoiceAssignmentManager.AvailableVoices.ToList();
-                // Update selected voice in case it changed
-                if (selectedVoice == null)
-                {
-                    selectedVoice = voiceManager.GetVoiceForPawn(targetPawn);
-                }
+                selectedVoice = SocialInteractions.GetVoiceForPawn(targetPawn);
             }
 
             // Calculate available space for voice list
@@ -118,10 +106,8 @@ namespace SocialInteractions
                 if (selectedVoice != null)
                 {
                     // Assign the voice to the pawn
-                    var manager = Current.Game.GetComponent<VoiceAssignmentManager>();
-                    if (manager != null)
+                    if (SocialInteractions.SetVoiceForPawn(targetPawn, selectedVoice))
                     {
-                        manager.SetVoiceForPawn(targetPawn, selectedVoice);
                         string assignedPawnName = targetPawn.Name != null ? targetPawn.Name.ToStringShort : "Unknown Pawn";
                         Messages.Message(string.Format("Voice assigned successfully to {0}.", assignedPawnName), MessageTypeDefOf.TaskCompletion);
                     }

@@ -4,8 +4,9 @@ using System.Linq;
 using UnityEngine;
 using Verse;
 using RimWorld;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.UI
 {
     public class ChatLogTabWindow : MainTabWindow
     {
@@ -73,7 +74,7 @@ namespace SocialInteractions
                 cachedFullConversation = null;
             }
         }
-        
+
         private Vector2 messagesScrollPos = Vector2.zero;
         private Vector2 detailsScrollPos = Vector2.zero;
         private float messagesLastHeight;
@@ -91,15 +92,15 @@ namespace SocialInteractions
         private List<ConversationGroup> conversationGroups = new List<ConversationGroup>();
         private List<ChatMessage> lastChatLog = new List<ChatMessage>(); // Cache the last retrieved chat log
         private bool needsRefresh = true; // Flag to indicate if conversation groups need to be refreshed
-        
+
         public override Vector2 RequestedTabSize { get { return new Vector2(1010f, 640f); } }
-        
+
         public override void PreOpen()
         {
             base.PreOpen();
             quickSearchWidget.Reset();
         }
-        
+
         public override void DoWindowContents(Rect rect)
         {
             // Draw the chat log page
@@ -200,7 +201,7 @@ namespace SocialInteractions
                 Widgets.NoneLabel(contentRect.yMin + 3f, contentRect.width, "(" + "NoMessages".Translate() + ")");
             }
         }
-        
+
         private void GroupMessages(List<ChatMessage> chatLog)
         {
             conversationGroups.Clear();
@@ -232,13 +233,13 @@ namespace SocialInteractions
                 conversationGroups.Add(new ConversationGroup(messageId, singleMessageList));
             }
         }
-        
+
         private void DoConversationGroupRow(Rect rect, ConversationGroup group, int index)
         {
             Text.Font = GameFont.Small;
             Text.Anchor = TextAnchor.MiddleLeft;
             Text.WordWrap = false;
-            
+
             bool flag = quickSearchWidget.filter.Active && quickSearchWidget.filter.Matches(group.title);
             if (flag)
             {
@@ -252,40 +253,40 @@ namespace SocialInteractions
             {
                 Widgets.DrawLightHighlight(rect);
             }
-            
+
             // Handle mouse hover
             if (Mouse.IsOver(rect))
             {
                 hoveredGroupIndex = index;
             }
-            
+
             Widgets.DrawHighlightIfMouseover(rect);
-            
+
             // Draw timestamp
             Rect dateRect = rect;
             dateRect.width = 90f;
             GUI.color = new Color(0.75f, 0.75f, 0.75f);
             Widgets.Label(dateRect, group.timestamp.ToString("HH:mm:ss"));
             GUI.color = Color.white;
-            
+
             // Draw message count
             Rect countRect = rect;
             countRect.x = dateRect.xMax + 5f;
             countRect.width = 30f;
             Widgets.Label(countRect, group.messages.Count.ToString());
-            
+
             // Draw title
             Rect titleRect = rect;
             titleRect.xMin = countRect.xMax + 5f;
             titleRect.xMax -= 5f;
-            
+
             GUI.color = group.messages[0].color;
             Widgets.Label(titleRect, group.title.Truncate(titleRect.width));
             GUI.color = Color.white;
-            
+
             GenUI.ResetLabelAlign();
             Text.WordWrap = true;
-            
+
             // Handle clicking on the row (select the entry)
             if (Widgets.ButtonInvisible(rect))
             {
@@ -293,7 +294,7 @@ namespace SocialInteractions
                 detailsScrollPos = Vector2.zero; // Reset scroll position when selecting a new entry
             }
         }
-        
+
         private void Notify_SearchChanged()
         {
             messagesScrollPos = Vector2.zero;
@@ -301,7 +302,7 @@ namespace SocialInteractions
             // Force refresh when search changes
             needsRefresh = true;
         }
-        
+
         public override void Notify_ClickOutsideWindow()
         {
             quickSearchWidget.Unfocus();

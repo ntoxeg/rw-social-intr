@@ -3,8 +3,10 @@ using Verse;
 using Verse.AI;
 using System.Linq;
 using System.Collections.Generic;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Dating
 {
     /// <summary>
     /// Joy giver that makes pawns with certain traits/genes pester prisoners or slaves for joy.
@@ -105,14 +107,14 @@ namespace SocialInteractions
             foreach (Pawn target in allTargets)
             {
                 int opinion = pawn.relations.OpinionOf(target);
-                
+
                 // Only consider targets with negative opinion
                 if (opinion >= 0)
                     continue;
 
                 // Weight increases with more negative opinion
                 float weight = System.Math.Abs(opinion);
-                
+
                 // Compound the weight based on number of qualifying conditions
                 int qualifyingConditions = CountQualifyingConditions(pawn);
                 weight *= (1f + (qualifyingConditions - 1) * 0.5f);

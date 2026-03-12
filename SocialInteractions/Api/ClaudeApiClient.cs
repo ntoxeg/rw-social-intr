@@ -9,8 +9,9 @@ using System.Runtime.Serialization.Json;
 using System.IO;
 using System.Collections.Generic;
 using System.Net.Http.Headers;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Api
 {
     [DataContract]
     public class ClaudeApiTextBlock
@@ -19,7 +20,7 @@ namespace SocialInteractions
         public string Type { get; set; }
         [DataMember(Name = "text")]
         public string Text { get; set; }
-        
+
         public ClaudeApiTextBlock()
         {
             Type = "text";
@@ -120,10 +121,10 @@ namespace SocialInteractions
             // Trim whitespace which can cause header issues
             _apiKey = (apiKey != null) ? apiKey.Trim() : null;
             _httpClient = SharedHttpClient;
-            
+
             // Clear any existing default request headers
             _httpClient.DefaultRequestHeaders.Clear();
-            
+
             // Add required headers for Claude API
             if (!string.IsNullOrEmpty(_apiKey))
             {
@@ -145,7 +146,7 @@ namespace SocialInteractions
                     SLog.Warning(string.Format("[SocialInteractions] Failed to add x-api-key header for Claude. Error: {0}", ex.Message));
                 }
             }
-            
+
             // Add required Claude-specific headers
             _httpClient.DefaultRequestHeaders.Add("anthropic-version", "2023-06-01");
             _httpClient.DefaultRequestHeaders.Add("User-Agent", "SocialInteractionsMod/1.0");
@@ -227,7 +228,7 @@ namespace SocialInteractions
 
                 // Use the correct Claude API endpoint
                 string fullUrl = _apiUrl.TrimEnd('/');
-                
+
                 // For Claude API, if the URL doesn't already contain the messages endpoint, append it
                 if (!fullUrl.EndsWith("/v1/messages"))
                 {
@@ -239,14 +240,14 @@ namespace SocialInteractions
                 }
 
                 var response = await _httpClient.PostAsync(fullUrl, httpContent);
-                
+
                 // Log the response status code for debugging
                 SLog.Message(string.Format("[SocialInteractions] Claude API Response Status: {0}", response.StatusCode));
-                
+
                 response.EnsureSuccessStatusCode(); // Throws an exception if the HTTP response status is an error code
 
                 var responseBody = await response.Content.ReadAsStringAsync();
-                
+
                 // Log the response body for debugging
                 SLog.Message(string.Format("[SocialInteractions] Claude API Response Body: {0}", responseBody));
 
@@ -283,10 +284,10 @@ namespace SocialInteractions
             response = System.Text.RegularExpressions.Regex.Replace(response, @"<thinking>.*?</thinking>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             response = System.Text.RegularExpressions.Regex.Replace(response, @"<think>.*?</think>", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
             response = System.Text.RegularExpressions.Regex.Replace(response, @"\[thinking\].*?\[/thinking\]", "", System.Text.RegularExpressions.RegexOptions.Singleline | System.Text.RegularExpressions.RegexOptions.IgnoreCase);
-            
+
             // Trim whitespace
             response = response.Trim();
-            
+
             return response;
         }
 

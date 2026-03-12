@@ -1,8 +1,9 @@
 using HarmonyLib;
 using RimWorld;
 using Verse;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(Precept_RoleSingle), "Assign")]
     public static class Precept_RoleSingle_Patch

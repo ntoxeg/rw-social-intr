@@ -7,8 +7,9 @@ using UnityEngine;
 using Verse;
 using Verse.AI;
 using Verse.AI.Group;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Negotiation
 {
     [HarmonyPatch(typeof(GenAI), "InDangerousCombat")]
     public static class GenAI_InDangerousCombat_Patch
@@ -44,7 +45,7 @@ namespace SocialInteractions
                     // We FORCE a larger distance (60f) here because JobGiver_Steal normally passes a small 12f radius.
                     float forcedMaxDist = Math.Max(maxDist, 60f);
                     __result = TryFindBestItemToStealCustom(root, map, forcedMaxDist, out item, thief, disallowed);
-                    
+
                     if (__result)
                         SLog.Message("[Plunder] " + thief.LabelShort + " found item to steal: " + item.Label + " at distance " + forcedMaxDist);
                     else
@@ -76,7 +77,7 @@ namespace SocialInteractions
                 return false;
             }
 
-            Predicate<Thing> validator = delegate(Thing t)
+            Predicate<Thing> validator = delegate (Thing t)
             {
                 if (thief != null && !thief.CanReserve(t))
                 {
@@ -95,15 +96,15 @@ namespace SocialInteractions
 
             // The KEY CHANGE: TraverseMode.PassDoors instead of NoPassClosedDoors
             item = GenClosest.ClosestThing_Regionwise_ReachablePrioritized(
-                root, 
-                map, 
-                ThingRequest.ForGroup(ThingRequestGroup.HaulableEverOrMinifiable), 
-                PathEndMode.ClosestTouch, 
-                TraverseParms.For(TraverseMode.PassDoors, Danger.Some), 
-                maxDist, 
-                validator, 
-                (Thing x) => StealAIUtility.GetValue(x), 
-                15, 
+                root,
+                map,
+                ThingRequest.ForGroup(ThingRequestGroup.HaulableEverOrMinifiable),
+                PathEndMode.ClosestTouch,
+                TraverseParms.For(TraverseMode.PassDoors, Danger.Some),
+                maxDist,
+                validator,
+                (Thing x) => StealAIUtility.GetValue(x),
+                15,
                 15
             );
 

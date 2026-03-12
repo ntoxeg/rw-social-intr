@@ -4,8 +4,11 @@ using Verse.AI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SocialInteractions.Children;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Interactions
 {
     /// <summary>
     /// Interaction worker for enhanced insults with severity levels based on opinion
@@ -44,30 +47,30 @@ namespace SocialInteractions
 
             // Determine the severity of the insult based on the initiator's opinion of the recipient
             InsultSeverity severity = DetermineInsultSeverity(initiator, recipient);
-            
+
             // Check for potential social fight escalation based on severity and recipient's state
             CheckForSocialFightEscalation(initiator, recipient, severity);
-            
+
             // Generate an appropriate subject based on the severity and whether a fight occurred
             // The fight escalation method may have started a fight, so check the current MentalState
             bool fightOccurred = recipient.MentalState != null && recipient.MentalState.def == MentalStateDefOf.SocialFighting;
             string subject = GenerateInsultSubject(initiator, recipient, severity, fightOccurred);
-            
+
             // Apply appropriate thoughts based on severity and relationship
             ApplyInsultThoughts(initiator, recipient, severity);
-            
+
             // Handle the LLM interaction with the generated subject
             SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, SI_InteractionDefOf.EnhancedInsult, subject);
-            
+
             // Call the base Interacted method to create the normal log entry using XML rules
             base.Interacted(initiator, recipient, extraSentencePacks, out letterText, out letterLabel, out letterDef, out lookTargets);
-            
+
             // Create a custom log entry for the enhanced insult interaction to ensure it's properly recorded in social history
             try
             {
                 // Use the same fight determination as used for the subject
                 PlayLogEntry_EnhancedInsult enhancedInsultLogEntry = new PlayLogEntry_EnhancedInsult(SI_InteractionDefOf.EnhancedInsult, initiator, recipient, extraSentencePacks, severity, fightOccurred);
-                
+
                 // Add the entry to the play log to update the social history
                 if (Find.PlayLog != null)
                 {
@@ -78,9 +81,9 @@ namespace SocialInteractions
             {
                 SLog.Warning(string.Format("[SocialInteractions] InteractionWorker_EnhancedInsult: Failed to add enhanced insult to play log: {0}", ex.Message));
             }
-            
+
             // Log the interaction
-            SLog.Message(string.Format("[SocialInteractions] Enhanced insult: {0} insulted {1} with {2} severity", 
+            SLog.Message(string.Format("[SocialInteractions] Enhanced insult: {0} insulted {1} with {2} severity",
                 initiator.LabelShort, recipient.LabelShort, severity.ToString()));
         }
 
@@ -90,9 +93,9 @@ namespace SocialInteractions
             {
                 return InsultSeverity.Mild; // Default to mild if no relations data
             }
-            
+
             int opinionOfRecipient = initiator.relations.OpinionOf(recipient);
-            
+
             // Determine severity based on opinion thresholds
             if (opinionOfRecipient <= -50)
             {
@@ -111,7 +114,7 @@ namespace SocialInteractions
                 return InsultSeverity.Mild;     // Neutral or positive opinion (backhanded or subtle insults)
             }
         }
-        
+
         private string GenerateInsultSubject(Pawn initiator, Pawn recipient, InsultSeverity severity, bool ledToFight = false)
         {
             if (ledToFight)
@@ -120,20 +123,20 @@ namespace SocialInteractions
                 switch (severity)
                 {
                     case InsultSeverity.Violent:
-                        return string.Format("A violent verbal attack by {0} against {1} that escalates into a physical fight. The insult is extremely harsh and personal, causing {1} to retaliate physically.", 
+                        return string.Format("A violent verbal attack by {0} against {1} that escalates into a physical fight. The insult is extremely harsh and personal, causing {1} to retaliate physically.",
                             initiator.LabelShort, recipient.LabelShort);
-                            
+
                     case InsultSeverity.Severe:
-                        return string.Format("A severe insult by {0} directed at {1} that results in a physical confrontation. The harsh comment is enough to provoke {1} into fighting.", 
+                        return string.Format("A severe insult by {0} directed at {1} that results in a physical confrontation. The harsh comment is enough to provoke {1} into fighting.",
                             initiator.LabelShort, recipient.LabelShort);
-                            
+
                     case InsultSeverity.Moderate:
-                        return string.Format("A moderately harsh comment by {0} about {1} that unexpectedly escalates to physical violence. {1} responds aggressively to the criticism.", 
+                        return string.Format("A moderately harsh comment by {0} about {1} that unexpectedly escalates to physical violence. {1} responds aggressively to the criticism.",
                             initiator.LabelShort, recipient.LabelShort);
-                            
+
                     case InsultSeverity.Mild:
                     default:
-                        return string.Format("A subtle or backhanded comment by {0} toward {1} that somehow results in a physical fight. Despite its mild nature, the remark triggers a violent response.", 
+                        return string.Format("A subtle or backhanded comment by {0} toward {1} that somehow results in a physical fight. Despite its mild nature, the remark triggers a violent response.",
                             initiator.LabelShort, recipient.LabelShort);
                 }
             }
@@ -143,36 +146,36 @@ namespace SocialInteractions
                 switch (severity)
                 {
                     case InsultSeverity.Violent:
-                        return string.Format("A violent verbal attack by {0} against {1}. The insult is extremely harsh and personal, reflecting deep hatred and animosity.", 
+                        return string.Format("A violent verbal attack by {0} against {1}. The insult is extremely harsh and personal, reflecting deep hatred and animosity.",
                             initiator.LabelShort, recipient.LabelShort);
-                            
+
                     case InsultSeverity.Severe:
-                        return string.Format("A severe insult by {0} directed at {1}. The comment is harsh and intended to cause significant emotional harm.", 
+                        return string.Format("A severe insult by {0} directed at {1}. The comment is harsh and intended to cause significant emotional harm.",
                             initiator.LabelShort, recipient.LabelShort);
-                            
+
                     case InsultSeverity.Moderate:
-                        return string.Format("A moderately harsh comment by {0} about {1}. The remark is critical but not extremely vicious.", 
+                        return string.Format("A moderately harsh comment by {0} about {1}. The remark is critical but not extremely vicious.",
                             initiator.LabelShort, recipient.LabelShort);
-                            
+
                     case InsultSeverity.Mild:
                     default:
-                        return string.Format("A subtle or backhanded comment by {0} toward {1}. The remark may seem casual but contains an underlying criticism or slight.", 
+                        return string.Format("A subtle or backhanded comment by {0} toward {1}. The remark may seem casual but contains an underlying criticism or slight.",
                             initiator.LabelShort, recipient.LabelShort);
                 }
             }
         }
-        
+
         private void ApplyInsultThoughts(Pawn initiator, Pawn recipient, InsultSeverity severity)
         {
             // Apply different thoughts based on the severity of the insult
-            
+
             // For the recipient (the target of the insult)
             ThoughtDef insultThought = GetInsultThoughtForSeverity(severity);
             if (insultThought != null && recipient.needs != null && recipient.needs.mood != null)
             {
                 recipient.needs.mood.thoughts.memories.TryGainMemory(insultThought, initiator);
             }
-            
+
             // For the initiator (could have thoughts about being mean/venting)
             if (initiator.needs != null && initiator.needs.mood != null)
             {
@@ -187,7 +190,7 @@ namespace SocialInteractions
                 }
             }
         }
-        
+
         private ThoughtDef GetInsultThoughtForSeverity(InsultSeverity severity)
         {
             switch (severity)
@@ -199,17 +202,17 @@ namespace SocialInteractions
                         return deeplyInsulted;
                     else
                         return DefDatabase<ThoughtDef>.GetNamed("Insulted");
-                    
+
                 case InsultSeverity.Severe:
                     ThoughtDef badlyInsulted = DefDatabase<ThoughtDef>.GetNamedSilentFail("BadlyInsulted");
                     if (badlyInsulted != null)
                         return badlyInsulted;
                     else
                         return DefDatabase<ThoughtDef>.GetNamed("Insulted");
-                    
+
                 case InsultSeverity.Moderate:
                     return DefDatabase<ThoughtDef>.GetNamed("Insulted");
-                    
+
                 case InsultSeverity.Mild:
                 default:
                     // For mild insults, try to find a subtle thought or just return null for no specific thought
@@ -224,7 +227,7 @@ namespace SocialInteractions
                     return null;
             }
         }
-        
+
         /// <summary>
         /// Checks if the insult should escalate to a social fight based on severity and recipient's state
         /// </summary>
@@ -234,10 +237,10 @@ namespace SocialInteractions
             {
                 return;
             }
-            
+
             // Calculate the chance of escalation based on insult severity
             float escalationChance = 0f;
-            
+
             switch (severity)
             {
                 case InsultSeverity.Violent:
@@ -253,7 +256,7 @@ namespace SocialInteractions
                     escalationChance = 0.01f; // 1% chance for mild insults
                     break;
             }
-            
+
             // Modify escalation chance based on recipient's mood
             if (recipient.needs != null && recipient.needs.mood != null)
             {
@@ -268,13 +271,13 @@ namespace SocialInteractions
                     escalationChance *= 1.5f;
                 }
             }
-            
+
             // Modify escalation chance based on recipient's traits
             if (HasTraitThatProvokesFights(recipient))
             {
                 escalationChance *= 1.8f; // Recipient with fight-provoking traits
             }
-            
+
             // Modify escalation chance based on recipient's opinion of initiator
             if (recipient.relations != null)
             {
@@ -288,7 +291,7 @@ namespace SocialInteractions
                     escalationChance *= 1.5f;
                 }
             }
-            
+
             // Check for random escalation
             if (Rand.Value < escalationChance)
             {
@@ -296,7 +299,7 @@ namespace SocialInteractions
                 TryStartSocialFight(initiator, recipient);
             }
         }
-        
+
         /// <summary>
         /// Tries to start a social fight between the initiator and recipient
         /// </summary>
@@ -306,7 +309,7 @@ namespace SocialInteractions
             {
                 return;
             }
-            
+
             // Check if both pawns are able to fight (not downed, not in mental state, etc.)
             if (!recipient.CanReach(initiator, PathEndMode.Touch, Danger.Deadly, false, false) ||
                 recipient.Downed || recipient.IsPrisoner || recipient.IsSlave ||
@@ -316,34 +319,34 @@ namespace SocialInteractions
                 // Can't start a social fight if either pawn can't reach or engage
                 return;
             }
-            
+
             // Use the proper method to start social fight for both pawns, similar to vanilla RimWorld
             // This follows the same pattern as the decompiled StartSocialFight method
             if (PawnUtility.ShouldSendNotificationAbout(recipient) || PawnUtility.ShouldSendNotificationAbout(initiator))
             {
-                Messages.Message("MessageSocialFight".Translate(recipient.LabelShort, initiator.LabelShort, 
-                    recipient.Named("PAWN1"), initiator.Named("PAWN2")), 
+                Messages.Message("MessageSocialFight".Translate(recipient.LabelShort, initiator.LabelShort,
+                    recipient.Named("PAWN1"), initiator.Named("PAWN2")),
                     recipient, MessageTypeDefOf.ThreatSmall);
             }
-            
+
             // Start social fighting mental state for both pawns
             recipient.mindState.mentalStateHandler.TryStartMentalState(MentalStateDefOf.SocialFighting, null, false, false, false, initiator);
             initiator.mindState.mentalStateHandler.TryStartMentalState(MentalStateDefOf.SocialFighting, null, false, false, false, recipient);
-            
+
             // Record the tale
             TaleRecorder.RecordTale(TaleDefOf.SocialFight, recipient, initiator);
-            
-            SLog.Message(string.Format("[SocialInteractions] Social fight started: {0} started fighting {1} after enhanced insult", 
+
+            SLog.Message(string.Format("[SocialInteractions] Social fight started: {0} started fighting {1} after enhanced insult",
                 recipient.LabelShort, initiator.LabelShort));
         }
-        
+
         private bool HasTraitThatEnjoysNegativeInteractions(Pawn pawn)
         {
             if (pawn == null || pawn.story == null || pawn.story.traits == null)
             {
                 return false;
             }
-            
+
             // Check for traits that would make someone enjoy insulting others
             foreach (Trait trait in pawn.story.traits.allTraits)
             {
@@ -351,14 +354,14 @@ namespace SocialInteractions
                 {
                     string traitLabel = trait.def.defName.ToLower();
                     string traitLabelDisplay = trait.Label.ToLower();
-                    
+
                     // Check for sadistic, abrasive, or similar traits that enjoy negative interactions
-                    if (traitLabel.Contains("sadist") || 
-                        traitLabel.Contains("abrasive") || 
+                    if (traitLabel.Contains("sadist") ||
+                        traitLabel.Contains("abrasive") ||
                         traitLabel.Contains("psychopath") ||
                         traitLabel.Contains("bully") ||
-                        traitLabelDisplay.Contains("sadist") || 
-                        traitLabelDisplay.Contains("abrasive") || 
+                        traitLabelDisplay.Contains("sadist") ||
+                        traitLabelDisplay.Contains("abrasive") ||
                         traitLabelDisplay.Contains("psychopath") ||
                         traitLabelDisplay.Contains("bully"))
                     {
@@ -366,10 +369,10 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             return false;
         }
-        
+
         /// <summary>
         /// Checks if a pawn has traits that make them more likely to fight back when insulted
         /// </summary>
@@ -379,7 +382,7 @@ namespace SocialInteractions
             {
                 return false;
             }
-            
+
             // Check for traits that make a pawn more likely to fight when insulted
             foreach (Trait trait in pawn.story.traits.allTraits)
             {
@@ -387,15 +390,15 @@ namespace SocialInteractions
                 {
                     string traitLabel = trait.def.defName.ToLower();
                     string traitLabelDisplay = trait.Label.ToLower();
-                    
+
                     // Check for traits like abrasive, quick-tempered, jealous, etc. that might cause fights
-                    if (traitLabel.Contains("abrasive") || 
+                    if (traitLabel.Contains("abrasive") ||
                         traitLabel.Contains("psychopath") ||
                         traitLabel.Contains("jealous") ||
                         traitLabel.Contains("hothead") ||
                         traitLabel.Contains("quicktemper") ||
                         traitLabel.Contains("shorttemper") ||
-                        traitLabelDisplay.Contains("abrasive") || 
+                        traitLabelDisplay.Contains("abrasive") ||
                         traitLabelDisplay.Contains("psychopath") ||
                         traitLabelDisplay.Contains("jealous") ||
                         traitLabelDisplay.Contains("hot headed") ||
@@ -406,7 +409,7 @@ namespace SocialInteractions
                     }
                 }
             }
-            
+
             return false;
         }
 

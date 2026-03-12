@@ -4,8 +4,10 @@ using Verse.AI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Interactions
 {
     /// <summary>
     /// Interaction worker for make-up/apologizing interactions that allow pawns to clear up misunderstandings

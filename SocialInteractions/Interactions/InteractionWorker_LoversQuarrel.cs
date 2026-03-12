@@ -4,8 +4,10 @@ using Verse.AI;
 using System;
 using System.Collections.Generic;
 using System.Linq;
+using SocialInteractions;
+using SocialInteractions.DefOfs;
 
-namespace SocialInteractions
+namespace SocialInteractions.Interactions
 {
     /// <summary>
     /// Outcome types for a lover's quarrel
@@ -23,7 +25,7 @@ namespace SocialInteractions
     public class InteractionWorker_LoversQuarrel : InteractionWorker
     {
         private const float EARSHOT_RADIUS = 12f;
-        
+
         public override void Interacted(Pawn initiator, Pawn recipient, List<RulePackDef> extraSentencePacks, out string letterText, out string letterLabel, out LetterDef letterDef, out LookTargets lookTargets)
         {
             // Initialize out parameters
@@ -41,29 +43,29 @@ namespace SocialInteractions
 
             // Determine the quarrel outcome upfront
             QuarrelOutcome outcome = DetermineQuarrelOutcome(initiator, recipient);
-            
+
             // Generate LLM subject with the outcome included
             string subject = GenerateQuarrelSubject(initiator, recipient, outcome);
-            
+
             // Apply thoughts to both participants based on outcome
             ApplyParticipantThoughts(initiator, recipient, outcome);
-            
+
             // Apply witness thoughts to nearby pawns
             ApplyWitnessThoughts(initiator, recipient);
-            
+
             // Handle potential breakup on NearBreakup outcome
             if (outcome == QuarrelOutcome.NearBreakup)
             {
                 TryTriggerBreakup(initiator, recipient);
             }
-            
+
             // Handle the LLM interaction
             SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, SI_InteractionDefOf.LoversQuarrel, subject);
-            
+
             // Call base Interacted method to create normal log entry
             base.Interacted(initiator, recipient, extraSentencePacks, out letterText, out letterLabel, out letterDef, out lookTargets);
-            
-            SLog.Message(string.Format("[SocialInteractions] Lover's quarrel: {0} and {1} had a {2} outcome", 
+
+            SLog.Message(string.Format("[SocialInteractions] Lover's quarrel: {0} and {1} had a {2} outcome",
                 initiator.LabelShort, recipient.LabelShort, outcome.ToString()));
         }
 
@@ -163,17 +165,17 @@ namespace SocialInteractions
         private string GenerateQuarrelSubject(Pawn initiator, Pawn recipient, QuarrelOutcome outcome)
         {
             string relationshipType = GetRelationshipType(initiator, recipient);
-            
+
             switch (outcome)
             {
                 case QuarrelOutcome.Reconciliation:
                     return string.Format("{0} and {1} ({2}) are having a heated argument, but they find common ground and reconcile. The tension melts away as they remember why they care about each other.",
                         initiator.LabelShort, recipient.LabelShort, relationshipType);
-                        
+
                 case QuarrelOutcome.NearBreakup:
                     return string.Format("{0} and {1} ({2}) are having a fierce, emotionally charged argument. Harsh words are exchanged, and the relationship feels like it's on the edge of breaking apart. The fight is intense and deeply hurtful.",
                         initiator.LabelShort, recipient.LabelShort, relationshipType);
-                        
+
                 case QuarrelOutcome.Neutral:
                 default:
                     return string.Format("{0} and {1} ({2}) are having a typical couple's quarrel. Voices are raised and frustrations are aired, but neither side gains ground. They'll need time to cool off.",
@@ -187,14 +189,14 @@ namespace SocialInteractions
         private string GetRelationshipType(Pawn pawn1, Pawn pawn2)
         {
             if (pawn1.relations == null) return "partners";
-            
+
             if (pawn1.relations.DirectRelationExists(PawnRelationDefOf.Spouse, pawn2))
                 return "spouses";
             if (pawn1.relations.DirectRelationExists(PawnRelationDefOf.Fiance, pawn2))
                 return "engaged";
             if (pawn1.relations.DirectRelationExists(PawnRelationDefOf.Lover, pawn2))
                 return "lovers";
-                
+
             return "partners";
         }
 
@@ -204,7 +206,7 @@ namespace SocialInteractions
         private void ApplyParticipantThoughts(Pawn initiator, Pawn recipient, QuarrelOutcome outcome)
         {
             ThoughtDef thoughtDef = null;
-            
+
             switch (outcome)
             {
                 case QuarrelOutcome.Reconciliation:
@@ -242,16 +244,16 @@ namespace SocialInteractions
 
             ThoughtDef witnessThought = DefDatabase<ThoughtDef>.GetNamedSilentFail("WitnessedLoversQuarrel");
             ThoughtDef parentWitnessThought = DefDatabase<ThoughtDef>.GetNamedSilentFail("WitnessedParentQuarrel");
-            
+
             if (witnessThought == null) return;
 
             IntVec3 centerPos = initiator.Position;
-            
+
             foreach (Pawn witness in initiator.Map.mapPawns.FreeColonistsAndPrisoners)
             {
                 if (witness == null || witness == initiator || witness == recipient)
                     continue;
-                    
+
                 if (!witness.Spawned || witness.Dead || witness.Downed)
                     continue;
 
@@ -262,15 +264,15 @@ namespace SocialInteractions
 
                 // Check if this witness is a child of either participant
                 bool isChildOfParticipant = IsChildOf(witness, initiator) || IsChildOf(witness, recipient);
-                
-                ThoughtDef thoughtToApply = isChildOfParticipant && parentWitnessThought != null 
-                    ? parentWitnessThought 
+
+                ThoughtDef thoughtToApply = isChildOfParticipant && parentWitnessThought != null
+                    ? parentWitnessThought
                     : witnessThought;
-                
+
                 if (witness.needs != null && witness.needs.mood != null && witness.needs.mood.thoughts != null && witness.needs.mood.thoughts.memories != null)
                 {
                     witness.needs.mood.thoughts.memories.TryGainMemory(thoughtToApply);
-                    
+
                     SLog.Message(string.Format("[SocialInteractions] {0} witnessed lover's quarrel between {1} and {2}{3}",
                         witness.LabelShort, initiator.LabelShort, recipient.LabelShort,
                         isChildOfParticipant ? " (their parent)" : ""));
@@ -297,7 +299,7 @@ namespace SocialInteractions
             {
                 SLog.Message(string.Format("[SocialInteractions] Lover's quarrel resulted in breakup: {0} and {1}",
                     initiator.LabelShort, recipient.LabelShort));
-                
+
                 // Try to use vanilla breakup mechanics
                 try
                 {
@@ -314,13 +316,13 @@ namespace SocialInteractions
                     {
                         // Remove the direct relation
                         initiator.relations.RemoveDirectRelation(relationDef, recipient);
-                        
+
                         // Add ex-relation
                         if (relationDef == PawnRelationDefOf.Spouse)
                             initiator.relations.AddDirectRelation(PawnRelationDefOf.ExSpouse, recipient);
                         else
                             initiator.relations.AddDirectRelation(PawnRelationDefOf.ExLover, recipient);
-                        
+
                         // Send notification
                         if (PawnUtility.ShouldSendNotificationAbout(initiator) || PawnUtility.ShouldSendNotificationAbout(recipient))
                         {
@@ -353,7 +355,7 @@ namespace SocialInteractions
         private bool HasAbrasiveTrait(Pawn pawn)
         {
             if (pawn == null || pawn.story == null || pawn.story.traits == null) return false;
-            
+
             foreach (Trait trait in pawn.story.traits.allTraits)
             {
                 if (trait == null || trait.def == null) continue;
@@ -370,7 +372,7 @@ namespace SocialInteractions
         public static bool AreRomanticPartners(Pawn pawn1, Pawn pawn2)
         {
             if (pawn1 == null || pawn1.relations == null || pawn2 == null) return false;
-            
+
             return pawn1.relations.DirectRelationExists(PawnRelationDefOf.Spouse, pawn2) ||
                    pawn1.relations.DirectRelationExists(PawnRelationDefOf.Fiance, pawn2) ||
                    pawn1.relations.DirectRelationExists(PawnRelationDefOf.Lover, pawn2);

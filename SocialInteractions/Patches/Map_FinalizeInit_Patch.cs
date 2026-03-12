@@ -2,8 +2,11 @@ using HarmonyLib;
 using RimWorld;
 using Verse;
 using System.Linq;
+using SocialInteractions.Dating;
+using SocialInteractions.Children;
+using SocialInteractions;
 
-namespace SocialInteractions
+namespace SocialInteractions.Patches
 {
     [HarmonyPatch(typeof(Map), "FinalizeInit")]
     public static class Map_FinalizeInit_Patch
