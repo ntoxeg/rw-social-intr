@@ -1,5 +1,6 @@
 @echo off
-set SRC=C:\Users\gento\dev\GitHub\rimworldmods\SocialInteractions
+setlocal enabledelayedexpansion
+set SRC=%~dp0SocialInteractions
 set DST=C:\Games\Steam\steamapps\common\RimWorld\Mods\Social Interactions
 
 echo Deploying Social Interactions mod...
@@ -7,10 +8,14 @@ echo Source: %SRC%
 echo Target: %DST%
 echo.
 
-robocopy "%SRC%\About" "%DST%\About" /MIR /NJH /NJS
-robocopy "%SRC%\1.5" "%DST%\1.5" /MIR /NJH /NJS
-robocopy "%SRC%\Languages" "%DST%\Languages" /MIR /NJH /NJS
-robocopy "%SRC%\Defs" "%DST%\Defs" /MIR /NJH /NJS
+for %%D in (About 1.5 Languages Defs) do (
+    robocopy "%SRC%\%%D" "%DST%\%%D" /MIR /NJH /NJS
+    if !ERRORLEVEL! GEQ 8 (
+        echo ERROR: robocopy failed on %%D with exit code !ERRORLEVEL!
+        pause
+        exit /b 1
+    )
+)
 
 echo.
 echo Deploy complete.
