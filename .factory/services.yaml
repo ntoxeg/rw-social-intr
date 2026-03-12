@@ -1,0 +1,5 @@
+commands:
+  build: dotnet build SocialInteractions\SocialInteractions.csproj -c Release
+  test: dotnet test SocialInteractions.Tests\SocialInteractions.Tests.csproj --no-restore
+  build-test: dotnet build SocialInteractions.Tests\SocialInteractions.Tests.csproj
+  restore: dotnet restore SocialInteractions\SocialInteractions.csproj
