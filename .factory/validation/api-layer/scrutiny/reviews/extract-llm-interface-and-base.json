@@ -1,0 +1,46 @@
+{
+  "featureId": "extract-llm-interface-and-base",
+  "milestone": "api-layer",
+  "reviewer": "scrutiny-feature-reviewer",
+  "status": "pass",
+  "codeReviewIssues": [
+    {
+      "severity": "non_blocking",
+      "file": "SocialInteractions/Api/LlmClientBase.cs",
+      "description": "SharedHttpClient is a static readonly singleton, so Dispose(bool) only sets the _disposed flag without releasing any managed resources. This is correct for a shared static HttpClient, but the Dispose pattern is somewhat ceremonial — consider documenting why Dispose doesn't actually release the HttpClient (to avoid confusion for future maintainers)."
+    },
+    {
+      "severity": "non_blocking",
+      "file": "SocialInteractions/Jobs/JobDriver_HaveDeepTalk.cs",
+      "description": "Lines 127-175: Uses manual try/finally with explicit client.Dispose() instead of the 'using' pattern used in NegotiationManager (line 782) and SocialInteractions.GenerateTextWithApiClient (line 2123). Functionally equivalent but stylistically inconsistent. The manual pattern is justified here since the client is created inside Task.Run and the try/finally spans async operations."
+    },
+    {
+      "severity": "non_blocking",
+      "file": "SocialInteractions/Api/LlmClientFactory.cs",
+      "description": "UpdatePlayer2Heartbeat (lines 51-71) references concrete Player2ApiClient.StartHealthHeartbeat/StopHealthHeartbeat static methods directly. This is acceptable since the factory is in Api/ and heartbeat is a Player2-specific non-ILlmClient concern, but it does mean LlmClientFactory has knowledge of Player2-specific static members beyond the interface contract."
+    }
+  ],
+  "sharedStateObservations": [
+    {
+      "target": "AGENTS.md",
+      "observation": "AGENTS.md states 'API Clients: All 10 are currently static classes' — this is now outdated after this feature. All 10 clients now extend LlmClientBase and are non-static instance classes. The section should be updated to reflect the new ILlmClient/LlmClientBase/LlmClientFactory architecture.",
+      "sourceFeature": "extract-llm-interface-and-base"
+    },
+    {
+      "target": "AGENTS.md",
+      "observation": "AGENTS.md states 'Duplicate API switch: NegotiationManager.GetLLMResponse() has its own 10-case switch for client creation' — this duplication has now been resolved. NegotiationManager uses LlmClientFactory.Create(). The AGENTS.md should be updated to remove this known-issue note.",
+      "sourceFeature": "extract-llm-interface-and-base"
+    },
+    {
+      "target": "library",
+      "observation": "architecture.md line 49 still references 'Multi-API Support... with GenerateTextWithApiClient method' without mentioning the new ILlmClient/LlmClientBase/LlmClientFactory architecture. Should be updated to document the new abstraction layer.",
+      "sourceFeature": "extract-llm-interface-and-base"
+    },
+    {
+      "target": "skills",
+      "observation": "Worker reported skillFeedback.followedProcedure=false with deviation on step 1.2 (init.sh not runnable in available shell context). Worker used direct dotnet restore as fallback. The refactor-worker skill delegates startup to worker-base, and services.yaml does not include init.sh — the init.sh issue is a recurring cross-session blocker in Windows/WSL mixed environments.",
+      "sourceFeature": "extract-llm-interface-and-base"
+    }
+  ],
+  "summary": "All 17 validation contract assertions (VAL-API-001 through VAL-API-017) are satisfied. The refactoring correctly extracts ILlmClient interface (with GenerateText + Name + IDisposable), LlmClientBase abstract class (with shared HttpClient, POST logic, error handling that returns null and logs via SLog), and LlmClientFactory (handling all 10 LlmApiType values with correct constructor parameter diversity). All 10 API clients extend LlmClientBase and are no longer static. Callers outside Api/ (SocialInteractions.GenerateTextWithApiClient, NegotiationManager.GetLLMResponse, JobDriver_HaveDeepTalk) use LlmClientFactory/ILlmClient. No HttpClient usage for LLM outside Api/. Provider-specific request building is preserved in each client's BuildRequestBody/ExtractText/CreateRequestMessage/BuildRequestUrl overrides. Build and tests pass. Three non-blocking style/documentation observations noted."
+}

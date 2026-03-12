@@ -1,0 +1,66 @@
+{
+  "milestone": "api-layer",
+  "round": 1,
+  "status": "pass",
+  "validatorsRun": {
+    "build": {
+      "passed": true,
+      "command": "dotnet build SocialInteractions\\SocialInteractions.csproj -c Release",
+      "exitCode": 0,
+      "notes": "Build succeeded. 0 errors, 1 warning (pre-existing CS0414 in ChildrenMisbehaviorManager.cs)."
+    },
+    "test": {
+      "passed": true,
+      "command": "dotnet test SocialInteractions.Tests\\SocialInteractions.Tests.csproj --no-restore",
+      "exitCode": 0,
+      "notes": "24 tests passed, 0 failures."
+    }
+  },
+  "reviewsSummary": {
+    "total": 3,
+    "passed": 3,
+    "failed": 0,
+    "failedFeatures": []
+  },
+  "blockingIssues": [],
+  "appliedUpdates": [
+    {
+      "target": "library",
+      "description": "Created .factory/library/testing-constraints.md documenting Unity reference assembly limitation (Krafs.RimWorld.Ref provides compile-time-only assemblies, runtime instantiation of mod types fails), Assembly-CSharp copy-to-output requirement for test project, and testable code surface (~5-15%). This was discovered independently by both setup-test-project and api-layer-tests workers.",
+      "sourceFeature": "setup-test-project, api-layer-tests"
+    }
+  ],
+  "suggestedGuidanceUpdates": [
+    {
+      "target": "AGENTS.md",
+      "suggestion": "Update 'API Clients' section: Remove 'All 10 are currently static classes. Each ~250-315 lines with ~60-70% boilerplate (DTOs, serialization, HTTP). All implement IDisposable. Constructor signatures differ (2-4 params).' Replace with: 'All 10 API clients extend LlmClientBase (abstract, implements ILlmClient). Each overrides BuildRequestBody()/ExtractText() for provider-specific logic. LlmClientFactory creates clients by LlmApiType enum. Clients are non-static, instantiated via factory, and share HTTP logic through the base class.'",
+      "evidence": "Feature extract-llm-interface-and-base (commit 9689ca1) refactored all 10 API clients from static classes to LlmClientBase subclasses. The AGENTS.md description is now factually incorrect.",
+      "isSystemic": false
+    },
+    {
+      "target": "AGENTS.md",
+      "suggestion": "Remove the 'Duplicate API switch' note: 'NegotiationManager.GetLLMResponse() has its own 10-case switch for client creation, duplicating SocialInteractions.GenerateTextWithApiClient(). Both should use LlmClientFactory after refactoring.' — This duplication has been resolved; both now use LlmClientFactory.",
+      "evidence": "Feature extract-llm-interface-and-base (commit 9689ca1) updated both NegotiationManager.GetLLMResponse() and SocialInteractions.GenerateTextWithApiClient() to use LlmClientFactory.Create().",
+      "isSystemic": false
+    },
+    {
+      "target": "skills",
+      "suggestion": "The test-worker skill should document the Unity reference-assembly constraint for RimWorld mods: runtime instantiation of mod types fails because Krafs.RimWorld.Ref provides compile-time-only assemblies. Recommend adding a note that source-level characterization tests (regex on .cs files) are the primary approach for testing mod types that depend on Unity/Verse assemblies.",
+      "evidence": "Both setup-test-project (session 831d9425) and api-layer-tests (session 30a2aa8b) workers discovered this constraint through trial and error, spending multiple iterations before pivoting to source-level tests. Both reported skill deviations on this point.",
+      "isSystemic": true
+    },
+    {
+      "target": "skills",
+      "suggestion": "The worker-base/init.sh startup procedure is not Windows-compatible. Workers consistently cannot execute .factory/init.sh in PowerShell and fall back to direct dotnet restore. Consider making init.sh cross-platform or adding a Windows-specific init script.",
+      "evidence": "All 3 features in this milestone reported init.sh execution failure as a skill deviation. Same pattern observed in structural-cleanup milestone. This is a systemic cross-session issue.",
+      "isSystemic": true
+    }
+  ],
+  "rejectedObservations": [
+    {
+      "observation": "architecture.md line 49 references 'Multi-API Support... with GenerateTextWithApiClient method' without mentioning the new ILlmClient/LlmClientBase/LlmClientFactory architecture.",
+      "reason": "architecture.md is not in .factory/ shared state and appears to be user documentation. The scrutiny validator should not modify user-facing documentation. The AGENTS.md suggestion above covers the operational guidance aspect."
+    }
+  ],
+  "previousRound": null
+}

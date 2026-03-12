@@ -1,0 +1,26 @@
+{
+  "featureId": "setup-test-project",
+  "milestone": "api-layer",
+  "reviewer": "scrutiny-feature-reviewer",
+  "status": "pass",
+  "codeReviewIssues": [
+    {
+      "severity": "suggestion",
+      "file": "SocialInteractions/Core/AssemblyInfo.cs",
+      "description": "Feature description suggested placing InternalsVisibleTo in Properties/AssemblyInfo.cs, but worker placed it in Core/AssemblyInfo.cs. This is a reasonable choice since Core/ holds project-level files and no Properties/ directory exists. No action needed."
+    }
+  ],
+  "sharedStateObservations": [
+    {
+      "target": "skills",
+      "observation": "Worker deviated from init procedure (step 1.2): could not execute .factory/init.sh on Windows, fell back to direct dotnet restore. This is a recurring pattern across all workers in this mission — the init.sh script is not Windows-compatible when invoked from PowerShell. Prior workers in structural-cleanup milestone reported the same issue.",
+      "sourceFeature": "setup-test-project"
+    },
+    {
+      "target": "library",
+      "observation": "Worker discovered that net48 test projects referencing the main mod project need Assembly-CSharp.dll copied to the test output directory (via <None CopyToOutputDirectory> in .csproj), otherwise tests fail at runtime with FileNotFoundException. Additionally, tests cannot instantiate types that depend on Unity assemblies (e.g., SocialInteractionsModSettings) — must use pure-data types like enums (LlmApiType) for smoke tests. This pattern knowledge should be documented for future test authors.",
+      "sourceFeature": "setup-test-project"
+    }
+  ],
+  "summary": "Feature setup-test-project is fully implemented and correct. All 5 requirements met: (1) SocialInteractions.Tests.csproj created with xUnit 2.9.3, net48, ProjectReference to main project. (2) InternalsVisibleTo configured in Core/AssemblyInfo.cs. (3) rimworldmods.sln solution file links both projects. (4) SmokeTests.cs contains CanReferenceMainProjectTypes test verifying cross-project type access using LlmApiType enum. (5) Both dotnet build and dotnet test succeed (0 errors, 24 tests passing including subsequent api-layer-tests additions). The worker handled a practical challenge well: initial smoke test attempts using Settings types failed due to Unity runtime dependencies, so the worker iterated to use a pure enum type instead. Assembly-CSharp.dll copy-to-output was also correctly added to resolve transitive dependency loading. Clean implementation with no blocking issues."
+}

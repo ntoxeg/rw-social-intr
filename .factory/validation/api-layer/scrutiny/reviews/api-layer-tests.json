@@ -1,0 +1,36 @@
+{
+  "featureId": "api-layer-tests",
+  "milestone": "api-layer",
+  "reviewer": "scrutiny-feature-reviewer",
+  "status": "pass",
+  "codeReviewIssues": [
+    {
+      "severity": "non_blocking",
+      "file": "SocialInteractions.Tests/ApiLayerCharacterizationTests.cs",
+      "description": "Tests use source-level regex assertions instead of runtime instantiation. This is a pragmatic workaround for the Unity reference-assembly constraint (types cannot be instantiated without the full Unity runtime). However, regex-based source matching is inherently fragile: reformatting (e.g., changing expression-bodied Name property to block-bodied) would break tests without any behavioral change. This tradeoff is acceptable for characterization tests whose purpose is to flag structural drift."
+    },
+    {
+      "severity": "suggestion",
+      "file": "SocialInteractions.Tests/ApiLayerCharacterizationTests.cs",
+      "description": "No test for the factory's default/unknown LlmApiType path (ArgumentOutOfRangeException). The factory has a default throw case, but no characterization test captures it. Not required by the feature description but would improve coverage."
+    },
+    {
+      "severity": "suggestion",
+      "file": "SocialInteractions.Tests/ApiLayerCharacterizationTests.cs",
+      "description": "Error handling tests cover HttpRequestException, TaskCanceledException, and non-success status code, but LlmClientBase also catches SerializationException, InvalidDataContractException, and a general Exception (all returning null). Adding regex assertions for these would be consistent with the existing error-handling test pattern."
+    }
+  ],
+  "sharedStateObservations": [
+    {
+      "target": "skills",
+      "observation": "Worker deviated from test-worker skill procedure Step 3/4 by implementing source-level characterization tests instead of runtime tests. The deviation was justified: Unity reference assemblies in the NuGet package (Krafs.RimWorld.Ref) do not include runtime implementations, so instantiating mod types (which depend on UnityEngine.CoreModule) throws FileNotFoundException at test runtime. The skill should document this constraint and recommend source-level characterization or adapter-based testing as a fallback for RimWorld/Unity-bound code.",
+      "sourceFeature": "api-layer-tests"
+    },
+    {
+      "target": "library",
+      "observation": "The constraint that Unity reference assemblies prevent runtime instantiation of mod types in the test project is discovered knowledge. The test worker spent multiple iterations trying runtime tests before pivoting to source-level tests. This should be documented in .factory/library/ so future test-writing features don't repeat the discovery process. Key fact: Krafs.RimWorld.Ref provides compile-time reference assemblies only; any test that instantiates a type touching UnityEngine or Verse types will fail with FileNotFoundException for UnityEngine.CoreModule.dll.",
+      "sourceFeature": "api-layer-tests"
+    }
+  ],
+  "summary": "Feature api-layer-tests passes review. The commit (61ae113) adds 23 new tests in ApiLayerCharacterizationTests.cs (10 factory mapping, 10 Name contract, 3 error handling) bringing total to 24 with the existing smoke test. All tests pass. The implementation covers all 10 LlmApiType values in factory tests, verifies non-empty Name for all 10 clients, and validates the three primary HTTP failure paths in LlmClientBase. Tests use source-level regex assertions rather than runtime instantiation due to Unity reference-assembly constraints — a documented and justified deviation from the skill procedure. Test organization is clean with three well-named test classes and a reusable SourceFile helper. VAL-TEST-005 (factory tests exist) and VAL-TEST-006 (error handling tests exist) are both satisfied."
+}
