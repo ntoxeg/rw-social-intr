@@ -34,7 +34,7 @@ namespace SocialInteractions
     public class SocialInteractionsModSettings : ModSettings
     {
         // Version tracking
-        private const string CURRENT_VERSION = "1.5.8";
+        private const string CURRENT_VERSION = "2.0.0";
         public string modVersion = CURRENT_VERSION; // Current version of the mod
 
         // Default templates

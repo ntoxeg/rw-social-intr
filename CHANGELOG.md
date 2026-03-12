@@ -5,6 +5,24 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.0] - 2026-03-12
+
+### Changed
+- Reorganized all 129 C# source files into 14 logical subdirectories (Core, Api, Dating, Children, Negotiation, Interactions, Combat, Speech, UI, DefOfs, Jobs, Components, Patches)
+- Introduced directory-aligned namespaces (SocialInteractions.Api, SocialInteractions.Dating, etc.)
+- Extracted shared ILlmClient interface and LlmClientBase from 10 API clients, reducing per-client boilerplate by ~60%
+- Added LlmClientFactory for centralized API client creation
+- Standardized error handling across all API clients (graceful null returns on failure)
+- Decomposed SocialInteractionsModSettings into nested classes (ApiSettings, FeatureToggles, PromptSettings, DisplaySettings, GameplaySettings)
+- Converted DatingManager, TTSManager, ChildrenMisbehaviorManager, and ChatLogManager from static classes to GameComponents
+- Cleaned up static mutable state in SpeechBubbleManager and VoiceAssignmentManager
+
+### Removed
+- Legacy compile.bat and compile.rsp build system (standardized on dotnet build)
+
+### Added
+- Unit test project (SocialInteractions.Tests) with 24 characterization tests for the API layer
+
 ## [1.6.0] - 2026-03-11
 
 ### Changed
@@ -209,6 +227,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Initial mod structure and architecture
 
+[2.0.0]: https://github.com/LuckyKo/rimworldmods/compare/v1.5.8...v2.0.0
 [1.5.8]: https://github.com/LuckyKo/rimworldmods/compare/v1.5.7...v1.5.8
 [1.5.7]: https://github.com/LuckyKo/rimworldmods/compare/v1.5.5...v1.5.7
 [1.5.5]: https://github.com/LuckyKo/rimworldmods/compare/v1.5.0...v1.5.5
