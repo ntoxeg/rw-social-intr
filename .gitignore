@@ -3,3 +3,4 @@ compile_new.rsp
 other_mods_ignore_this/
 debug.txt"SocialInteractions/1.5/Assemblies/SocialInteractions.dll" 
 "SocialInteractions/1.5/Assemblies/*.dll" 
+.claude/settings.local.json
