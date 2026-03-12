@@ -13,18 +13,20 @@ namespace SocialInteractions.Speech
 {
     public class SpeechBubbleManager : GameComponent
     {
-        private static readonly object queueLock = new object();
-        private static Queue<SpeechBubble> speechBubbleQueue = new Queue<SpeechBubble>();
-        private static Dictionary<Pawn, float> pawnBubbleEndTimes = new Dictionary<Pawn, float>();
-        private static float nextQueuedBubbleDisplayTime = 0f;
-        private static float pauseStartTime = -1f; // Tracks when the game was paused
-        private static int currentConversationId = 0;
-        private static HashSet<int> activeConversations = new HashSet<int>();
-        private static Dictionary<int, float> activeConversationStartTimes = new Dictionary<int, float>(); // Track start times for timeouts
+        public static SpeechBubbleManager Current => Verse.Current.Game?.GetComponent<SpeechBubbleManager>();
+
+        private readonly object queueLock = new object();
+        private Queue<SpeechBubble> speechBubbleQueue = new Queue<SpeechBubble>();
+        private Dictionary<Pawn, float> pawnBubbleEndTimes = new Dictionary<Pawn, float>();
+        private float nextQueuedBubbleDisplayTime = 0f;
+        private float pauseStartTime = -1f; // Tracks when the game was paused
+        private int currentConversationId = 0;
+        private HashSet<int> activeConversations = new HashSet<int>();
+        private Dictionary<int, float> activeConversationStartTimes = new Dictionary<int, float>(); // Track start times for timeouts
         private const float ConversationTimeoutSeconds = 30f; // Fail-safe timeout
 
         // --- For Job Queue ---
-        private static Queue<Action> pendingJobs = new Queue<Action>();
+        private Queue<Action> pendingJobs = new Queue<Action>();
         // --- End For Job Queue ---
 
         public SpeechBubbleManager(Game game)
@@ -263,21 +265,33 @@ namespace SocialInteractions.Speech
 
         public static void EnqueueJob(Action jobAction)
         {
-            lock (queueLock)
+            SpeechBubbleManager manager = Current;
+            if (manager == null || jobAction == null)
             {
-                pendingJobs.Enqueue(jobAction);
+                return;
+            }
+
+            lock (manager.queueLock)
+            {
+                manager.pendingJobs.Enqueue(jobAction);
             }
         }
 
         public static int StartConversation()
         {
-            lock (queueLock)
+            SpeechBubbleManager manager = Current;
+            if (manager == null)
             {
-                currentConversationId++;
-                activeConversations.Add(currentConversationId);
-                activeConversationStartTimes[currentConversationId] = Time.time;
+                return -1;
             }
-            return currentConversationId;
+
+            lock (manager.queueLock)
+            {
+                manager.currentConversationId++;
+                manager.activeConversations.Add(manager.currentConversationId);
+                manager.activeConversationStartTimes[manager.currentConversationId] = Time.time;
+            }
+            return manager.currentConversationId;
         }
 
         /// <summary>
@@ -287,32 +301,56 @@ namespace SocialInteractions.Speech
         /// </summary>
         public static int GetNextConversationId()
         {
-            lock (queueLock)
+            SpeechBubbleManager manager = Current;
+            if (manager == null)
             {
-                currentConversationId++;
-                return currentConversationId;
+                return -1;
+            }
+
+            lock (manager.queueLock)
+            {
+                manager.currentConversationId++;
+                return manager.currentConversationId;
             }
         }
 
         public static void EndConversation(int conversationId)
         {
-            lock (queueLock)
+            SpeechBubbleManager manager = Current;
+            if (manager == null)
             {
-                activeConversations.Remove(conversationId);
-                activeConversationStartTimes.Remove(conversationId);
+                return;
+            }
+
+            lock (manager.queueLock)
+            {
+                manager.activeConversations.Remove(conversationId);
+                manager.activeConversationStartTimes.Remove(conversationId);
             }
         }
 
         public static bool IsConversationActive(int conversationId)
         {
-            return activeConversations.Contains(conversationId);
+            SpeechBubbleManager manager = Current;
+            if (manager == null)
+            {
+                return false;
+            }
+
+            return manager.activeConversations.Contains(conversationId);
         }
 
         public static bool IsLlmCurrentlyBusy()
         {
-            lock (queueLock)
+            SpeechBubbleManager manager = Current;
+            if (manager == null)
             {
-                return speechBubbleQueue.Count > 0 || activeConversations.Count > 0;
+                return false;
+            }
+
+            lock (manager.queueLock)
+            {
+                return manager.speechBubbleQueue.Count > 0 || manager.activeConversations.Count > 0;
             }
         }
 
@@ -325,10 +363,16 @@ namespace SocialInteractions.Speech
         /// </summary>
         public static void ClearQueues()
         {
-            lock (queueLock)
+            SpeechBubbleManager manager = Current;
+            if (manager == null)
+            {
+                return;
+            }
+
+            lock (manager.queueLock)
             {
                 // Clear all pending speech bubbles
-                speechBubbleQueue.Clear();
+                manager.speechBubbleQueue.Clear();
 
                 // Do NOT clear activeConversations or pendingJobs here.
                 // Clearing pendingJobs wipes out the high-priority jobs that were just 
@@ -350,9 +394,15 @@ namespace SocialInteractions.Speech
         // Original enqueue method for simple messages (e.g., fallback messages)
         public static void Enqueue(Verse.Pawn speaker, string text, float duration, bool isFirstMessage, int conversationId, Color? color = null, bool useCustomMote = false)
         {
-            lock (queueLock)
+            SpeechBubbleManager manager = Current;
+            if (manager == null)
             {
-                speechBubbleQueue.Enqueue(new SpeechBubble(speaker, text, duration, conversationId, false, color, useCustomMote));
+                return;
+            }
+
+            lock (manager.queueLock)
+            {
+                manager.speechBubbleQueue.Enqueue(new SpeechBubble(speaker, text, duration, conversationId, false, color, useCustomMote));
             }
         }
 
@@ -399,9 +449,15 @@ namespace SocialInteractions.Speech
             }
             ChatLogManager.Current?.AddMessage(new ChatMessage(speaker, recipient, rawMessage, messageType, conversationId, messageColor, fallbackText, formattedMessage));
 
-            lock (queueLock)
+            SpeechBubbleManager manager = Current;
+            if (manager == null)
             {
-                speechBubbleQueue.Enqueue(new SpeechBubble(speaker, wrappedMessage, duration, conversationId, false, null, useCustomMote, rawMessage));
+                return;
+            }
+
+            lock (manager.queueLock)
+            {
+                manager.speechBubbleQueue.Enqueue(new SpeechBubble(speaker, wrappedMessage, duration, conversationId, false, null, useCustomMote, rawMessage));
             }
         }
 
@@ -418,9 +474,16 @@ namespace SocialInteractions.Speech
             string wrappedMessage = SocialInteractions.WrapText(text, SocialInteractions.Settings.Display.wordsPerLineLimit);
             // Add to chat log with fallback text
             ChatLogManager.Current?.AddMessage(new ChatMessage(speaker, null, text, MessageType.LLMChat, conversationId, Color.grey, text, text));
-            lock (queueLock)
+
+            SpeechBubbleManager manager = Current;
+            if (manager == null)
             {
-                speechBubbleQueue.Enqueue(new SpeechBubble(speaker, wrappedMessage, duration, conversationId, false, null));
+                return;
+            }
+
+            lock (manager.queueLock)
+            {
+                manager.speechBubbleQueue.Enqueue(new SpeechBubble(speaker, wrappedMessage, duration, conversationId, false, null));
             }
         }
 
@@ -441,22 +504,34 @@ namespace SocialInteractions.Speech
             ChatLogManager.Current?.AddMessage(new ChatMessage(speaker, null, text, MessageType.LLMChat, conversationId, color ?? Color.grey, fallbackText, text));
 
 
-            lock (queueLock)
+            SpeechBubbleManager manager = Current;
+            if (manager == null)
             {
-                speechBubbleQueue.Enqueue(new SpeechBubble(speaker, text, duration, conversationId, false, color, useCustomMote, ttsText ?? text));
+                return;
+            }
+
+            lock (manager.queueLock)
+            {
+                manager.speechBubbleQueue.Enqueue(new SpeechBubble(speaker, text, duration, conversationId, false, color, useCustomMote, ttsText ?? text));
             }
         }
 
         // For instant messages (combat taunts)
         public static void EnqueueInstant(Verse.Pawn speaker, string text, float duration, Color? color = null, bool useCustomMote = false)
         {
+            SpeechBubbleManager manager = Current;
+            if (manager == null)
+            {
+                return;
+            }
+
             float endTime;
-            if (pawnBubbleEndTimes.TryGetValue(speaker, out endTime) && Time.time < endTime)
+            if (manager.pawnBubbleEndTimes.TryGetValue(speaker, out endTime) && Time.time < endTime)
             {
                 return; // Don't enqueue if this pawn already has an active instant bubble
             }
             duration = Math.Max(1f, duration);
-            pawnBubbleEndTimes[speaker] = Time.time + duration; // Set bubbleEndTime for instant bubbles
+            manager.pawnBubbleEndTimes[speaker] = Time.time + duration; // Set bubbleEndTime for instant bubbles
             // No clearing of speechBubbleQueue here, as it's for instant display only
             bool shouldShow = useCustomMote ? SocialInteractions.Settings.Display.showLlmBubbles : true; // Combat taunts (standard motes) have their own toggle
             if (speaker != null && speaker.Map != null && shouldShow)
@@ -467,11 +542,11 @@ namespace SocialInteractions.Speech
                     // Use custom mote for LLM-generated text
                     if (color.HasValue)
                     {
-                        MakeCustomMote(speaker, wrappedText, color.Value, duration);
+                        manager.MakeCustomMote(speaker, wrappedText, color.Value, duration);
                     }
                     else
                     {
-                        MakeCustomMote(speaker, wrappedText, Color.white, duration);
+                        manager.MakeCustomMote(speaker, wrappedText, Color.white, duration);
                     }
                 }
                 else
@@ -479,11 +554,11 @@ namespace SocialInteractions.Speech
                     // Use standard mote for fallback text and combat dialogue
                     if (color.HasValue)
                     {
-                        MakeStandardMote(speaker, wrappedText, color.Value, duration);
+                        manager.MakeStandardMote(speaker, wrappedText, color.Value, duration);
                     }
                     else
                     {
-                        MakeStandardMote(speaker, wrappedText, Color.white, duration);
+                        manager.MakeStandardMote(speaker, wrappedText, Color.white, duration);
                     }
                 }
             }
@@ -492,12 +567,18 @@ namespace SocialInteractions.Speech
         // New overload for LLM instant messages that handles all formatting internally
         public static void EnqueueInstant(Verse.Pawn speaker, string rawMessage, Pawn recipient, float duration, bool isHighPriority = false, bool useCustomMote = true)
         {
+            SpeechBubbleManager manager = Current;
+            if (manager == null)
+            {
+                return;
+            }
+
             // Format the message with speaker name and rich text
             string formattedMessage = FormatLlmMessage(rawMessage, speaker, recipient, isHighPriority);
             string wrappedMessage = SocialInteractions.WrapText(formattedMessage, SocialInteractions.Settings.Display.wordsPerLineLimit);
 
             // Trigger TTS
-            SpeakIfEnabled(rawMessage, speaker);
+            manager.SpeakIfEnabled(rawMessage, speaker);
 
             // Add to chat log
             Color messageColor = isHighPriority ? new Color(1.0f, 0.6f, 0.2f) : Color.white; // Orange for high priority, white for normal
@@ -505,12 +586,12 @@ namespace SocialInteractions.Speech
             ChatLogManager.Current?.AddMessage(new ChatMessage(speaker, recipient, rawMessage, MessageType.LLMChat, -1, messageColor, fallbackText, formattedMessage));
 
             float endTime;
-            if (pawnBubbleEndTimes.TryGetValue(speaker, out endTime) && Time.time < endTime)
+            if (manager.pawnBubbleEndTimes.TryGetValue(speaker, out endTime) && Time.time < endTime)
             {
                 return; // Don't enqueue if this pawn already has an active instant bubble
             }
             duration = Math.Max(1f, duration);
-            pawnBubbleEndTimes[speaker] = Time.time + duration; // Set bubbleEndTime for instant bubbles
+            manager.pawnBubbleEndTimes[speaker] = Time.time + duration; // Set bubbleEndTime for instant bubbles
             // No clearing of speechBubbleQueue here, as it's for instant display only
             bool shouldShow = useCustomMote ? SocialInteractions.Settings.Display.showLlmBubbles : true; // Combat taunts (standard motes) have their own toggle
             if (speaker != null && speaker.Map != null && shouldShow)
@@ -518,12 +599,12 @@ namespace SocialInteractions.Speech
                 if (useCustomMote)
                 {
                     // Use custom mote for LLM-generated text
-                    MakeCustomMote(speaker, wrappedMessage, Color.white, duration);
+                    manager.MakeCustomMote(speaker, wrappedMessage, Color.white, duration);
                 }
                 else
                 {
                     // Use standard mote for fallback text and combat dialogue
-                    MakeStandardMote(speaker, wrappedMessage, Color.white, duration);
+                    manager.MakeStandardMote(speaker, wrappedMessage, Color.white, duration);
                 }
             }
         }
@@ -540,13 +621,19 @@ namespace SocialInteractions.Speech
         // For default summary bubbles
         public static void ShowDefaultBubble(Pawn speaker, string text)
         {
+            SpeechBubbleManager manager = Current;
+            if (manager == null)
+            {
+                return;
+            }
+
             float endTime;
-            if (pawnBubbleEndTimes.TryGetValue(speaker, out endTime) && Time.time < endTime)
+            if (manager.pawnBubbleEndTimes.TryGetValue(speaker, out endTime) && Time.time < endTime)
             {
                 return; // Don't show if this pawn already has an active bubble
             }
             float duration = Math.Max(1f, SocialInteractions.EstimateReadingTime(text));
-            pawnBubbleEndTimes[speaker] = Time.time + duration;
+            manager.pawnBubbleEndTimes[speaker] = Time.time + duration;
             if (speaker != null && speaker.Map != null && SocialInteractions.Settings.Display.showDefaultBubbles)
             {
                 string wrappedText = SocialInteractions.WrapText(text, SocialInteractions.Settings.Display.wordsPerLineLimit);
@@ -556,7 +643,7 @@ namespace SocialInteractions.Speech
         }
 
         // Method to create a custom pauseable mote for LLM-generated text
-        private static void MakeCustomMote(Pawn speaker, string text, Color color, float duration)
+        private void MakeCustomMote(Pawn speaker, string text, Color color, float duration)
         {
             if (speaker == null || speaker.Map == null)
             {
@@ -586,7 +673,7 @@ namespace SocialInteractions.Speech
         }
 
         // Method to create a standard mote for fallback text and combat dialogue
-        private static void MakeStandardMote(Pawn speaker, string text, Color color, float duration)
+        private void MakeStandardMote(Pawn speaker, string text, Color color, float duration)
         {
             if (speaker == null || speaker.Map == null)
             {
@@ -600,10 +687,16 @@ namespace SocialInteractions.Speech
 
         public static bool HasPendingSpeechBubbles(int conversationId)
         {
-            lock (queueLock)
+            SpeechBubbleManager manager = Current;
+            if (manager == null)
+            {
+                return false;
+            }
+
+            lock (manager.queueLock)
             {
                 // Check if there are bubbles in the queue with the specified conversation ID
-                foreach (SpeechBubble bubble in speechBubbleQueue)
+                foreach (SpeechBubble bubble in manager.speechBubbleQueue)
                 {
                     if (bubble.conversationId == conversationId)
                     {
@@ -616,10 +709,16 @@ namespace SocialInteractions.Speech
 
         public static bool HasPendingSpeechBubblesForPawn(Pawn pawn)
         {
-            lock (queueLock)
+            SpeechBubbleManager manager = Current;
+            if (manager == null)
+            {
+                return false;
+            }
+
+            lock (manager.queueLock)
             {
                 // Check if there are bubbles in the queue for the specified pawn
-                foreach (SpeechBubble bubble in speechBubbleQueue)
+                foreach (SpeechBubble bubble in manager.speechBubbleQueue)
                 {
                     if (bubble.speaker == pawn)
                     {
@@ -632,7 +731,8 @@ namespace SocialInteractions.Speech
 
         public static bool HasActiveConversations()
         {
-            return activeConversations.Count > 0;
+            SpeechBubbleManager manager = Current;
+            return manager != null && manager.activeConversations.Count > 0;
         }
 
         public static string FormatLlmText(string text)
@@ -729,7 +829,7 @@ namespace SocialInteractions.Speech
             return FormatSpeakerName(pawn, messageText, isHighPriority);
         }
 
-        private static void SpeakIfEnabled(string text, Pawn speaker)
+        private void SpeakIfEnabled(string text, Pawn speaker)
         {
             if (SocialInteractions.Settings.Api.enableTTS)
             {

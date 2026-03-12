@@ -2257,7 +2257,7 @@ namespace SocialInteractions
 
             // Make sure voices are loaded
             var manager = Current.Game.GetComponent<VoiceAssignmentManager>();
-            if (manager == null || VoiceAssignmentManager.AvailableVoices == null || VoiceAssignmentManager.AvailableVoices.Count == 0)
+            if (manager == null || manager.AvailableVoices == null || manager.AvailableVoices.Count == 0)
             {
                 Messages.Message("No voices available. Make sure TTS server is configured and voices are loaded.", MessageTypeDefOf.RejectInput);
                 return;
@@ -2286,12 +2286,12 @@ namespace SocialInteractions
             }
 
             var manager = Current.Game.GetComponent<VoiceAssignmentManager>();
-            if (manager == null || VoiceAssignmentManager.AvailableVoices == null)
+            if (manager == null || manager.AvailableVoices == null)
             {
                 return new List<string>();
             }
 
-            return new List<string>(VoiceAssignmentManager.AvailableVoices);
+            return new List<string>(manager.AvailableVoices);
         }
 
         public static bool SetVoiceForPawn(Pawn pawn, string voice)

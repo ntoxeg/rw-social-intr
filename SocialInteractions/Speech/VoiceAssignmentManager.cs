@@ -9,13 +9,15 @@ namespace SocialInteractions.Speech
 {
     public class VoiceAssignmentManager : GameComponent
     {
+        public static VoiceAssignmentManager Current => Verse.Current.Game?.GetComponent<VoiceAssignmentManager>();
+
         // Persistent mapping of Pawn -> VoiceName
         private Dictionary<Pawn, string> voiceMapping = new Dictionary<Pawn, string>();
 
         // Cache for available voices (runtime only, not saved)
-        private static List<string> availableVoices = new List<string>();
+        private List<string> availableVoices = new List<string>();
 
-        public static List<string> AvailableVoices
+        public List<string> AvailableVoices
         {
             get { return availableVoices; }
         }
@@ -327,7 +329,7 @@ namespace SocialInteractions.Speech
             return "alloy";
         }
 
-        public static void SetAvailableVoices(List<string> voices)
+        public void SetAvailableVoices(List<string> voices)
         {
             availableVoices = voices;
         }

@@ -96,7 +96,8 @@ namespace SocialInteractions.Speech
 
         public List<string> GetVoices()
         {
-            return VoiceAssignmentManager.AvailableVoices;
+            var manager = VoiceAssignmentManager.Current;
+            return manager != null ? manager.AvailableVoices : new List<string>();
         }
 
         public void FetchVoicesFromApi()
@@ -193,7 +194,7 @@ namespace SocialInteractions.Speech
                 if (voices.Count > 0)
                 {
                     SLog.Message(string.Format("[SocialInteractions] TTSManager: Found {0} voices.", voices.Count));
-                    VoiceAssignmentManager.SetAvailableVoices(voices);
+                    VoiceAssignmentManager.Current?.SetAvailableVoices(voices);
                 }
                 else
                 {
