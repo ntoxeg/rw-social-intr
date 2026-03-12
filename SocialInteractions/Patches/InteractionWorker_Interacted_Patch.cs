@@ -20,7 +20,7 @@ namespace SocialInteractions.Patches
             // SLog.Message(string.Format("[SocialInteractions] InteractionWorker_Interacted_Patch.Postfix called. pawnsStopOnInteraction: {0}", SocialInteractions.Settings.Features.pawnsStopOnInteraction));
 
             // Check if the recipient is a child and the interaction is an insult, and misbehavior is enabled
-            if (recipient != null && recipient.RaceProps.Humanlike && ChildrenMisbehaviorManager.IsChild(recipient) && SocialInteractions.Settings.Features.enableChildrenMisbehavior)
+            if (recipient != null && recipient.RaceProps.Humanlike && ChildrenMisbehaviorManager.Current?.IsChild(recipient) == true && SocialInteractions.Settings.Features.enableChildrenMisbehavior)
             {
                 // Get the interaction definition from the __instance parameter
                 InteractionDef interactionDef = __instance.interaction;

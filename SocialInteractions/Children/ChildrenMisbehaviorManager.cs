@@ -11,8 +11,14 @@ using SocialInteractions.DefOfs;
 
 namespace SocialInteractions.Children
 {
-    public static class ChildrenMisbehaviorManager
+    public class ChildrenMisbehaviorManager : GameComponent
     {
+        public static ChildrenMisbehaviorManager Current => Verse.Current.Game?.GetComponent<ChildrenMisbehaviorManager>();
+
+        public ChildrenMisbehaviorManager(Game game)
+        {
+        }
+
         // Misbehavior factor calculation constants
         private const float MaxMisbehaviorFactor = 1.0f;
         private const float MinMisbehaviorFactor = 0.0f;
@@ -33,13 +39,13 @@ namespace SocialInteractions.Children
         private const int LongCooldownTicks = 60000; // 24 hours
 
         // Track when the child is allowed to misbehave next
-        private static Dictionary<Pawn, int> nextAllowedMisbehaviorTick = new Dictionary<Pawn, int>();
-        private static int misbehaviorCheckInterval = 3000; // Check every 3000 ticks
+        private Dictionary<Pawn, int> nextAllowedMisbehaviorTick = new Dictionary<Pawn, int>();
+        private int misbehaviorCheckInterval = 3000; // Check every 3000 ticks
 
         /// <summary>
         /// Calculates the misbehavior factor for a child pawn based on parental opinion and other factors
         /// </summary>
-        public static float CalculateMisbehaviorFactor(Pawn child)
+        public float CalculateMisbehaviorFactor(Pawn child)
         {
             if (child == null || !IsChild(child))
             {
@@ -156,7 +162,7 @@ namespace SocialInteractions.Children
         /// <summary>
         /// Determines if a pawn should engage in misbehavior based on their misbehavior factor and other conditions
         /// </summary>
-        public static bool ShouldChildMisbehave(Pawn child, out float misbehaviorLevel)
+        public bool ShouldChildMisbehave(Pawn child, out float misbehaviorLevel)
         {
             misbehaviorLevel = 0f;
 
@@ -229,7 +235,7 @@ namespace SocialInteractions.Children
         /// Executes a misbehavior action for a child pawn
         /// Higher misbehavior levels unlock more options, but only one is randomly selected
         /// </summary>
-        public static void ExecuteMisbehavior(Pawn child, float misbehaviorLevel)
+        public void ExecuteMisbehavior(Pawn child, float misbehaviorLevel)
         {
             if (child == null)
             {
@@ -301,7 +307,7 @@ namespace SocialInteractions.Children
             // No fallback monologue - each behavior that needs dialogue handles it internally
         }
 
-        private static void HandleMisbehaviorFailure(Pawn child, string subject, ThoughtDef thoughtDef)
+        private void HandleMisbehaviorFailure(Pawn child, string subject, ThoughtDef thoughtDef)
         {
             SLog.Message(string.Format("[SocialInteractions] Misbehavior failed: Child {0} could not perform action. Subject: {1}", child.LabelShort, subject));
 
@@ -313,7 +319,7 @@ namespace SocialInteractions.Children
             SocialInteractions.HandleMonologue(child, subject);
         }
 
-        private static void AnnoyAdults(Pawn child)
+        private void AnnoyAdults(Pawn child)
         {
             if (child == null || child.Map == null)
             {
@@ -366,7 +372,7 @@ namespace SocialInteractions.Children
             }
         }
 
-        private static void ApplyNegativeMoodToAdult(Pawn adult, Pawn child)
+        private void ApplyNegativeMoodToAdult(Pawn adult, Pawn child)
         {
             if (adult == null || adult.needs == null || adult.needs.mood == null || child == null)
             {
@@ -377,7 +383,7 @@ namespace SocialInteractions.Children
             adult.needs.mood.thoughts.memories.TryGainMemory(ChildThoughtDefOf.ChildAnnoyance, child);
         }
 
-        private static void MisplaceItems(Pawn child)
+        private void MisplaceItems(Pawn child)
         {
             if (child == null || child.Map == null || child.jobs == null)
             {
@@ -418,7 +424,7 @@ namespace SocialInteractions.Children
             }
         }
 
-        private static void SpyOnCouples(Pawn child)
+        private void SpyOnCouples(Pawn child)
         {
             if (child == null || child.Map == null)
             {
@@ -456,7 +462,7 @@ namespace SocialInteractions.Children
             }
         }
 
-        private static Pawn FindCoupleLovin(Pawn child)
+        private Pawn FindCoupleLovin(Pawn child)
         {
             if (child == null || child.Map == null) return null;
 
@@ -484,7 +490,7 @@ namespace SocialInteractions.Children
             return null;
         }
 
-        private static void PlayTag(Pawn child)
+        private void PlayTag(Pawn child)
         {
             if (child == null || child.Map == null)
             {
@@ -521,7 +527,7 @@ namespace SocialInteractions.Children
             }
         }
 
-        private static Pawn FindTagTarget(Pawn child)
+        private Pawn FindTagTarget(Pawn child)
         {
             if (child == null || child.Map == null) return null;
 
@@ -559,7 +565,7 @@ namespace SocialInteractions.Children
         /// <summary>
         /// Finds a valuable item in storage zones near the child
         /// </summary>
-        private static Thing FindValuableItemInStorage(Pawn child, Map map, int radius)
+        private Thing FindValuableItemInStorage(Pawn child, Map map, int radius)
         {
             List<Thing> potentialItems = new List<Thing>();
 
@@ -624,7 +630,7 @@ namespace SocialInteractions.Children
         /// <summary>
         /// Finds a random suitable location for the child to play
         /// </summary>
-        private static IntVec3 FindRandomPlayLocation(Pawn child, Map map)
+        private IntVec3 FindRandomPlayLocation(Pawn child, Map map)
         {
             List<IntVec3> possibleCells = new List<IntVec3>();
 
@@ -648,7 +654,7 @@ namespace SocialInteractions.Children
             return IntVec3.Invalid; // No suitable location found
         }
 
-        private static IntVec3 FindInappropriateStorageLocation(Pawn child, Map map, Thing item)
+        private IntVec3 FindInappropriateStorageLocation(Pawn child, Map map, Thing item)
         {
             // Look for inappropriate storage zones like dumping areas or random locations
             // Try to find a trash zone or unassigned area to dump items
@@ -684,7 +690,7 @@ namespace SocialInteractions.Children
             return IntVec3.Invalid;
         }
 
-        private static bool TrampleCrops(Pawn child)
+        private bool TrampleCrops(Pawn child)
         {
             if (child == null || child.Map == null)
             {
@@ -722,7 +728,7 @@ namespace SocialInteractions.Children
             return false;
         }
 
-        private static IntVec3 FindGrowingAreaWithCrops(Pawn child)
+        private IntVec3 FindGrowingAreaWithCrops(Pawn child)
         {
             if (child == null || child.Map == null)
             {
@@ -795,7 +801,7 @@ namespace SocialInteractions.Children
             return bestArea;
         }
 
-        private static int CountMatureCropsInArea(IntVec3 center, Map map, int radius)
+        private int CountMatureCropsInArea(IntVec3 center, Map map, int radius)
         {
             int count = 0;
 
@@ -821,7 +827,7 @@ namespace SocialInteractions.Children
             return count;
         }
 
-        private static bool DestroyRandomProperty(Pawn child)
+        private bool DestroyRandomProperty(Pawn child)
         {
             if (child == null || child.Map == null)
             {
@@ -880,7 +886,7 @@ namespace SocialInteractions.Children
             return false;
         }
 
-        private static bool LightFire(Pawn child)
+        private bool LightFire(Pawn child)
         {
             if (child == null || child.Map == null)
             {
@@ -918,7 +924,7 @@ namespace SocialInteractions.Children
             return false;
         }
 
-        private static Thing FindFlammableTarget(Pawn child)
+        private Thing FindFlammableTarget(Pawn child)
         {
             if (child == null || child.Map == null)
             {
@@ -965,7 +971,7 @@ namespace SocialInteractions.Children
             return null; // No suitable flammable target found
         }
 
-        private static IntVec3 FindSafeFireLocation(Pawn child)
+        private IntVec3 FindSafeFireLocation(Pawn child)
         {
             if (child.Map == null) return IntVec3.Invalid;
 
@@ -1025,7 +1031,7 @@ namespace SocialInteractions.Children
             return IntVec3.Invalid; // No safe location found
         }
 
-        private static bool IsCriticalArea(Map map, IntVec3 c)
+        private bool IsCriticalArea(Map map, IntVec3 c)
         {
             // Check if the cell is near critical infrastructure
             foreach (IntVec3 checkCell in GenRadial.RadialCellsAround(c, 5, true))
@@ -1051,7 +1057,7 @@ namespace SocialInteractions.Children
             return false;
         }
 
-        private static bool PlayWithWeapon(Pawn child)
+        private bool PlayWithWeapon(Pawn child)
         {
             // For now, we'll implement additional dangerous behaviors like:
             // - Attempting to use weapons
@@ -1117,7 +1123,7 @@ namespace SocialInteractions.Children
             return false;
         }
 
-        private static IntVec3 FindNearbyRangedWeapon(Pawn child)
+        private IntVec3 FindNearbyRangedWeapon(Pawn child)
         {
             if (child.Map == null) return IntVec3.Invalid;
 
@@ -1141,7 +1147,7 @@ namespace SocialInteractions.Children
             return IntVec3.Invalid;
         }
 
-        private static IntVec3 FindNearbyWeapon(Pawn child)
+        private IntVec3 FindNearbyWeapon(Pawn child)
         {
             if (child.Map == null) return IntVec3.Invalid;
 
@@ -1165,7 +1171,7 @@ namespace SocialInteractions.Children
             return IntVec3.Invalid; // No weapon found
         }
 
-        private static string GetMisbehaviorLevelDescription(float misbehaviorLevel)
+        private string GetMisbehaviorLevelDescription(float misbehaviorLevel)
         {
             if (misbehaviorLevel < Level1Threshold) return "no";
             else if (misbehaviorLevel < Level2Threshold) return "level 1";
@@ -1174,13 +1180,13 @@ namespace SocialInteractions.Children
             else return "level 4";
         }
 
-        private static void TriggerChildMonologue(Pawn child, float misbehaviorLevel)
+        private void TriggerChildMonologue(Pawn child, float misbehaviorLevel)
         {
             string subject = GetMisbehaviorSubject(child, misbehaviorLevel);
             SocialInteractions.HandleMonologue(child, subject);
         }
 
-        private static string GetMisbehaviorSubject(Pawn child, float misbehaviorLevel)
+        private string GetMisbehaviorSubject(Pawn child, float misbehaviorLevel)
         {
             if (misbehaviorLevel < Level2Threshold)
             {
@@ -1200,7 +1206,7 @@ namespace SocialInteractions.Children
             }
         }
 
-        private static string GetRandomAnnoyanceText()
+        private string GetRandomAnnoyanceText()
         {
             string[] annoyanceTexts = {
                 "Are we there yet?",
@@ -1223,7 +1229,7 @@ namespace SocialInteractions.Children
             return annoyanceTexts[Rand.Range(0, annoyanceTexts.Length)];
         }
 
-        private static Pawn FindNearbyAnnoyableAdult(Pawn child)
+        private Pawn FindNearbyAnnoyableAdult(Pawn child)
         {
             if (child == null || child.Map == null)
             {
@@ -1279,7 +1285,7 @@ namespace SocialInteractions.Children
             return null;
         }
 
-        private static List<Pawn> GetParentsAndGuardians(Pawn child)
+        private List<Pawn> GetParentsAndGuardians(Pawn child)
         {
             List<Pawn> parents = new List<Pawn>();
 
@@ -1316,14 +1322,14 @@ namespace SocialInteractions.Children
             return parents;
         }
 
-        private static bool HasParentBeenAbsentForLongTime(Pawn parent, Pawn child)
+        private bool HasParentBeenAbsentForLongTime(Pawn parent, Pawn child)
         {
             // This is a simplified check - in a real implementation, we'd need to track 
             // actual interaction times between parent and child
             return false; // Placeholder implementation
         }
 
-        private static float GetTraitInfluenceOnMisbehavior(Pawn child)
+        private float GetTraitInfluenceOnMisbehavior(Pawn child)
         {
             float traitInfluence = 0f;
 
@@ -1364,7 +1370,7 @@ namespace SocialInteractions.Children
             return Mathf.Clamp(traitInfluence, -0.5f, 0.5f);
         }
 
-        private static bool LeakLocation(Pawn child)
+        private bool LeakLocation(Pawn child)
         {
             if (child == null || child.Map == null) return false;
 
@@ -1388,7 +1394,7 @@ namespace SocialInteractions.Children
             return false;
         }
 
-        private static Thing FindCommsConsole(Pawn child)
+        private Thing FindCommsConsole(Pawn child)
         {
             if (child.Map == null) return null;
 
@@ -1404,7 +1410,7 @@ namespace SocialInteractions.Children
                 });
         }
 
-        public static bool IsChild(Pawn pawn)
+        public bool IsChild(Pawn pawn)
         {
             if (pawn == null || pawn.ageTracker == null)
             {
@@ -1437,7 +1443,7 @@ namespace SocialInteractions.Children
             return age >= ChildMinAge && age < ChildAgeLimit;
         }
 
-        private static bool IsAdult(Pawn pawn)
+        private bool IsAdult(Pawn pawn)
         {
             if (pawn == null || pawn.ageTracker == null)
             {
@@ -1447,10 +1453,15 @@ namespace SocialInteractions.Children
             return pawn.ageTracker.AgeBiologicalYears >= ChildAgeLimit;
         }
 
+        public override void ExposeData()
+        {
+            base.ExposeData();
+        }
+
         /// <summary>
         /// Cleanup method to be called periodically (e.g. with a MapComponent)
         /// </summary>
-        public static void Cleanup()
+        public void Cleanup()
         {
             // Remove references to pawns that are no longer valid
             List<Pawn> toRemove = new List<Pawn>();

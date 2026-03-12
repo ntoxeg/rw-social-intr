@@ -36,7 +36,7 @@ namespace SocialInteractions.Interactions
             }
 
             // Check if the recipient is a child and misbehavior is enabled for insult triggering
-            if (recipient.RaceProps.Humanlike && ChildrenMisbehaviorManager.IsChild(recipient) && SocialInteractions.Settings.Features.enableChildrenMisbehavior)
+            if (recipient.RaceProps.Humanlike && ChildrenMisbehaviorManager.Current?.IsChild(recipient) == true && SocialInteractions.Settings.Features.enableChildrenMisbehavior)
             {
                 SLog.Message(string.Format("[SocialInteractions] Child {0} received enhanced insult from {1}",
                     recipient.LabelShort, initiator.LabelShort));
