@@ -5,7 +5,7 @@
 
   <ThoughtDef>
     <defName>CaughtCheating</defName>
-    <thoughtClass>SocialInteractions.Thought_CaughtCheating</thoughtClass>
+    <thoughtClass>SocialInteractions.Dating.Thought_CaughtCheating</thoughtClass>
     <durationDays>2</durationDays>
     <stackLimit>1</stackLimit>
     <stages>
@@ -19,7 +19,7 @@
 
   <ThoughtDef>
     <defName>GotCaughtCheating</defName>
-    <thoughtClass>SocialInteractions.Thought_GotCaughtCheating</thoughtClass>
+    <thoughtClass>SocialInteractions.Dating.Thought_GotCaughtCheating</thoughtClass>
     <durationDays>2</durationDays>
     <stackLimit>1</stackLimit>
     <stages>
@@ -33,7 +33,7 @@
 
   <ThoughtDef>
     <defName>WasCheatedOn</defName>
-    <thoughtClass>SocialInteractions.Thought_WasCheatedOn</thoughtClass>
+    <thoughtClass>SocialInteractions.Dating.Thought_WasCheatedOn</thoughtClass>
     <durationDays>2</durationDays>
     <stackLimit>1</stackLimit>
     <stages>
@@ -48,7 +48,7 @@
   <InteractionDef>
     <defName>CaughtCheating</defName>
     <label>caught cheating</label>
-    <workerClass>SocialInteractions.InteractionWorker_CaughtCheating</workerClass>
+    <workerClass>SocialInteractions.Interactions.InteractionWorker_CaughtCheating</workerClass>
     <symbol>Things/Mote/SpeechSymbols/Insult</symbol>
     <logRulesInitiator>
       <rulesStrings>
@@ -65,7 +65,7 @@
   <InteractionDef>
     <defName>DateLovin</defName>
     <label>lovin'</label>
-    <workerClass>SocialInteractions.InteractionWorker_DateLovin</workerClass>
+    <workerClass>SocialInteractions.Interactions.InteractionWorker_DateLovin</workerClass>
     <symbol>Things/Mote/SpeechSymbols/Romance</symbol>
     <logRulesInitiator>
       <rulesStrings>

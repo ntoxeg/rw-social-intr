@@ -3,7 +3,7 @@
 
   <JobDef>
     <defName>SI_InviteToPlayTag</defName>
-    <driverClass>SocialInteractions.JobDriver_InviteToPlayTag</driverClass>
+    <driverClass>SocialInteractions.Children.JobDriver_InviteToPlayTag</driverClass>
     <reportString>inviting TargetA to play tag.</reportString>
     <casualInterruptible>false</casualInterruptible>
     <allowOpportunisticPrefix>false</allowOpportunisticPrefix>
@@ -11,7 +11,7 @@
 
   <JobDef>
     <defName>SI_PlayTagRunner</defName>
-    <driverClass>SocialInteractions.JobDriver_PlayTagRunner</driverClass>
+    <driverClass>SocialInteractions.Children.JobDriver_PlayTagRunner</driverClass>
     <reportString>playing tag.</reportString>
     <casualInterruptible>false</casualInterruptible>
     <allowOpportunisticPrefix>false</allowOpportunisticPrefix>
@@ -20,7 +20,7 @@
 
   <JobDef>
     <defName>SI_PlayTagChaser</defName>
-    <driverClass>SocialInteractions.JobDriver_PlayTagChaser</driverClass>
+    <driverClass>SocialInteractions.Children.JobDriver_PlayTagChaser</driverClass>
     <reportString>chasing TargetA.</reportString>
     <casualInterruptible>false</casualInterruptible>
     <allowOpportunisticPrefix>false</allowOpportunisticPrefix>

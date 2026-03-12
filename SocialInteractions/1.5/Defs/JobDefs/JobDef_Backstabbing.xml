@@ -3,14 +3,14 @@
 
   <JobDef>
     <defName>BackstabbingApproachTarget</defName>
-    <driverClass>SocialInteractions.JobDriver_BackstabbingApproachTarget</driverClass>
+    <driverClass>SocialInteractions.Jobs.JobDriver_BackstabbingApproachTarget</driverClass>
     <reportString>backstabbing my rival.</reportString>
     <allowOpportunisticPrefix>true</allowOpportunisticPrefix>
   </JobDef>
 
   <JobDef>
     <defName>BackstabbingGatherInfo</defName>
-    <driverClass>SocialInteractions.JobDriver_BackstabbingGatherInfo</driverClass>
+    <driverClass>SocialInteractions.Jobs.JobDriver_BackstabbingGatherInfo</driverClass>
     <reportString>gathering information on my rival.</reportString>
     <allowOpportunisticPrefix>true</allowOpportunisticPrefix>
   </JobDef>

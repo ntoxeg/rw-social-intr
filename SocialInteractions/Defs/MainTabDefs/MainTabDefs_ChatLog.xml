@@ -4,7 +4,7 @@
     <defName>SocialInteractions_ChatLog</defName>
     <label>Social Log</label>
     <description>View the chat log of social interactions.</description>
-    <tabWindowClass>SocialInteractions.ChatLogTabWindow</tabWindowClass>
+    <tabWindowClass>SocialInteractions.UI.ChatLogTabWindow</tabWindowClass>
     <order>75</order>
     <minimized>True</minimized>
   </MainButtonDef>

@@ -2,7 +2,7 @@
 <Defs>
   <JobDef>
     <defName>ChildBreakBuilding</defName>
-    <driverClass>SocialInteractions.JobDriver_ChildBreakBuilding</driverClass>
+    <driverClass>SocialInteractions.Children.JobDriver_ChildBreakBuilding</driverClass>
     <reportString>breaking TargetA.</reportString>
     <casualInterruptible>false</casualInterruptible>
   </JobDef>

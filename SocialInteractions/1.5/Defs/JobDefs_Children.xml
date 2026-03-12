@@ -3,43 +3,43 @@
 
     <JobDef>
         <defName>ChildAnnoyAdult</defName>
-        <driverClass>SocialInteractions.JobDriver_ChildAnnoyAdult</driverClass>
+        <driverClass>SocialInteractions.Children.JobDriver_ChildAnnoyAdult</driverClass>
         <reportString>annoying TargetA.</reportString>
     </JobDef>
 
     <JobDef>
         <defName>ChildPlayWithItem</defName>
-        <driverClass>SocialInteractions.JobDriver_ChildPlayWithItem</driverClass>
+        <driverClass>SocialInteractions.Children.JobDriver_ChildPlayWithItem</driverClass>
         <reportString>playing with TargetA.</reportString>
     </JobDef>
 
     <JobDef>
         <defName>ChildGoCryToParent</defName>
-        <driverClass>SocialInteractions.JobDriver_ChildGoCryToParent</driverClass>
+        <driverClass>SocialInteractions.Children.JobDriver_ChildGoCryToParent</driverClass>
         <reportString>crying to TargetA.</reportString>
     </JobDef>
 
     <JobDef>
         <defName>ChildPlayWithWeapon</defName>
-        <driverClass>SocialInteractions.JobDriver_ChildPlayWithWeapon</driverClass>
+        <driverClass>SocialInteractions.Children.JobDriver_ChildPlayWithWeapon</driverClass>
         <reportString>playing with a weapon unsafely.</reportString>
     </JobDef>
 
     <JobDef>
         <defName>ChildTrampleCrops</defName>
-        <driverClass>SocialInteractions.JobDriver_ChildTrampleCrops</driverClass>
+        <driverClass>SocialInteractions.Children.JobDriver_ChildTrampleCrops</driverClass>
         <reportString>trampling crops.</reportString>
     </JobDef>
 
     <JobDef>
         <defName>ChildLightFire</defName>
-        <driverClass>SocialInteractions.JobDriver_ChildLightFire</driverClass>
+        <driverClass>SocialInteractions.Children.JobDriver_ChildLightFire</driverClass>
         <reportString>lighting a fire unsafely.</reportString>
     </JobDef>
 
     <JobDef>
         <defName>ChildSpyOnLovin</defName>
-        <driverClass>SocialInteractions.JobDriver_ChildSpyOnLovin</driverClass>
+        <driverClass>SocialInteractions.Children.JobDriver_ChildSpyOnLovin</driverClass>
         <reportString>spying on TargetA.</reportString>
     </JobDef>
 

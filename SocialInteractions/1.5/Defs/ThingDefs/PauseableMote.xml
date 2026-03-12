@@ -3,7 +3,7 @@
   <ThingDef ParentName="MoteBase">
     <defName>PauseableMote</defName>
     <label>pauseable mote</label>
-    <thingClass>SocialInteractions.PauseableMote</thingClass>
+    <thingClass>SocialInteractions.Speech.PauseableMote</thingClass>
     <drawGUIOverlay>true</drawGUIOverlay>
     <altitudeLayer>MetaOverlays</altitudeLayer>
     <graphicData>

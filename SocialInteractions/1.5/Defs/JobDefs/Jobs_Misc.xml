@@ -2,7 +2,7 @@
 <Defs>
   <JobDef>
     <defName>CaughtCheatingInteraction</defName>
-    <driverClass>SocialInteractions.JobDriver_CaughtCheating</driverClass>
+    <driverClass>SocialInteractions.Dating.JobDriver_CaughtCheating</driverClass>
     <reportString>Confronting cheater.</reportString>
     <casualInterruptible>false</casualInterruptible>
   </JobDef>

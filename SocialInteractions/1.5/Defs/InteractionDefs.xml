@@ -4,7 +4,7 @@
   <InteractionDef>
     <defName>TendPatient</defName>
     <label>tend patient</label>
-    <workerClass>SocialInteractions.InteractionWorker_TendPatient</workerClass>
+    <workerClass>SocialInteractions.Interactions.InteractionWorker_TendPatient</workerClass>
     <logRulesInitiator>
       <rulesStrings>
         <li>r_logentry->Tended to [RECIPIENT_nameDef].</li>
@@ -20,7 +20,7 @@
   <InteractionDef>
     <defName>Lovin</defName>
     <label>make love</label>
-    <workerClass>SocialInteractions.InteractionWorker_Lovin</workerClass>
+    <workerClass>SocialInteractions.Interactions.InteractionWorker_Lovin</workerClass>
     <logRulesInitiator>
       <rulesStrings>
         <li>r_logentry->Made love to [RECIPIENT_nameDef].</li>

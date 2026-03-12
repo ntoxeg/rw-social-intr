@@ -2,7 +2,7 @@
 <Defs>
   <JobDef>
     <defName>BeTalkedTo</defName>
-    <driverClass>SocialInteractions.JobDriver_BeTalkedTo</driverClass>
+    <driverClass>SocialInteractions.Jobs.JobDriver_BeTalkedTo</driverClass>
     <reportString>being talked to by TargetA.</reportString>
     <joyKind>Social</joyKind>
   </JobDef>

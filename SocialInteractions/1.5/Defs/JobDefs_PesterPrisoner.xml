@@ -3,7 +3,7 @@
   
   <JobDef>
     <defName>PesterPrisoner</defName>
-    <driverClass>SocialInteractions.JobDriver_PesterPrisoner</driverClass>
+    <driverClass>SocialInteractions.Dating.JobDriver_PesterPrisoner</driverClass>
     <reportString>pestering TargetA</reportString>
     <joyKind>Sadistic</joyKind>
     <suspendable>false</suspendable>
@@ -11,7 +11,7 @@
 
   <JobDef>
     <defName>PesterPrisonerPartner</defName>
-    <driverClass>SocialInteractions.JobDriver_PesterPrisonerPartner</driverClass>
+    <driverClass>SocialInteractions.Dating.JobDriver_PesterPrisonerPartner</driverClass>
     <reportString>pestering TargetA with TargetB</reportString>
     <joyKind>Sadistic</joyKind>
     <casualInterruptible>false</casualInterruptible>
@@ -19,7 +19,7 @@
 
   <JobDef>
     <defName>AbusiveThreesome</defName>
-    <driverClass>SocialInteractions.JobDriver_AbusiveThreesome</driverClass>
+    <driverClass>SocialInteractions.Dating.JobDriver_AbusiveThreesome</driverClass>
     <reportString>Doing some Lovin' with TargetA and TargetB</reportString>
     <suspendable>false</suspendable>
     <casualInterruptible>false</casualInterruptible>

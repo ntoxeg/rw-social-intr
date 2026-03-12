@@ -3,7 +3,7 @@
 
   <JoyGiverDef>
     <defName>GoOnDate</defName>
-    <giverClass>SocialInteractions.JoyGiver_GoOnDate</giverClass>
+    <giverClass>SocialInteractions.Dating.JoyGiver_GoOnDate</giverClass>
     <baseChance>8</baseChance>
     <joyKind>Dating</joyKind>
     <jobDef>GoOnDate</jobDef>

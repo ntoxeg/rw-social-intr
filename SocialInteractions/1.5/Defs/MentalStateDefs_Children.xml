@@ -3,7 +3,7 @@
 
     <MentalStateDef>
         <defName>ChildFleeInTerror</defName>
-        <stateClass>SocialInteractions.MentalState_ChildFleeInTerror</stateClass>
+        <stateClass>SocialInteractions.Children.MentalState_ChildFleeInTerror</stateClass>
         <label>fleeing in terror</label>
         <category>Aggro</category>
         <minTicksBeforeRecovery>300</minTicksBeforeRecovery>

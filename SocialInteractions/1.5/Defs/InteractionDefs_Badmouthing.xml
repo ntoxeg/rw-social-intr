@@ -4,7 +4,7 @@
   <InteractionDef>
     <defName>Badmouthing</defName>
     <label>badmouth someone</label>
-    <workerClass>SocialInteractions.InteractionWorker_Badmouthing</workerClass>
+    <workerClass>SocialInteractions.Interactions.InteractionWorker_Badmouthing</workerClass>
     <symbol>Things/Mote/SpeechSymbols/Insult</symbol>
     <logRulesInitiator>
       <rulesStrings>
@@ -21,7 +21,7 @@
   <InteractionDef>
     <defName>EnhancedInsult</defName>
     <label>enhanced insult</label>
-    <workerClass>SocialInteractions.InteractionWorker_EnhancedInsult</workerClass>
+    <workerClass>SocialInteractions.Interactions.InteractionWorker_EnhancedInsult</workerClass>
     <symbol>Things/Mote/SpeechSymbols/Insult</symbol>
     <logRulesInitiator>
       <rulesStrings>
@@ -38,7 +38,7 @@
   <InteractionDef>
     <defName>LoversQuarrel</defName>
     <label>lover's quarrel</label>
-    <workerClass>SocialInteractions.InteractionWorker_LoversQuarrel</workerClass>
+    <workerClass>SocialInteractions.Interactions.InteractionWorker_LoversQuarrel</workerClass>
     <symbol>Things/Mote/SpeechSymbols/Insult</symbol>
     <logRulesInitiator>
       <rulesStrings>
@@ -57,7 +57,7 @@
   <InteractionDef>
     <defName>Admiration</defName>
     <label>admiration</label>
-    <workerClass>SocialInteractions.InteractionWorker_Admiration</workerClass>
+    <workerClass>SocialInteractions.Interactions.InteractionWorker_Admiration</workerClass>
     <symbol>Things/Mote/SpeechSymbols/Speech</symbol>
     <logRulesInitiator>
       <rulesStrings>
@@ -74,7 +74,7 @@
   <InteractionDef>
     <defName>Backstabbing</defName>
     <label>strategic backstabbing</label>
-    <workerClass>SocialInteractions.InteractionWorker_Backstabbing</workerClass>
+    <workerClass>SocialInteractions.Interactions.InteractionWorker_Backstabbing</workerClass>
     <symbol>Things/Mote/SpeechSymbols/Insult</symbol>
     <logRulesInitiator>
       <rulesStrings>
@@ -91,7 +91,7 @@
   <InteractionDef>
     <defName>MakeUp</defName>
     <label>make up/apologizing</label>
-    <workerClass>SocialInteractions.InteractionWorker_MakeUp</workerClass>
+    <workerClass>SocialInteractions.Interactions.InteractionWorker_MakeUp</workerClass>
     <symbol>Things/Mote/SpeechSymbols/Speech</symbol>
     <logRulesInitiator>
       <rulesStrings>

@@ -2,7 +2,7 @@
 <Defs>
   <LetterDef>
     <defName>SI_JoinRequest</defName>
-    <letterClass>SocialInteractions.SI_JoinRequestLetter</letterClass>
+    <letterClass>SocialInteractions.Negotiation.SI_JoinRequestLetter</letterClass>
     <flashColor>(0.6, 0.6, 0.6)</flashColor>
     <bounce>true</bounce>
   </LetterDef>

@@ -2,7 +2,7 @@
 <Defs>
   <JoyGiverDef>
     <defName>HaveDeepTalk</defName>
-    <giverClass>SocialInteractions.JoyGiver_HaveDeepTalk</giverClass>
+    <giverClass>SocialInteractions.Jobs.JoyGiver_HaveDeepTalk</giverClass>
     <baseChance>2</baseChance>
     <canDoWhileInBed>false</canDoWhileInBed>
     <jobDef>HaveDeepTalk</jobDef>

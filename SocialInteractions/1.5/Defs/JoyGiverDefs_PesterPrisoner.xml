@@ -3,7 +3,7 @@
 
   <JoyGiverDef>
     <defName>PesterPrisoner</defName>
-    <giverClass>SocialInteractions.JoyGiver_PesterPrisoner</giverClass>
+    <giverClass>SocialInteractions.Dating.JoyGiver_PesterPrisoner</giverClass>
     <baseChance>4</baseChance>
     <joyKind>Sadistic</joyKind>
     <jobDef>PesterPrisoner</jobDef>

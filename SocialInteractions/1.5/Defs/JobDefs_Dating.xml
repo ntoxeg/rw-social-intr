@@ -3,7 +3,7 @@
   
   <JobDef>
     <defName>GoOnDate</defName>
-    <driverClass>SocialInteractions.JobDriver_GoOnDate</driverClass>
+    <driverClass>SocialInteractions.Dating.JobDriver_GoOnDate</driverClass>
     <reportString>Hanging out with a friend</reportString>
     <joyKind>Dating</joyKind>
     <suspendable>false</suspendable>
@@ -11,14 +11,14 @@
 
   <JobDef>
     <defName>FollowAndWatchInitiator</defName>
-    <driverClass>SocialInteractions.JobDriver_FollowAndWatch</driverClass>
+    <driverClass>SocialInteractions.Dating.JobDriver_FollowAndWatch</driverClass>
     <reportString>Hanging out with TargetA</reportString>
     <casualInterruptible>false</casualInterruptible>
   </JobDef>
 
   <JobDef>
     <defName>DateLovin</defName>
-    <driverClass>SocialInteractions.JobDriver_DateLovin</driverClass>
+    <driverClass>SocialInteractions.Dating.JobDriver_DateLovin</driverClass>
     <reportString>Doing some Lovin' with TargetA</reportString>
     <suspendable>false</suspendable>
     <casualInterruptible>false</casualInterruptible>
@@ -26,7 +26,7 @@
 
   <JobDef>
     <defName>SocialRelaxDate</defName>
-    <driverClass>SocialInteractions.JobDriver_SocialRelaxDate</driverClass>
+    <driverClass>SocialInteractions.Dating.JobDriver_SocialRelaxDate</driverClass>
     <reportString>Socializing with TargetA.</reportString>
     <joyKind>Dating</joyKind>
     <suspendable>false</suspendable>

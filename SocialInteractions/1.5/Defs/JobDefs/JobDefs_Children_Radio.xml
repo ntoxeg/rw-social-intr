@@ -2,7 +2,7 @@
 <Defs>
   <JobDef>
     <defName>ChildPlayWithRadio</defName>
-    <driverClass>SocialInteractions.JobDriver_ChildPlayWithRadio</driverClass>
+    <driverClass>SocialInteractions.Children.JobDriver_ChildPlayWithRadio</driverClass>
     <reportString>playing with radio.</reportString>
     <joyDuration>4000</joyDuration>
     <joyKind>Gaming_Dexterity</joyKind>

@@ -5,6 +5,11 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.1] - 2026-03-12
+
+### Fixed
+- Updated all 47 XML type references across 24 def files to use new sub-namespaces introduced in 2.0.0 (e.g. SocialInteractions.Jobs, SocialInteractions.Children, SocialInteractions.Dating, SocialInteractions.Interactions, SocialInteractions.UI, SocialInteractions.Speech, SocialInteractions.Negotiation)
+
 ## [2.0.0] - 2026-03-12
 
 ### Changed
@@ -36,6 +41,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 
 ### Fixed
 - Extra closing brace in InteractionWorker_ConvertIdeoAttempt_Patch.cs
+
 ## [1.5.8] - 2026-03-10
 
 ### Added
@@ -227,6 +233,7 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Initial mod structure and architecture
 
+[2.0.1]: https://github.com/LuckyKo/rimworldmods/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/LuckyKo/rimworldmods/compare/v1.5.8...v2.0.0
 [1.5.8]: https://github.com/LuckyKo/rimworldmods/compare/v1.5.7...v1.5.8
 [1.5.7]: https://github.com/LuckyKo/rimworldmods/compare/v1.5.5...v1.5.7

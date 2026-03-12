@@ -4,7 +4,7 @@
     <defName>SocialInteractions_TTSMute</defName>
     <label>TTS Toggle</label>
     <description>Toggle Text-to-Speech ON/OFF.</description>
-    <workerClass>SocialInteractions.MainButtonWorker_ToggleTTS</workerClass>
+    <workerClass>SocialInteractions.UI.MainButtonWorker_ToggleTTS</workerClass>
     <order>76</order>
     <minimized>True</minimized>
     <!-- Placeholder generic icon since we draw custom label/color anyway, but Defs usually require one to load without warning -->

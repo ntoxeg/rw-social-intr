@@ -2,7 +2,7 @@
 <Defs>
   <JobDef>
     <defName>AbusiveThreesomeParticipant</defName>
-    <driverClass>SocialInteractions.JobDriver_AbusiveThreesomeParticipant</driverClass>
+    <driverClass>SocialInteractions.Dating.JobDriver_AbusiveThreesomeParticipant</driverClass>
     <reportString>participating in an assault.</reportString>
     <joyKind>Social</joyKind>
     <casualInterruptible>false</casualInterruptible>

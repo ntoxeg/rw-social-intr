@@ -2,7 +2,7 @@
 <Defs>
   <JobDef>
     <defName>HaveChatWith</defName>
-    <driverClass>SocialInteractions.JobDriver_HaveChatWith</driverClass>
+    <driverClass>SocialInteractions.Jobs.JobDriver_HaveChatWith</driverClass>
     <reportString>having a chat with TargetA.</reportString>
     <joyDuration>2000</joyDuration>
     <joyKind>Social</joyKind>

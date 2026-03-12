@@ -2,7 +2,7 @@
 <Defs>
   <JobDef>
     <defName>HaveDeepTalk</defName>
-    <driverClass>SocialInteractions.JobDriver_HaveDeepTalk</driverClass>
+    <driverClass>SocialInteractions.Jobs.JobDriver_HaveDeepTalk</driverClass>
     <reportString>having a deep talk with TargetA.</reportString>
     <joyDuration>4000</joyDuration>
     <joyKind>Social</joyKind>
