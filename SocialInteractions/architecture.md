@@ -2,7 +2,7 @@
 
 ## Overview
 
-The SocialInteractions mod enhances RimWorld's social dynamics by integrating LLM-generated dialogue, adding a complex dating and cheating system, and implementing combat taunts. It uses Harmony patches to intercept and modify vanilla game behavior.
+The SocialInteractions mod enhances RimWorld's social dynamics by integrating LLM-generated dialogue, adding a complex dating and cheating system, implementing combat taunts, raid negotiation mechanics, child misbehavior systems, and drama interactions (badmouthing, backstabbing, admiration, etc.). It uses Harmony patches to intercept and modify vanilla game behavior.
 
 ## Development Notes
 When debugging RimWorld Harmony patches, if a patch isn't applying, follow these steps:
@@ -32,23 +32,105 @@ Usage:
 This utility is especially helpful for making targeted modifications to files when the basic edit tool fails repeatedly
 
 
+## Directory Structure
+
+```
+SocialInteractions/
+├── About/                  # Mod metadata (About.xml)
+├── 1.5/                    # RimWorld 1.5 version-specific content
+│   ├── Assemblies/         # Compiled DLL output
+│   └── Defs/               # XML definitions (interactions, jobs, thoughts, hediffs, etc.)
+│       ├── JobDefs/         # Job definitions (backstabbing, children, chat, misc)
+│       ├── MainTabDefs/     # Chat log main tab definition
+│       ├── RulePacks/       # Drama and make-up rule packs
+│       └── ThingDefs/       # Pauseable mote definition
+├── Api/                    # LLM API client layer (interface, base, factory, 9 providers)
+├── Children/               # Child misbehavior system (manager, tracker, job drivers, mental states)
+├── Combat/                 # Combat taunt patches
+├── Components/             # GameComponents and utility classes
+├── Core/                   # Entry point, settings, logging, assembly info
+├── Dating/                 # Dating system (manager, trackers, job drivers, joy givers, thoughts)
+├── DefOfs/                 # DefOf static references (jobs, hediffs, interactions, traits, etc.)
+├── Defs/                   # Non-versioned defs (main tabs, TTS mute)
+│   └── MainTabDefs/        # TTS mute toggle tab definition
+├── Interactions/           # Custom InteractionWorkers and PlayLogEntries
+├── Jobs/                   # General-purpose job drivers and joy givers
+├── Languages/              # Localization (English, ChineseSimplified)
+│   ├── English/Keyed/
+│   └── ChineseSimplified/Keyed/
+├── Negotiation/            # Raid negotiation system (manager, dialog, lord jobs, patches)
+├── Patches/                # Harmony patches (30+ patch files)
+├── Speech/                 # Speech bubble display, TTS, voice assignment, pauseable motes
+└── UI/                     # Chat log windows, pawn/voice selection dialogs, bio editor
+```
+
 ## Core Components
 
-### 1. `SocialInteractions.cs` (Core Logic)
+### Core/ — Entry Point, Settings, and Logging
+
+#### `SocialInteractions.cs`
 - **Static class** managing mod-wide state and core functionality.
 - **Harmony Patches**: Applies all Harmony patches on startup.
 - **LLM Interaction Logic**:
   - `IsLlmInteractionEnabled`, `IsLlmJobEnabled`: Determine if an interaction/job should use the LLM based on extensive settings.
-  - `GenerateDeepTalkPrompt`, `GenerateMonologuePrompt`: Constructs detailed prompts for the LLM using pawn (traits, mood, genes, skills, etc.) and world data (date, time, weather). Now includes recent conversation history via the `[pawn1_journal]` and `[pawn2_journal]` placeholders.
+  - `GenerateDeepTalkPrompt`, `GenerateMonologuePrompt`: Constructs detailed prompts for the LLM using pawn (traits, mood, genes, skills, etc.) and world data (date, time, weather). Includes recent conversation history via the `[pawn1_journal]` and `[pawn2_journal]` placeholders.
   - `HandleInteraction`, `HandleNonStoppingInteraction`, `HandleJobGiverInteraction`, `HandleMonologue`: Entry points for triggering LLM interactions, managing asynchronous calls, parsing responses, and queuing speech bubbles.
   - `HandleCaughtCheatingInteraction`: A special handler that holds the cheating pawn in place, triggers a specific LLM interaction, and schedules a delayed fight between the pawns.
   - `HandleThreewayLovinInteraction`: Handles special 3p action scenarios with LLM dialogue.
   - Text utility methods (`WrapText`, `EstimateReadingTime`, `RemoveRichTextTags`, `FormatLlmText`).
 - **Pawn Data Helpers**: Private methods (`GetRelationship`, `GetDislikes`, `GetAfflictions`, etc.) to extract relevant pawn information for prompts. Includes `GetLastSocialLogEntry` to extract recent conversation history between pawns. Also includes `GetPawnFlavorText` and `SetPawnFlavorText` for custom bio text management. The custom bio text is integrated into the prompt system through the `[pawn#_bio]` placeholder in the `ExtractPawnData` method.
 - **Custom Pawn Bio System**: Static dictionary `PawnFlavorTexts` for storing bio text, with `GetPawnFlavorText` and `SetPawnFlavorText` methods for retrieval and storage using pawn IDs as keys.
-- **Multi-API Support**: Added support for multiple LLM API types (KoboldCpp, Ollama, LMStudio, OpenAI) with `GenerateTextWithApiClient` method.
 
-### 2. `SpeechBubbleManager.cs` (UI/Display)
+#### `SocialInteractionsSettings.cs`
+- **`SocialInteractionsModSettings`**: Holds all configurable options (API keys, flags for features/interactions, prompt template, UI/UX settings).
+- **`SocialInteractionsMod`**: Implements the in-game settings UI.
+- **Extensive Configuration**: Numerous settings for fine-tuning all aspects of the mod's behavior, from dating mechanics to LLM parameters.
+- **Multi-API Support**: Configuration options for different LLM API types with their specific settings.
+
+#### `SLog.cs`
+- **Static class** providing a wrapper around `Verse.Log` with a verbosity toggle based on mod settings.
+- **Conditional Logging**: Only outputs messages when verbose logging is enabled in the mod settings.
+
+#### `AssemblyInfo.cs`
+- Standard assembly metadata for the mod DLL.
+
+### Api/ — LLM Client Layer
+
+A clean abstraction layer for communicating with multiple LLM providers. Uses an interface → abstract base → concrete client hierarchy with a factory for instantiation.
+
+#### `ILlmClient.cs`
+- **Interface** defining the contract for all LLM clients.
+- **Key Method**: `GenerateText()` — async method accepting prompt, max length, temperature, stop sequences, and sampling parameters (XTC, top-k, top-p, min-p, repetition penalty).
+
+#### `LlmClientBase.cs`
+- **Abstract base class** implementing `ILlmClient`.
+- **Shared Infrastructure**: HTTP client management, JSON serialization/deserialization, error handling, response cleaning (removes thinking tags).
+- **Template Method Pattern**: Subclasses implement `BuildRequestBody()` and `ExtractText()` for API-specific formats.
+- **Utility Methods**: `BuildStopSequenceList()`, `CleanChatResponse()`, `IsValidHeaderValue()`.
+
+#### `LlmClientFactory.cs`
+- **Factory class** that creates the appropriate API client based on `LlmApiType` setting.
+- **Supported Types**: KoboldCpp, Ollama, LMStudio, OpenAI, Gemini, Qwen, Deepseek, Grok, Claude, Player2.
+- **Player2 Heartbeat**: Special `UpdatePlayer2Heartbeat()` method for health/usage tracking.
+
+#### Concrete Clients
+
+| Client | Auth Header | Endpoint | Thinking Support | Notes |
+|--------|-------------|----------|-----------------|-------|
+| `KoboldApiClient.cs` | — | `/api/v1/generate` | No | Local KoboldCpp server |
+| `OllamaApiClient.cs` | — | `/api/generate` | No | Local Ollama server |
+| `LMStudioApiClient.cs` | — | `/v1/chat/completions` | No | Local LM Studio server |
+| `OpenAiApiClient.cs` | Bearer token | `/v1/chat/completions` | No | OpenAI-compatible API |
+| `ClaudeApiClient.cs` | `x-api-key` + `anthropic-version` | `/v1/messages` | Yes (budget configurable) | Anthropic message-based format |
+| `DeepseekApiClient.cs` | Bearer token | `/chat/completions` | Yes | OpenAI-compatible + thinking toggle |
+| `GeminiApiClient.cs` | `x-goog-api-key` | `/v1beta/models/{model}:generateContent` | Yes (budget + level) | Parts-based content; max 5 stop sequences |
+| `GrokApiClient.cs` | Bearer token | `/v1/chat/completions` | No | xAI; simplest implementation |
+| `Player2ApiClient.cs` | Bearer + `player2-game-key` | `/v1/chat/completions` | No | Health heartbeat (60s); JSON sanitization; MinP support |
+| `QwenApiClient.cs` | Bearer token | `/api/v1/services/aigc/text-generation/generate` | No | Alibaba Qwen |
+
+### Speech/ — Speech Bubbles, TTS, and Voice Management
+
+#### `SpeechBubbleManager.cs`
 - **GameComponent** managing the display and queuing of speech bubbles.
 - **Queuing System**: Ensures sequential display of multi-line LLM dialogue.
 - **Spam/Busy Management**: Prevents new LLM interactions from firing while one is already in progress, falling back to default bubbles.
@@ -59,281 +141,365 @@ This utility is especially helpful for making targeted modifications to files wh
 - **Efficiency System**: Implements scheduled unlock timing to optimize LLM request handling with `ScheduleUnlock` method.
 - **Animal Support**: Includes fallback logic for non-humanlike targets (animals, mechs) to bypass UI windows and use default bubble-only mode.
 
-### 3. `NegotiationManager.cs` (Interactive Logic)
+#### `TTSManager.cs`
+- **Sequential Playback**: Implements a `Sequence ID` system (`nextRequestId`, `nextPlaybackId`) and a `playbackBuffer` to guarantee audio plays in the correct order regardless of download speed.
+- **Pause-Resilient Logic**: Uses `Time.unscaledDeltaTime` and `audioSource.ignoreListenerPause = true` to allow audio playback while the game is paused (e.g., during negotiation).
+- **Mute Logic**: `Stop()` now clears all queues, buffers, and fast-forwards the sequence ID for instant, persistent silence.
+- **Network Staggering**: Staggers API requests by 500ms in `NegotiationManager` to prevent server-side batching/LIFO processing.
+- **External API Only**: Relies exclusively on OpenAI-compatible APIs (e.g., local Kokoro servers) for TTS generation.
+
+#### `VoiceAssignmentManager.cs`
+- **GameComponent** responsible for persistent voice allocation.
+- Maintains `Dictionary<Pawn, string>` mapping pawns to specific voice names.
+- Uses `Scribe_Collections` (with auxiliary lists) to save assignments in the save file.
+- Automatically fetches voices from the API on game load and assigns them based on gender ("af_" for female, "am_" for male).
+
+#### `PauseableMote.cs`
+- Custom mote thing that supports pausing and custom visual effects for speech/interaction display.
+
+### Negotiation/ — Raid Negotiation System
+
+A complete negotiation pipeline: detection → dialogue → outcome application → peaceful phase → optional recruitment.
+
+#### `NegotiationManager.cs`
 - **Coordinator**: Orchestrates the multi-turn interactive negotiation process.
 - **Narrative Context**: Generates detailed, paragraph-style pawn descriptions matching the standard dialogue template.
 - **Skill Bias**: Explicitly injects the Social skill level into the LLM prompt to influence the pawn's eloquence and success rate.
-- **Outcome Engine**: 
+- **Outcome Engine**:
     - Parsed categories: `POSITIVE`, `NEUTRAL`, `NEGATIVE`.
-    - **Deferred Application**: Supports "Push Your Luck" mechanics. Successes are stored as `pendingOutcome` and only applied when the window is closed manually. 
+    - **Deferred Application**: Supports "Push Your Luck" mechanics. Successes are stored as `pendingOutcome` and only applied when the window is closed manually.
     - **Risk Override**: A subsequent `NEGATIVE` outcome immediately overrides any pending success, forces a failure penalty, and closes the window.
 - **Batch Processing**: Enqueues TTS requests with artificial staggering (500ms) to ensure chronological processing by external servers.
 
-### 4. `Dialog_PawnNegotiation.cs` (Interactive UI)
+#### `Dialog_PawnNegotiation.cs`
 - **Interaction Window**: Styled after the vanilla Comms/Negotiation dialog.
 - **Interactive UI**: Displays LLM-generated choices as clickable buttons and supports custom text input.
 - **Live History**: Real-time display of dialogue history with rich-text support for color-coded status messages (Green=Success, Red=Failure, Yellow=Neutral).
 - **Pause Resilience**: Configured as a `forcePause` window that respects real-time updates for TTS playback.
 
-### 5. `DatingManager.cs` (Dating State Machine)
+#### `LordJob_NegotiatedRaid.cs`
+- **State Machine**: Orchestrates negotiated raid behavior with phases: travel → linger → plunder → exit.
+- **Outcome Types**: Critical Success, Positive, Neutral, Failure — each determining raid behavior post-negotiation.
+- **Peace Enforcement**: `Notify_RaiderHarmed()` detects colonist attacks on raiders and breaks the peace deal.
+- **Smart Gathering**: `GetSmartLingerSpot()` finds suitable areas (tables, beds, party spots) for raiders to loiter.
+- **Supporting Classes**: `LordToil_SafeTravel`, `LordToil_DoAssault`, `RaidOutcomeUtility`.
+
+#### `LordToil_Plunder.cs`
+- **Persistent Stealing Toil**: Extends `LordToil_StealCover` with an extended 60-cell search radius (vs. vanilla's 7).
+- **Non-Aggressive**: Raiders search for and steal valuables without reverting to combat.
+
+#### `NegotiationCooldown_GameComponent.cs`
+- **GameComponent** persisting negotiation cooldowns for both pawns and factions.
+- **Spam Prevention**: Enforces temporal delays between negotiations.
+- **Methods**: `SetCooldown()`, `IsOnCooldown()`, `GetHoursRemaining()`.
+
+#### `RaidNegotiation_Patches.cs`
+- **Utility and Patches**: `RaidNegotiationUtility` identifies negotiable raids, finds raid leaders, and validates negotiation conditions.
+- **Hostility Patch**: Makes pawns with `SI_Negotiating` hediff immune to raider hostility checks.
+- **Job Patch**: Detects negotiation initiation from `JobDriver_HaveChatWith` and applies protection hediff.
+
+#### `RaidLooting_Patches.cs`
+- **Combat Suppression**: Suppresses "dangerous combat" checks for plundering raiders so they prioritize stealing.
+- **Extended Loot Search**: Custom loot finder using `TraverseMode.PassDoors` and larger search radius.
+
+#### `SI_JoinRequestLetter.cs`
+- **Choice Letter**: Appears when a raider wants to join the colony after successful negotiation.
+- **Accept/Reject**: Player can accept (pawn switches faction) or reject the request.
+
+### Dating/ — Dating, Cheating, and Prisoner Pestering
+
+#### `DatingManager.cs`
 - **Static class** managing the high-level state of ongoing dates.
 - **Date Tracking**: Maintains a list of active `Date` objects (initiator, partner, stage: `Joy`, `Lovin`, `Finished`).
-- **Lifecycle Management**: `StartDate`, `EndDate`, `RejectDate`, `AdvanceDateStage`. These methods are the "mutations" to the date state.
+- **Lifecycle Management**: `StartDate`, `EndDate`, `RejectDate`, `AdvanceDateStage`.
 - **State Checks**: `IsOnDate`, `IsOnDateCooldown`, `GetPartnerOfDateWith`, `GetInitiatorOfDateWith`.
-- **Core Date Logic**:
-  - `TransitionToLovin`: Handles the transition from the "Joy" stage to the "Lovin" stage, finding a bed and starting `JobDriver_DateLovin`.
-  - `CalculateDateCompatibility`, `CalculateSexualCompatibility`: Determines if pawns are compatible for a date/lovin'.
-  - `FindSuitableBedForLovin`: Finds an appropriate location for the lovin' activity, either a bed or a random spot nearby.
+- **Core Date Logic**: `TransitionToLovin`, `CalculateDateCompatibility`, `CalculateSexualCompatibility`, `FindSuitableBedForLovin`.
+- **3p Actions**: Support for threeway actions with special handling for spouse involvement.
 - **Persistence**: `ExposeData` for saving/loading date state.
 - **Maintenance**: `CleanupExpiredDateCooldowns`, `CheckForStuckDates`.
-- **Stage Management**: Handles date stage transitions with proper timing and job management.
-- **3p Actions**: Support for threeway actions with special handling for spouse involvement.
 
-### 6. `DateTracker_MapComponent.cs` (Date Lifecycle Engine)
-- **MapComponent** that acts as the primary engine for progressing dates. It runs continuously, monitoring pawns and calling state changes on the `DatingManager`.
-- **Core Functionality**: 
-  - **Lifecycle Monitoring**: Continuously checks the status of all pawns on dates, ensuring dates progress correctly through their stages.
-  - **Stage Advancement Logic**: Determines when to call `DatingManager.AdvanceDateStage` based on conditions like the initiator's joy need being satisfied or a pawn being drafted/downed.
-  - **Partner Activity Management**: Manages the date partner's behavior during the "Joy" stage, primarily by assigning and managing the `FollowAndWatch` job.
-  - **Joy Activity Coordination**: Attempts to have the partner join the initiator's joy activity when appropriate.
+#### `DateTracker_MapComponent.cs`
+- **MapComponent** acting as the primary engine for progressing dates.
+- **Core Functionality**: Lifecycle monitoring, stage advancement logic, partner activity management, joy activity coordination.
 
-### 7. `Dating_MapComponent.cs` (Hediff Cleanup)
-- **MapComponent** with a specific purpose: cleaning up orphaned `SI_Naked` hediffs and managing 3p action scenarios.
-- **Functionality**: Ticks every frame, checking for pawns that have the `SI_Naked` hediff but are no longer doing the `JobDriver_DateLovin` job or `JobDriver_CaughtCheating` job.
+#### `Dating_MapComponent.cs`
+- **MapComponent** cleaning up orphaned `SI_Naked` hediffs and managing 3p action scenarios.
 - **Grace Period**: Provides a grace period for pawns to transition into the correct job before removing the hediff.
-- **3p Action Support**: Handles special cases for 3p actions where multiple pawns may have the SI_Naked hediff.
 
-### 8. `KoboldApiClient.cs`, `OllamaApiClient.cs`, `LMStudioApiClient.cs`, `OpenAiApiClient.cs` (LLM Communication)
-- **Classes** handling communication with various external LLM APIs.
-- **Data Contracts**: Defines API request/response structures for serialization.
-- **`GenerateText`**: Main method to send a prompt to the API and receive a response.
-- **Error Handling**: Robust error handling for network issues and API failures.
-- **Sampling Parameters**: Support for advanced sampling parameters like Top-K, Top-P, Min-P.
+#### Date Job Drivers
 
-### 9. `SLog.cs` (Logging)
-- **Static class** providing a wrapper around `Verse.Log` with a verbosity toggle based on mod settings.
-- **Conditional Logging**: Only outputs messages when verbose logging is enabled in the mod settings.
+| Job Driver | Purpose |
+|-----------|---------|
+| `JobDriver_GoOnDate.cs` | Initiates dating sequence; rolls for acceptance based on opinion/mood |
+| `JobDriver_DateLovin.cs` | "Lovin" stage with bouncing animation, hediff management, pregnancy handling |
+| `JobDriver_FollowAndWatch.cs` | Partner follows initiator during joy stage with continuous path updates |
+| `JobDriver_SocialRelaxDate.cs` | Relaxation activities with comfort/joy mechanics and wandering behavior |
+| `JobDriver_CaughtCheating.cs` | Handles the caught-cheating confrontation sequence |
+| `JobDriver_AbusiveThreesome.cs` | Initiator driver for 3p action scenarios |
+| `JobDriver_AbusiveThreesomeParticipant.cs` | Participant driver for 3p action scenarios |
+| `JobDriver_PesterPrisoner.cs` | Main driver for pestering prisoners/slaves; insult scheduling, suppression mechanics |
+| `JobDriver_PesterPrisonerPartner.cs` | Partner variant that follows and participates in pestering |
 
-### 10. `SocialInteractionsSettings.cs` (Configuration)
-- **`SocialInteractionsModSettings`**: Holds all configurable options (API keys, flags for features/interactions, prompt template, UI/UX settings).
-- **`SocialInteractionsMod`**: Implements the in-game settings UI.
-- **Extensive Configuration**: Numerous settings for fine-tuning all aspects of the mod's behavior, from dating mechanics to LLM parameters.
-- **Multi-API Support**: Configuration options for different LLM API types with their specific settings.
+#### Joy Givers
 
-### 11. `ChatLogManager.cs` (Chat History)
-- **Static class** managing the storage and retrieval of all chat messages.
-- **ChatMessage Class**: Represents individual messages with speaker, recipient, timestamp, type, and formatting information.
-- **Message Types**: Supports different message types (LLMChat, GameEvent, DateEvent, CombatEvent) for filtering.
-- **Integration**: Works with SpeechBubbleManager to store all interactions for later review in the chat log window.
+| Joy Giver | Purpose |
+|-----------|---------|
+| `JoyGiver_GoOnDate.cs` | Creates initial dating jobs |
+| `JoyGiver_FollowAndWatch.cs` | Allows pawns to join multi-participant joy activities |
+| `JoyGiver_PesterPrisoner.cs` | Selects prisoners/slaves as pestering targets based on traits/genes |
 
-### 12. `PlayLogEntry_Badmouthing.cs` (Custom Play Log Entry)
-- **Custom PlayLogEntry** for badmouthing interactions that includes information about the target pawn.
-- **Extended Functionality**: Overrides `ToGameStringFromPOV` to include target pawn information depending on the perspective of the pawn viewing the log.
-- **Perspective Handling**: Formats the log text differently based on whether the viewer is the initiator, recipient, target, or third party.
-- **Serialization Support**: Includes parameterless constructor and proper serialization methods for RimWorld's save/load system.
+#### Cheating Thoughts
 
-### 13. `1.5/Defs/InteractionDefs_Badmouthing.xml` (Interaction Definitions)
-- **XML Definition File** containing the definitions for both badmouthing and enhanced insult interactions.
-- **Badmouthing Definition**: Defines the Badmouthing interaction type with custom worker class and log rules.
-- **EnhancedInsult Definition**: Defines the EnhancedInsult interaction type with severity-based worker class and log rules.
-- **Visual Elements**: Specifies appropriate symbols and labels for the interactions in the game UI.
-- **Log Rules**: Provides basic log entry templates that are enhanced by custom PlayLogEntry classes.
+| Thought | Purpose |
+|---------|---------|
+| `Thought_CaughtCheating.cs` | "Caught [pawn] cheating" — for the witness |
+| `Thought_GotCaughtCheating.cs` | "Got caught cheating by [pawn]" — for the cheater |
+| `Thought_WasCheatedOn.cs` | "Was cheated on by [pawn]" — for the betrayed partner |
 
-### 14. `DramaInteractionPatches.cs` (Drama System Patch Controller)
-- **Harmony Patch System**: Patches `Pawn_InteractionsTracker.TryInteractWith` to intercept social interactions and potentially replace them with drama interactions.
-- **Priority Management**: Implements a priority-based system where badmouthing/gossip has higher priority than enhanced chitchat insults.
-- **Conditional Triggers**: Only triggers on suitable interactions (Chitchat, DisturbingChat, Insult) when drama features are enabled.
-- **Badmouthing Trigger Logic**: Checks for trait-based encouragement/prevention, mood, and opinion dynamics to determine if badmouthing should occur.
-- **Enhanced Chitchat Insult Trigger Logic**: Evaluates mood, opinion of recipient, traits, and opinion differences to determine if enhanced insults should occur.
-- **Trait Integration**: Considers traits that prevent negative interactions (Kind, etc.) or encourage them (Jealous, Abrasive, etc.).
-- **Prevention Mechanisms**: Ensures that drama interactions only occur when appropriate based on pawn relationships and settings.
+### Interactions/ — Custom InteractionWorkers and PlayLogEntries
 
-### 15. `InteractionWorker_Badmouthing.cs` (Badmouthing System)
-- **Custom Interaction Worker**: Handles the core logic of badmouthing interactions that selects a target pawn and determines outcomes based on opinion dynamics.
-- **Smart Target Selection**: Uses `GetLeastFavoritePawn` to identify the most disliked pawn in the colony for badmouthing, preventing the recipient from being the target.
-- **Gossip Scenario**: When both initiator and recipient share negative opinions about the target, they bond over their shared dislike.
-- **Opinion-Based Outcomes**:
-  - If recipient values the target pawn less than the initiator, the recipient believes the badmouthing and forms a worse opinion of the target.
-  - If recipient values the target pawn more than the initiator, the recipient loses trust in the initiator.
-- **Gossip Partnership Formation**: Creates stronger bonds between pawns who share negative opinions about others.
-- **Trait Integration**: Considers traits that encourage or prevent badmouthing (e.g., Kind trait prevents it, Jealous/Abrasive traits encourage it).
-- **Backstabbing Trigger**: Successful badmouthing may trigger strategic backstabbing attempts against the target's allies.
-- **Custom Play Log Entry**: Uses `PlayLogEntry_Badmouthing` for proper logging with target pawn information.
-- **LLM Integration**: Generates appropriate subject text for LLM dialogue based on the specific badmouthing scenario and opinion dynamics.
-- **Drama Event Tracking**: Adds badmouthing events to the chat log for review via `ChatLogManager.AddDramaEvent`.
+#### Interaction Workers
 
-### 16. `InteractionWorker_EnhancedInsult.cs` (Enhanced Insult System)
-- **Severity-Based Interaction**: Implements insult severity levels (Mild, Moderate, Severe, Violent) based on initiator's opinion of recipient.
-- **Social Fight Escalation**: Can escalate insults to physical social fights based on severity, mood, and recipient traits.
-- **Thought Application**: Applies different thoughts based on insult severity (e.g., WasToldNegativeThings, HeardBadmouthing).
-- **Trait Recognition**: Identifies pawns that enjoy negative interactions or are likely to fight back.
-- **LLM Integration**: Generates detailed subject text for LLM dialogue based on severity and whether fights occurred.
-- **Custom Play Log Entry**: Uses `PlayLogEntry_EnhancedInsult` for proper logging with severity information.
+| Worker | Purpose |
+|--------|---------|
+| `InteractionWorker_Badmouthing.cs` | Target selection via `GetLeastFavoritePawn`, opinion-based outcomes, gossip bonding, backstabbing triggers |
+| `InteractionWorker_EnhancedInsult.cs` | Severity-based insults (Mild/Moderate/Severe/Violent), social fight escalation |
+| `InteractionWorker_Admiration.cs` | Social hierarchy recognition, trait/skill matching, multiple admiration types |
+| `InteractionWorker_Backstabbing.cs` | Strategic betrayal with social skill-based success, catastrophic opinion reversal mechanics |
+| `InteractionWorker_MakeUp.cs` | Reconciliation mechanics with thought removal and opinion changes |
+| `InteractionWorker_LoversQuarrel.cs` | Romantic quarrels with three outcomes (reconciliation, neutral, near-breakup); 10% breakup chance on severe outcomes |
+| `InteractionWorker_CaughtCheating.cs` | Triggers specific LLM interactions for cheating confrontations |
+| `InteractionWorker_DateLovin.cs` | Triggers LLM interactions for date lovin' events |
+| `InteractionWorkers.cs` | Legacy/utility interaction worker definitions |
 
-### 17. `PlayLogEntry_EnhancedInsult.cs` (Custom Play Log Entry for Enhanced Insults)
-- **Custom PlayLogEntry** for EnhancedInsult interactions that includes severity and fight escalation information.
-- **Severity-Based Descriptions**: Provides different action descriptions based on the severity level of the insult.
-- **Fight Outcome Tracking**: Records whether the insult led to a physical confrontation.
-- **Perspective Handling**: Formats the log text differently based on the viewer's relationship to the interaction (initiator, recipient, or third party).
-- **Serialization Support**: Includes parameterless constructor and proper serialization methods for RimWorld's save/load system.
+#### Play Log Entries
 
-### 18. `InteractionWorker_Admiration.cs` (Admiration System)
-- **Custom Interaction Worker**: Handles admiration interactions where low social influence pawns praise those they see as leaders.
-- **Social Hierarchy Recognition**: Identifies pawns with leadership traits, skills, or roles that make them admirable to others.
-- **Trait/Skill Matching**: Evaluates shared traits, valued skills, and compatibility between initiators and recipients.
-- **Social Skill-Based Success**: Success of admiration attempts depends on the initiator's social skill level.
-- **Opinion Change Mechanics**: Can result in positive opinion changes when executed successfully, or neutral/negative outcomes if poorly executed.
-- **Admiration Types**: Supports different types of admiration (GeneralPraise, SharedInterestPraise, SkillBasedAdmiration, InspirationalPraise) based on relationship dynamics.
-- **Thought Application**: Applies appropriate thoughts to both initiator and recipient based on interaction outcomes.
-- **LLM Integration**: Generates subject text for LLM dialogue based on admiration type and outcome.
-- **Custom Play Log Entry**: Uses `PlayLogEntry_Admiration` for proper logging of admiration interactions.
+| Log Entry | Purpose |
+|-----------|---------|
+| `PlayLogEntry_Badmouthing.cs` | Includes target pawn info with perspective-based formatting |
+| `PlayLogEntry_EnhancedInsult.cs` | Includes severity level and fight escalation info |
+| `PlayLogEntry_Admiration.cs` | Includes admiration type (GeneralPraise, SharedInterestPraise, SkillBasedAdmiration, InspirationalPraise) |
+| `PlayLogEntry_Backstabbing.cs` | Includes target and success/failure info for strategic betrayal |
+| `PlayLogEntry_MakeUp.cs` | Includes success/failure tracking for reconciliation attempts |
 
-### 19. `PawnFlavorText_GameComponent.cs` (Pawn Bio Storage)
-- **GameComponent** for saving and loading custom pawn bio text with the entire game state.
-- **Persistence**: Uses `Scribe_Collections.Look` to save the `pawnFlavorTexts` dictionary across game sessions, ensuring data persists between different maps and game restarts.
-- **Sync Method**: `SyncWithStaticDictionary` method to synchronize data between the component and static dictionary in `SocialInteractions`.
+### Children/ — Child Misbehavior System
 
-### 20. `PlayLogEntry_Admiration.cs` (Custom Play Log Entry for Admiration)
-- **Custom PlayLogEntry** for Admiration interactions that includes admiration type information.
-- **Admiration Type Tracking**: Records the type of admiration (GeneralPraise, SharedInterestPraise, SkillBasedAdmiration, InspirationalPraise) in the log entry.
-- **Perspective Handling**: Formats the log text differently based on the viewer's relationship to the interaction (initiator, recipient, or third party).
-- **Serialization Support**: Includes parameterless constructor and proper serialization methods for RimWorld's save/load system.
-- **Extended Functionality**: Overrides `ToGameStringFromPOV` to include admiration type information depending on the perspective of the pawn viewing the log.
+#### `ChildrenMisbehaviorManager.cs`
+- **Core Logic Manager**: Misbehavior calculations, level selection, and behavior execution.
+- **Misbehavior Factor Calculation**: Based on parental opinion, child's mood, and character traits.
+- **Four Levels of Misbehavior**:
+  - Level 1 — Annoying Adults: Approaches adults during work with annoying questions.
+  - Level 2 — Item Play / Tag / Spying: Takes valuable items, plays tag with other children, spies on intimate activity.
+  - Level 3 — Property Damage: Tramples crops, breaks buildings with `CompBreakdownable`.
+  - Level 4 — Dangerous Behavior: Weapon play (20% accidental discharge), fire lighting, radio leaking (can trigger raids).
+- **Trait Integration**: Rebellious (+20%), Kind (-20%), Psychopath (+30%).
 
-### 21. `InteractionWorker_Backstabbing.cs` (Strategic Backstabbing System)
-- **Custom Interaction Worker**: Handles the core logic of strategic betrayal where manipulative pawns turn allies against each other.
-- **Social Skill-Based Success**: Success rate depends on the difference between the instigator's and target's social skills.
-- **Information Gathering Phase**: Can perform an initial information gathering phase to learn about relationship dynamics before attempting manipulation.
-- **Catastrophic Betrayal Mechanics**: Successful backstabbing causes massive opinion reversal based on original trust level - the more trusted the target was, the more devastating the betrayal.
-- **Target Selection Logic**: Identifies the target's "best friends" or highest-opinion allies for the strategic backstabbing attempt.
-- **Trait Integration**: Pawns with manipulation-related traits (manipulative, deceptive, calculating, psychopath) are more likely to attempt or succeed at backstabbing.
-- **Job System Integration**: Uses job.targetB and ScheduledTargetPawn to preserve target information through the job system to prevent targeting errors.
-- **LLM Integration**: Generates appropriate subject text for LLM dialogue based on the strategic nature of the betrayal and its success/failure.
-- **Custom Play Log Entry**: Uses `PlayLogEntry_Backstabbing` for proper logging with target and success information.
-- **Data Management**: Efficiently stores bio text using pawn `thingIDNumber` as the key, working across all maps in the game.
-- **Initialization Methods**: `FinalizeInit` and `LoadedGame` methods to ensure proper data synchronization when the game starts or loads.
+#### `ChildrenMisbehaviorTracker_MapComponent.cs`
+- **MapComponent** that periodically checks for misbehavior opportunities (every 600 ticks).
 
-### 22. `Dialog_EditPawnFlavorText.cs` (Bio Editor UI)
-- **Window** providing a user interface for editing custom pawn bio text.
-- **Text Input**: Clean multi-line text input field for entering bio information.
-- **Action Buttons**: "Save", "Cancel", and "Clear" buttons for managing bio text changes.
-- **Character-Specific**: Associates bio text directly with the pawn being edited.
-- **User Experience**: Simple and intuitive interface accessible from the character card.
+#### Child Job Drivers
 
-### 23. `CharacterCardUtility_AddFlavorTextButton_Patch.cs` (Character Card Integration)
-- **Harmony Patch** that adds a "Bio" button to the character card for accessing the bio editor.
-- **Positioning**: Places the button one row down from the standard character card buttons.
-- **UI Integration**: Seamlessly integrates with the existing character card UI.
-- **Action Handling**: Triggers the `Dialog_EditPawnFlavorText` when clicked.
+| Job Driver | Level | Description |
+|-----------|-------|-------------|
+| `JobDriver_ChildAnnoyAdult.cs` | 1 | Approaches adults at work with annoying questions |
+| `JobDriver_ChildPlayWithItem.cs` | 2 | Takes and potentially damages items |
+| `JobDriver_InviteToPlayTag.cs` | 2 | Invitation process for tag gameplay |
+| `JobDriver_PlayTagRunner.cs` | 2 | "It" child who runs to random locations |
+| `JobDriver_PlayTagChaser.cs` | 2 | Chasing child who follows the runner |
+| `JobDriver_ChildSpyOnLovin.cs` | 2 | Sneaks to watch intimate activity; may disrupt |
+| `JobDriver_ChildTrampleCrops.cs` | 3 | Destroys crops in growing zones |
+| `JobDriver_ChildBreakBuilding.cs` | 3 | Attacks breakdownable buildings |
+| `JobDriver_ChildPlayWithWeapon.cs` | 4 | Weapon play with 20% accidental discharge chance |
+| `JobDriver_ChildLightFire.cs` | 4 | Lights fires on flammable objects |
+| `JobDriver_ChildPlayWithRadio.cs` | 4 | Plays with comms console; skill-based raid trigger chance |
+| `JobDriver_ChildGoCryToParent.cs` | — | Comfort-seeking after fleeing; social skill-based comfort |
 
-### 24. `Game_FlavorTextComponent_Patch.cs` (Game Initialization)
-- **Harmony Patches** for `Game.InitNewGame` and `Game.LoadGame` to properly initialize the `PawnFlavorText_GameComponent` and `TTSManager`.
-- **New Game Initialization**: Ensures the GameComponent is created when starting a new game.
-- **Game Loading Support**: Guarantees the GameComponent exists when loading an existing game.
-- **Persistence Coordination**: Works with `PawnFlavorText_GameComponent` to maintain proper data flow.
-- **TTS Reset**: Forces a state reset of the TTS sequence IDs on every game load/new game to prevent synchronization "stuck" states.
+#### `MentalState_ChildFleeInTerror.cs`
+- Custom mental state for children who flee after taking damage.
+- Dynamic flee chance decreasing with combined shooting/melee skills.
 
-### 25. Localization System
-- **Translation Framework**: Implements RimWorld's standard keyed translation system with `Languages/English/Keyed/Keyed.xml` structure.
-- **Multi-Language Support**: Includes full Chinese Simplified localization in `Languages/ChineseSimplified/Keyed/Keyed.xml`.
-- **Comprehensive Coverage**: Translates all mod settings, UI elements, dialog text, and descriptions using translation keys.
-- **Settings Integration**: Updates `SocialInteractionsSettings.cs` to use `.Translate()` method calls for all user-facing text.
-- **File Structure**: Proper RimWorld localization structure with separate language folders and keyed XML files.
-- **UI Elements Translated**: Includes settings labels, descriptions, bio editor dialog elements, and all other user-facing strings.
+#### `ChildThoughtDefOf.cs`
+- DefOf references for child-specific thoughts (ChildCrying, etc.).
 
-### 25. Text-To-Speech (TTS) Architecture
-- **External API Only**: `System.Speech` has been removed. The mod now relies exclusively on OpenAI-compatible APIs (e.g., local Kokoro servers) for TTS generation.
-- **`TTSManager.cs`**:
-  - **Sequential Playback**: Implements a `Sequence ID` system (`nextRequestId`, `nextPlaybackId`) and a `playbackBuffer` to guarantee audio plays in the correct order regardless of download speed.
-  - **Pause-Resilient Logic**: Uses `Time.unscaledDeltaTime` and `audioSource.ignoreListenerPause = true` to allow audio playback while the game is paused (e.g., during negotiation).
-  - **Mute Logic**: `Stop()` now clears all queues, buffers, and fast-forwards the sequence ID for instant, persistent silence.
-  - **Network Staggering**: Staggers API requests by 500ms in `NegotiationManager` to prevent server-side batching/LIFO processing.
-- **`VoiceAssignmentManager.cs`**:
-  - **GameComponent** responsible for persistent voice allocation.
-  - Maintains `Dictionary<Pawn, string>` mapping pawns to specific voice names.
-  - Uses `Scribe_Collections` (with auxiliary lists) to save assignments in the save file.
-  - Automatically fetches voices from the API on game load and assigns them based on gender ("af_" for female, "am_" for male).
-- **UI Integration**:
-  - **Settings**: "Remap Voices" button, API configuration fields, voice count display.
-  - **Main Menu**: `MainButtonWorker_ToggleTTS` provides a toggle button on the main tab bar to mute/unmute TTS instantly.
+### Jobs/ — General-Purpose Job Drivers
 
-## Job Drivers
+| File | Purpose |
+|------|---------|
+| `JobDriver_HaveChatWith.cs` | Primary social connection; opens `Dialog_PawnNegotiation` (interactive) or plays 30s interaction with speech bubbles (non-interactive); manual skill check fallback |
+| `JobDriver_HaveDeepTalk.cs` | Custom driver for deep talk jobs initiated by pawns |
+| `Job_HaveDeepTalk.cs` | Job definition helper for deep talk |
+| `JobDriver_BeTalkedTo.cs` | Recipient-side driver for being talked to |
+| `JobDriver_BackstabbingApproachTarget.cs` | Physical approach + backstabbing interaction execution |
+| `JobDriver_BackstabbingGatherInfo.cs` | Information gathering phase before backstabbing attempt |
+| `JoyGiver_HaveDeepTalk.cs` | Creates initial deep talk jobs |
 
-### `JobDriver_GoOnDate.cs`
-- **Custom JobDriver** that initiates the dating sequence.
-- **Acceptance Logic**: Rolls for date acceptance based on opinion and mood.
-- **Job Assignment**: Finds a joy job for the initiator and assigns a `FollowAndWatch` job to the partner.
-- **Validation**: Comprehensive validation of pawn states throughout the job.
+### Components/ — GameComponents and Utilities
 
-### `JobDriver_DateLovin.cs`
-- **Custom JobDriver** for the "Lovin" stage of a date.
-- **Animation**: Provides bouncing animation for both pawns during the lovin' activity.
-- **Hediff Management**: Applies and removes the `SI_Naked` hediff.
-- **Thought Management**: Gives appropriate thoughts to both pawns after the activity.
-- **Pregnancy Handling**: Handles pregnancy mechanics for Biotech-enabled games.
-- **Stage Completion**: Advances the date to the finished stage upon completion.
-- **Efficiency**: Optimized tick handling with proper cleanup.
+#### `PawnFlavorText_GameComponent.cs`
+- **GameComponent** for saving/loading custom pawn bio text.
+- Uses `Scribe_Collections.Look` for persistence across maps and game restarts.
+- `SyncWithStaticDictionary` for data synchronization with `SocialInteractions` static dictionary.
 
-### `JobDriver_FollowAndWatch.cs`
-- **Custom JobDriver** for the date partner to follow the initiator during the joy stage.
-- **Pathing Logic**: Continuously updates the path to follow the initiator.
-- **Joy Gain**: Provides social joy gain to the partner while following.
-- **Stage Transition**: Monitors the initiator's job to determine when to advance the date stage.
+#### `SocialInfluenceUtility.cs`
+- **Static utility class** calculating social metrics.
+- **Influence Score**: Opinion average × social skill (normalized 0-1).
+- **Integration Score**: Positivity of candidate through initiator's social connections (normalized 0-1).
 
-### `JobDriver_BackstabbingApproachTarget.cs`
-- **Custom JobDriver** for direct strategic backstabbing attempts.
-- **Physical Movement**: Pawns physically approach their target to manipulate them against a mutual acquaintance.
-- **Pathing Logic**: Continuously updates the path to follow the target during the interaction.
-- **State Validation**: Comprehensive validation system ensures targets are in appropriate states for interaction (alive, conscious, not in mental states).
-- **Target Preservation**: Maintains the original target information to prevent targeting errors.
-- **Interaction Handling**: Executes the backstabbing interaction using `InteractionWorker_Backstabbing`.
+### UI/ — User Interface
 
-### `JobDriver_BackstabbingGatherInfo.cs`
-- **Custom JobDriver** for information gathering phase of strategic backstabbing.
-- **Intelligence Gathering**: Allows the instigator to learn about the target's relationships before attempting manipulation.
-- **Physical Movement**: Pawns physically approach their target to conduct the information gathering conversation.
-- **State Validation**: Comprehensive validation system ensures targets are in appropriate states for interaction.
-- **Target Preservation**: Maintains target information through the job system.
-- **Interaction Handling**: Executes the information gathering using `InteractionWorker_Backstabbing`.
+#### `ChatLogManager.cs`
+- **Static class** managing storage and retrieval of all chat messages.
+- **ChatMessage Class**: Speaker, recipient, timestamp, type, formatting.
+- **Message Types**: LLMChat, GameEvent, DateEvent, CombatEvent for filtering.
 
-### `JobDriver_HaveChatWith.cs` (Negotiate)
-- **Primary Social Connection**: Replaces the default "Have Chat" interaction.
-- **Interaction Logic**:
-    - If Interactive mode is ON: Opens the `Dialog_PawnNegotiation` window.
-    - If Interactive mode is OFF: Plays a 30-second interaction with speech bubbles and follows the target.
-- **Fallback Logic**: Implements a manual skill check roll (Social vs Opinion/Impact) if the LLM is unavailable or disabled.
-- **Targeting**: Restricted to named pawns only to prevent UI crashes with wild animals.
+#### `ChatLogTabWindow.cs`
+- **Main tab window** for displaying chat logs with conversation grouping, search functionality, and message caching.
+- Dual-panel layout: conversation list on left, message details on right.
 
-## Harmony Patches (`*.cs` files)
+#### `ChatLogWindow.cs`
+- **Deprecated** window class kept for compatibility. Closes immediately; chat logs now integrated into the history tab.
+
+#### `Dialog_EditPawnFlavorText.cs`
+- **Window** for editing custom pawn bio text with multi-line input and Save/Cancel/Clear buttons.
+
+#### `MainButtonWorker_ToggleTTS.cs`
+- Toggle button on main tab bar to mute/unmute TTS instantly.
+
+#### `PawnSelectionDialog.cs`
+- Dialog for selecting colonists to assign voices to, with scrollable pawn list and current voice display.
+
+#### `VoiceSelectionDialog.cs`
+- Dialog for choosing specific voice assignments for a selected pawn from available voices.
+
+### DefOfs/ — Static Definition References
+
+| File | Definitions |
+|------|-------------|
+| `SI_JobDefOf.cs` | All custom job definitions (dating, children, backstabbing, chat, etc.) |
+| `SI_InteractionDefOf.cs` | Custom interaction definitions (badmouthing, dating, admiration, etc.) |
+| `SI_HediffDefOf.cs` | OnDate, SI_Naked, SI_Negotiating, Abused hediffs |
+| `SI_ThoughtDefOf.cs` | Custom thought definitions |
+| `SI_MentalStateDefOf.cs` | ChildFleeInTerror mental state |
+| `SI_ThingDefOf.cs` | PauseableMote thing definition |
+| `CustomTraitDefOf.cs` | Masochist trait reference |
+| `ChildThoughtDefOf.cs` | Child-specific thought references (in Children/) |
+
+### Combat/ — Combat Taunts
+
+#### `CombatPatches.cs`
+- Patches various combat methods (`CheckMeleeAttackAt`, `TakeDamage`, etc.) to trigger combat taunts and complaints via `SpeechBubbleManager.EnqueueInstant`.
+- Visual differentiation from regular dialogue.
+
+## Harmony Patches
 
 ### Interaction & Thought Patches
-- **`InteractionWorker_Interacted_Patch.cs`**: Patches `InteractionWorker.Interacted` to call `SocialInteractions.HandleInteraction` for relevant interactions.
-- **`InteractionWorkers.cs`**: Defines custom `InteractionWorker` classes (`InteractionWorker_DateLovin`, `InteractionWorker_CaughtCheating`) that trigger specific LLM interactions or game logic.
-- **`InteractionWorker_Badmouthing.cs`**: Custom interaction worker for badmouthing interactions that handles target selection, opinion dynamics, and gossip scenarios.
-- **`InteractionWorker_EnhancedInsult.cs`**: Custom interaction worker for enhanced insults with severity levels based on opinion, including social fight escalation logic.
-- **`ThoughtHandler_OpinionOffsetOfGroup_Patch.cs`**: Patches `ThoughtHandler.OpinionOffsetOfGroup` to apply opinion modifiers from `Thought_CaughtCheating`.
-- **`DramaInteractionPatches.cs`**: Patches `Pawn_InteractionsTracker.TryInteractWith` to potentially initiate drama interactions (badmouthing/gossip and enhanced insults) during social interactions based on pawn traits and settings.
+| Patch | Target | Purpose |
+|-------|--------|---------|
+| `InteractionWorker_Interacted_Patch.cs` | `InteractionWorker.Interacted` | Routes relevant interactions to `SocialInteractions.HandleInteraction` |
+| `DramaInteractionPatches.cs` | `Pawn_InteractionsTracker.TryInteractWith` | Triggers drama interactions (badmouthing, insults, admiration, make-up) |
+| `InteractionWorker_Breakup_Patch.cs` | Breakup interaction | Adds LLM dialogue to breakup events |
+| `InteractionWorker_ConvertIdeoAttempt_Patch.cs` | Ideology conversion | Triggers LLM interactions on conversion attempts |
+| `ThoughtHandler_OpinionOffsetOfGroup_Patch.cs` | `ThoughtHandler.OpinionOffsetOfGroup` | Applies opinion modifiers from `Thought_CaughtCheating` |
+| `MarriageCeremonyStart_Patch.cs` | Marriage ceremony transition | Triggers LLM dialogue when ceremony begins |
 
-### Job & JoyGiver Patches/Implementations
-- **`JobDriver_GoOnDate.cs`**: Custom `JobDriver` that initiates the dating sequence (asking, starting joy job, assigning `FollowAndWatch`).
-- **`JobDriver_DateLovin.cs`**: Custom `JobDriver` for the "Lovin" stage of a date, applying temporary hediffs and giving thoughts.
-- **`JobDriver_FollowAndWatch.cs`**: Custom `JobDriver` for the date partner to follow the initiator during the joy stage.
-- **`JobDriver_HaveDeepTalk.cs`, `JobDriver_BeTalkedTo.cs`**: Custom drivers for Deep Talk jobs initiated by pawns.
-- **`JoyGiver_GoOnDate.cs`, `JoyGiver_HaveDeepTalk.cs`**: Custom `JoyGiver`s that create the initial jobs for dating and deep talks.
-- **`JobPatches.cs`**: Patches `JobDriver.TryMakePreToilReservations` to allow pawns to reserve the same item for social interactions.
-- **`JobDriver_Joy_Patch.cs`**: Patches `JobDriver_Joy.MakeNewToils` to allow date partners to potentially join the same joy activity.
+### Job & Joy Patches
+| Patch | Target | Purpose |
+|-------|--------|---------|
+| `JobPatches.cs` | `JobDriver.TryMakePreToilReservations` | Allows same-item reservation for social interactions |
+| `JobDriver_Joy_Patch.cs` | `JobDriver_Joy.MakeNewToils` | Allows date partners to join same joy activity |
+| `JoyTickCheckEnd_Patch.cs` | Joy tick end check | Prevents joy termination for dating/pester activities |
+| `JobDriver_GiveSpeech_Patch.cs` | `JobDriver_GiveSpeech` | Generates monologues for speeches, detects execution rituals |
+| `JobDriver_ModifyCarriedThingDrawPos_Patch.cs` | Carried thing draw position | Bouncing/spinning animation for child play items |
+| `Debug_JobTracker_Patch.cs` | Job change tracking | Logs unexpected job assignments during dates |
 
-### Pawn/Map Lifecycle Patches
-- **`Pawn_Tick_Patch.cs`**: Patches `Pawn.Tick` to trigger the scheduled fight after a cheating interaction is complete.
-- **`Map_FinalizeInit_Patch.cs`**: Patches `Map.FinalizeInit` to initialize the custom map components (`DateTracker_MapComponent`, `Dating_MapComponent`, `SpeechBubbleManager`).
-- **`MindStateTick_Patch.cs`**: Patches `Pawn_MindState.MindStateTick` to handle interrupting pawns for dating.
-- **`Pawn_DraftController_Drafted_Patch.cs`**: Patches `Pawn_DraftController.set_Drafted` to interrupt date jobs when a pawn is drafted.
+### Pawn Lifecycle & Event Patches
+| Patch | Target | Purpose |
+|-------|--------|---------|
+| `Pawn_Tick_Patch.cs` | `Pawn.Tick` | Triggers scheduled fight after cheating interaction |
+| `Map_FinalizeInit_Patch.cs` | `Map.FinalizeInit` | Initializes custom map components |
+| `MindStateTick_Patch.cs` | `Pawn_MindState.MindStateTick` | Handles interrupting pawns for dating |
+| `Pawn_DraftController_Drafted_Patch.cs` | `Pawn_DraftController.set_Drafted` | Interrupts date jobs when drafted |
+| `Game_FlavorTextComponent_Patch.cs` | `Game.InitNewGame` / `Game.LoadGame` | Initializes `PawnFlavorText_GameComponent` and TTSManager |
+| `Pawn_TakeDamage_Patch.cs` | `ThingWithComps.PreApplyDamage` | Triggers child flee-in-terror mental state |
+| `Pawn_GetGizmos_Patch.cs` | Pawn gizmos | Adds "Negotiate" button to colonist action bar |
+| `TaleRecorder_Patch.cs` | Birth events | Triggers LLM interactions between doctor and mother |
 
-### Combat & Rendering Patches
-- **`CombatPatches.cs`**: Patches various combat methods (`CheckMeleeAttackAt`, `TakeDamage`, etc.) to trigger combat taunts and complaints via `SpeechBubbleManager.EnqueueInstant`.
-- **`PawnRenderer_GetDrawParms_Patch.cs`, `PawnRenderer_RenderPawnAt_Patch.cs`**: Patches rendering methods to apply visual offsets for pawns engaged in `JobDriver_DateLovin`.
+### Monologue Trigger Patches
+| Patch | Target | Purpose |
+|-------|--------|---------|
+| `Faction_Patch.cs` | Faction leader selection | Monologue when new faction leader chosen |
+| `HistoryEventsManager_Patch.cs` | "Bonded" history event | Monologue on animal bonding (10s cooldown) |
+| `InspirationHandler_TryStartInspiration_Patch.cs` | `InspirationHandler.TryStartInspiration` | Monologue when pawn receives inspiration |
+| `MentalState_Patch.cs` | Mental state entry | Monologue when entering mental states (excl. social fighting) |
+| `Precept_RoleMulti_Patch.cs` | Multi-slot role assignment | Monologue on role assignment (e.g., priest) |
+| `Precept_RoleSingle_Patch.cs` | Single-slot role assignment | Monologue on individual role promotions |
+| `QualityUtility_SendCraftNotification_Patch.cs` | Craft notification | Monologue on masterwork/legendary crafting |
+| `LordJob_Joinable_Party_CreateGraph_Patch.cs` | Party/concert start | Monologue for party organizers |
+| `LordJob_PsychicRitual_CreateGraph_Patch.cs` | Psychic ritual start | Monologue for ritual invokers |
 
-## Data Flow Example: Starting a Date
+### Rendering Patches
+| Patch | Target | Purpose |
+|-------|--------|---------|
+| `PawnRenderer_GetDrawParms_Patch.cs` | Pawn rendering | Visual offsets for date lovin' |
+| `PawnRenderer_RenderPawnAt_Patch.cs` | Pawn rendering | Visual offsets for date lovin' |
+
+### Raid Negotiation Patches
+| Patch | Target | Purpose |
+|-------|--------|---------|
+| `RaidNegotiation_Patches.cs` | Hostility checks, job detection | Protects negotiators, detects negotiation start |
+| `RaidLooting_Patches.cs` | Combat AI, stealing | Suppresses combat for plunderers, extends loot search |
+
+### Character & UI Patches
+| Patch | Target | Purpose |
+|-------|--------|---------|
+| `CharacterCardUtility_AddFlavorTextButton_Patch.cs` | Character card | Adds "Bio" button for accessing bio editor |
+
+## XML Definitions (`1.5/Defs/`)
+
+### Interaction Definitions
+- `InteractionDefs.xml` — Base interaction definitions
+- `InteractionDefs_Badmouthing.xml` — Badmouthing, enhanced insult, and backstabbing interactions
+- `InteractionDefs_Children.xml` — Child play tag and misbehavior interactions
+- `InteractionDefs_Dating.xml` — Dating-related interactions
+- `InteractionDefs_DatingOutcome.xml` — Date outcome interactions
+- `InteractionDefs_JobGivers.xml` — Job-giver interaction definitions
+- `InteractionDefs_ManualChat.xml` — Manual chat interaction
+
+### Job Definitions
+- `JobDefs.xml` — Core job definitions
+- `JobDefs/Jobs_HaveChatWith.xml` — Chat job definitions
+- `JobDefs/Jobs_Misc.xml` — Miscellaneous jobs
+- `JobDefs/JobDef_Backstabbing.xml` — Backstabbing job definitions
+- `JobDefs/JobDefs_Children_BreakBuilding.xml` — Building breaking jobs
+- `JobDefs/JobDefs_Children_Radio.xml` — Radio play jobs
+- `JobDefs/JobDefs_Children_Tag.xml` — Tag play jobs
+- `JobDefs_AbusiveThreesome.xml` — 3p action jobs
+- `JobDefs_Children.xml` — General child jobs
+- `JobDefs_Dating.xml` — Dating jobs
+- `JobDefs_PesterPrisoner.xml` — Prisoner pestering jobs
+- `JobDefs_Recipient.xml` — Recipient-side jobs
+
+### Other Definitions
+- `HediffDefs_Dating.xml`, `HediffDefs_Negotiation.xml`, `HediffDefs_PesterPrisoner.xml` — Custom hediffs
+- `JoyGiverDefs.xml`, `JoyGiverDefs_Dating.xml`, `JoyGiverDefs_PesterPrisoner.xml` — Joy activities
+- `JoyKindDefs.xml`, `JoyKindDefs_Dating.xml`, `JoyKindDefs_PesterPrisoner.xml` — Joy categories
+- `ThoughtDefs_ChildComfort.xml`, `ThoughtDefs_Children.xml` — Child thoughts
+- `ThoughtDefs_Dating.xml`, `ThoughtDefs_LoversQuarrel.xml`, `ThoughtDefs_PesterPrisoner.xml` — Social thoughts
+- `MentalStateDefs_Children.xml` — Child mental states
+- `LetterDefs.xml` — Custom letter types
+- `RulePacks/RulePacks_Drama.xml`, `RulePacks/RulePacks_MakeUp.xml` — Log rule packs
+- `MainTabDefs/MainTabDefs_ChatLog.xml` — Chat log tab
+- `ThingDefs/PauseableMote.xml` — Custom mote definition
+
+## Localization
+
+- **Framework**: RimWorld's standard keyed translation system.
+- **Languages**: English (`Languages/English/Keyed/Keyed.xml`), Chinese Simplified (`Languages/ChineseSimplified/Keyed/Keyed.xml`).
+- **Coverage**: All mod settings, UI elements, dialog text, and descriptions.
+
+## Data Flow Examples
+
+### Starting a Date
 1.  `JoyGiver_GoOnDate` gives a `JobDriver_GoOnDate` job to an initiator.
 2.  `JobDriver_GoOnDate` moves the initiator to a potential partner and rolls for acceptance based on opinion and mood.
 3.  If accepted:
@@ -349,209 +515,18 @@ This utility is especially helpful for making targeted modifications to files wh
 9.  `DatingManager` transitions the state to `DateStage.Finished` and calls `EndDate`.
 10. `DatingManager.EndDate` cleans up hediffs, ends any remaining jobs, and puts the pawns on a date cooldown.
 
-## Data Flow Example: Monologue
-1. A pawn experiences a specific event (e.g., becomes a leader, enters a mental state, or a significant world event occurs).
-2. The relevant game code calls `SocialInteractions.HandleMonologue` with the pawn and a subject describing the event.
-3. `HandleMonologue`:
-    - Checks if LLM interactions are enabled and if spam protection is active.
-    - Generates a prompt using `GenerateMonologuePrompt`, which includes detailed information about the pawn and the world context.
-    - Sends the prompt to the LLM API via the appropriate client.
-    - Processes the LLM response, splitting it into individual lines.
-    - Queues each line as a speech bubble via `SpeechBubbleManager.Enqueue`.
-    - Manages conversation state and timing for a smooth display experience.
+### Monologue Trigger
+1. A pawn experiences a specific event (e.g., becomes a leader, enters a mental state, crafts a masterwork).
+2. The relevant Harmony patch calls `SocialInteractions.HandleMonologue` with the pawn and a subject describing the event.
+3. `HandleMonologue` checks LLM availability, generates a prompt using `GenerateMonologuePrompt`, sends it to the LLM, and queues response lines as speech bubbles.
 
-## Recent Enhancements
-
-### Multi-API Support
-- **Expanded LLM Integration**: Support for multiple LLM API types including KoboldCpp, Ollama, LMStudio, and OpenAI.
-- **Flexible Configuration**: Each API type has its own configuration options and model settings.
-- **Improved Prompt Generation**: Enhanced prompt templates with comprehensive pawn and world information.
-
-### External API TTS
-- **Persistent Voice Allocation**: Voices are fetched from the API and persistently assigned to pawns, ensuring consistent voices across sessions.
-- **Gender-Aware Allocation**: Automatically assigns male/female voices based on pawn gender using "af_"/"am_" prefixes.
-- **Mute Toggle**: Quick-access mute button on the main menu bar to stop audio immediately.
-
-### Enhanced Dating System
-- **Three-Way Actions**: Support for 3p actions with special handling for spouse involvement.
-- **Improved Compatibility Calculation**: More sophisticated date compatibility calculations based on traits, age, libido, and relationships.
-- **Better Location Finding**: Enhanced logic for finding suitable locations for lovin' activities.
-- **Robust Error Handling**: Comprehensive null checks and error handling throughout the dating system.
-
-### Improved LLM Integration
-- **Conversation Management**: Better tracking of conversation IDs to prevent overlapping dialogues.
-- **Enhanced Prompt Generation**: More detailed prompts with comprehensive pawn and world information.
-- **Graceful Degradation**: Fallback mechanisms when LLM interactions are disabled or unavailable.
-- **Efficiency System**: Scheduled unlock timing to optimize LLM request handling.
-
-### Better Performance and Stability
-- **Optimized Tick Handling**: Reduced frequency of expensive operations.
-- **Memory Management**: Proper cleanup of resources and references.
-- **Extensive Logging**: Detailed logging for debugging (when enabled).
-- **Chat Log Integration**: Complete history of all interactions stored for later review.
-
-- **Visual Differentiation**: Combat taunts use different visual styles from regular dialogue.
-
-### Interactive Negotiation System
-- **Choice-Based Gameplay**: Players can now choose specific dialogue options or type their own input to influence outcomes.
-- **Push Your Luck**: A "Pending Outcome" system allows players to keep a good negotiation going for more RP, with the risk that a later mistake ruins the whole deal.
-- **Narrative Alignment**: Prompts now use a cohesive narrative paragraph format for pawn context, including Social Skill levels as a key influence factor.
-- **Visual Status**: Real-time coloring of system messages (Green for success, Red for failure) in the dialog history.
-
-### Robust Synchronized TTS
-- **Zero Sequence Drift**: Guaranteed chronological audio playback through ID-based buffering.
-- **Network Stability**: Staggered request dispatching prevents LIFO order issues on the server side.
-- **Universal State Reset**: Absolute synchronization recovery on game load using Harmony patches.
-- **Instant Mute**: Total flush of all audio buffers and queues upon muting.
-
-### Drama Systems
-#### Badmouthing System
-- **Interaction Definition**: Custom `Badmouthing` interaction defined in `InteractionDefs_Badmouthing.xml` with appropriate worker class and log rules.
-- **Custom Interaction Worker**: `InteractionWorker_Badmouthing.cs` handles the core logic of selecting a target pawn and determining outcomes based on opinion dynamics.
-- **Smart Target Selection**: Uses `GetLeastFavoritePawn` to identify the most disliked pawn in the colony for badmouthing, preventing the recipient from being the target.
-- **Gossip Scenario**: When both initiator and recipient share negative opinions about the target, they bond over shared dislike with positive thoughts.
-- **Opinion-Based Outcomes**:
-  - If recipient values the target pawn less than the initiator, the recipient is more likely to believe the badmouthing, resulting in reduced opinion of the target.
-  - If recipient values the target pawn more than the initiator, the recipient loses trust in the initiator for speaking negatively about someone they respect more.
-- **Harmony Patch Integration**: `DramaInteractionPatches.cs` patches `Pawn_InteractionsTracker.TryInteractWith` to potentially trigger badmouthing during suitable social interactions (Chitchat, DisturbingChat, Insult).
-- **Trait-Based Triggering**: Considers pawn traits that encourage or prevent badmouthing (e.g., Kind trait prevents it, Jealous/Abrasive traits encourage it).
-- **Global Play Log Enhancement**: `PlayLogEntry_Badmouthing.cs` provides detailed target pawn information in the global play log, accessible through the history tab.
-- **LLM Integration**: Generates appropriate subject text for LLM dialogue based on the specific badmouthing scenario and opinion dynamics.
-- **Drama Event Tracking**: Adds badmouthing events to the chat log for review via `ChatLogManager.AddDramaEvent`.
-
-#### Enhanced Insult System
-- **Interaction Definition**: Custom `EnhancedInsult` interaction defined in `InteractionDefs_Badmouthing.xml` with severity-based worker class and log rules.
-- **Severity-Based Mechanics**: Determines insult severity (Mild, Moderate, Severe, Violent) based on initiator's opinion of recipient.
-- **Social Fight Escalation**: Can escalate to physical social fights based on severity, mood, and recipient traits.
-- **Thought Application**: Applies different thoughts based on insult severity.
-- **Harmony Patch Integration**: `DramaInteractionPatches.cs` patches `Pawn_InteractionsTracker.TryInteractWith` to potentially trigger enhanced insults during suitable social interactions (Chitchat, DisturbingChat).
-- **Trait Recognition**: Identifies pawns that enjoy negative interactions or are likely to fight back.
-- **Custom Play Log Entry**: `PlayLogEntry_EnhancedInsult.cs` provides detailed severity and outcome information in the global play log.
-- **LLM Integration**: Generates appropriate subject text for LLM dialogue based on severity and fight outcomes.
-
-#### Strategic Backstabbing System
-- **Interaction Definition**: Custom `Backstabbing` interaction defined in `InteractionDefs_Badmouthing.xml` with strategic worker class and log rules.
-- **Follow-up Mechanism**: Triggered as a strategic follow-up to successful badmouthing/gossip interactions when the instigator identifies valuable targets (high-trust allies of the original target).
-- **Social Skill-Based Success**: Success rate depends on the difference between the instigator's and target's social skills, making the system skill-based rather than random.
-- **Catastrophic Betrayal**: Successful backstabbing causes massive opinion reversal based on original trust level - the more trusted the target was, the more devastating the betrayal (opinion can go from +80 to -100).
-- **Target Selection Logic**: Identifies the original target's "best friends" or highest-opinion allies for the strategic backstabbing attempt. When triggered from badmouthing, preserves the original target information to prevent confusion.
-- **Trait Integration**: Pawns with manipulation-related traits (manipulative, deceptive, calculating, psychopath) are more likely to attempt or succeed at backstabbing.
-- **Custom Interaction Worker**: `InteractionWorker_Backstabbing.cs` handles the core logic of strategic betrayal with social skill comparisons and opinion reversal mechanics.
-- **Custom Play Log Entry**: `PlayLogEntry_Backstabbing.cs` provides detailed information about the betrayal in the global play log.
-- **Integration with Existing Systems**: Builds on the existing badmouthing system, checking for backstabbing opportunities after successful drama interactions.
-- **LLM Integration**: Generates appropriate subject text for LLM dialogue based on the strategic nature of the betrayal and its success/failure.
-- **Settings Integration**: Includes toggle to enable/disable backstabbing and configure base chance for backstabbing attempts.
-- **Job System Integration**: Uses custom job drivers (`JobDriver_BackstabbingApproachTarget.cs`, `JobDriver_BackstabbingGatherInfo.cs`) for physical pawn movement and interaction scheduling.
-- **Target Preservation**: When backstabbing is scheduled from badmouthing, the original target information is preserved through the job system using `job.targetB` and accessed via `ScheduledTargetPawn` property to prevent target confusion.
-
-#### Backstabbing Settings
-- **Enable Backstabbing**: Toggle to enable or disable the entire backstabbing system
-- **Base Backstabbing Chance**: Configurable base chance for backstabbing attempts that can be adjusted in the mod settings
-
-#### Backstabbing Job System
-- **Custom Job Drivers**: Two specialized job drivers handle the physical aspects of backstabbing:
-  - `JobDriver_BackstabbingApproachTarget.cs`: Handles direct backstabbing attempts where the instigator approaches an ally to manipulate them against a mutual acquaintance
-  - `JobDriver_BackstabbingGatherInfo.cs`: Handles information gathering phases where the instigator gathers relationship intelligence before attempting manipulation
-- **Physical Movement**: Pawns physically move to their targets and maintain interaction even when targets move, using continuous path updating
-- **State Validation**: Comprehensive validation system ensures targets are in appropriate states for interaction (alive, conscious, not in mental states) while allowing strategic interruptions of regular activities
-- **Target Preservation**: Critical target information is preserved through the job system to prevent the "wrong target" issue where backstabbing would target the wrong pawn
-
-#### Admiration System
-- **Custom Interaction Worker**: `InteractionWorker_Admiration.cs` handles admiration mechanics based on social hierarchy and skill matching
-- **Custom Play Log Entry**: `PlayLogEntry_Admiration.cs` for proper logging with admiration type information
-- **Harmony Patch Integration**: `DramaInteractionPatches.cs` triggers admiration during suitable social interactions
-- **Settings Integration**: Toggle and configuration options in `SocialInteractionsSettings.cs` with localization support
-
-#### MakeUp/Apologizing System
-- **Custom Interaction Worker**: `InteractionWorker_MakeUp.cs` handles reconciliation mechanics including thought removal and opinion changes
-- **Custom Play Log Entry**: `PlayLogEntry_MakeUp.cs` for logging reconciliation attempts with success/failure tracking
-- **Harmony Patch Integration**: `DramaInteractionPatches.cs` triggers make-up interactions during social exchanges when negative modifiers exist
-- **Settings Integration**: Configuration options in `SocialInteractionsSettings.cs` with localization support
-
-#### Marriage Ceremony Integration
-- **Harmony Patch**: `MarriageCeremonyStart_Patch.cs` intercepts the transition from gathering to actual ceremony phase in `LordJob_Joinable_MarriageCeremony`
-- **Timing**: Triggers when the ceremony officially begins (when pawns move to their designated spots to exchange vows), not during the gathering phase
-- **Efficiency**: Uses reflection to access transition destination and adds the LLM call as a pre-action, ensuring it runs exactly once
-- **Settings Integration**: `enableMarriageCeremony` setting in `SocialInteractionsSettings.cs` with proper localization
-- **LLM Integration**: Generates appropriate subject text for LLM dialogue based on the ceremony context
-
-#### Breakup Interaction System
-- **Harmony Patch**: `InteractionWorker_Breakup_Patch.cs` intercepts the base game's breakup interaction.
-- **LLM Enhancement**: Adds AI-generated dialogue to the breakup event while preserving all original game mechanics (relationship changes, thoughts, letters, etc.).
-- **Settings Integration**: `enableBreakups` and `useLlmForBreakups` settings in `SocialInteractionsSettings.cs` to control the feature.
-- **Fallback Handling**: Maintains base game behavior when LLM features are disabled while still showing appropriate speech bubbles.
-- **Spam Prevention**: Respects the mod's spam prevention system to avoid overlapping breakups with other LLM interactions.
-- **Reflection-based Access**: Uses reflection (`AccessTools.Method`) to safely access internal RimWorld classes without breaking original functionality.
-
-#### Child Misbehavior System
-- **Comprehensive Misbehavior System**: Complete system for children engaging in various misbehavior activities based on relationship with parents/guardians and other factors
-- **Misbehavior Factor Calculation**: `ChildrenMisbehaviorManager.CalculateMisbehaviorFactor` calculates likelihood of misbehavior based on parental opinion (lower opinion = higher misbehavior), child's mood, and character traits
-- **Four Levels of Misbehavior**:
-  - Level 1 - Annoying Adults: Child approaches adults during work and asks annoying questions (triggers negative mood)
-  - Level 2 - Item Misplacement: Child takes valuable items from storage and plays with them, potentially damaging them
-  - Level 3 - Property Damage: Child damages crops by trampling (`JobDriver_ChildTrampleCrops`), breaks weapons/apparel stored inappropriately
-  - Level 4 - Dangerous Behavior: 
-    - **Weapon Play**: Child picks up and plays with weapons (`JobDriver_ChildPlayWithWeapon`). Includes logic to pick up unequipped weapons. Features a 20% chance of accidental discharge causing self-harm (10 damage, high AP).
-    - **Fire Lighting**: Child attempts to light fires in dangerous or inappropriate locations (`JobDriver_ChildLightFire`).
-- **ChildrenMisbehaviorManager.cs**: Core logic manager for misbehavior calculations, level selection, and behavior execution. Includes logic for finding suitable targets (crops, weapons, flammable objects) with configurable search radii.
-- **ChildrenMisbehaviorTracker_MapComponent.cs**: MapComponent that periodically checks for children misbehavior opportunities (every 600 ticks)
-- **Custom Job Drivers**: 
-  - `JobDriver_ChildAnnoyAdult.cs`: Annoying adults at work.
-  - `JobDriver_ChildPlayWithItem.cs`: Playing with and potentially damaging items.
-  - `JobDriver_ChildPlayWithWeapon.cs`: Dangerous weapon play with self-harm mechanics.
-  - `JobDriver_ChildTrampleCrops.cs`: Destroying crops in growing zones.
-  - `JobDriver_ChildLightFire.cs`: Lighting fires on flammable objects.
-- **Settings Integration**: `enableChildrenMisbehavior` and `baseChildrenMisbehaviorChance` settings in `SocialInteractionsSettings.cs` with localization support
-- **Trait Integration**: Considers child traits like Rebellious (+20%), Kind (-20%), Psychopath (+30%) that affect misbehavior likelihood
-- **LLM Integration**: Misbehavior activities can trigger LLM monologues or interactions based on the specific behavior
-
-### Mental State and Child Comfort System
-- **MentalState_ChildFleeInTerror.cs**: Custom mental state for children who flee in terror after taking damage, based on the TODO requirement for children to flee when taking damage
-- **Pawn_TakeDamage_Patch.cs**: Harmony patch on `ThingWithComps.PreApplyDamage` that triggers flee in terror mental state for children based on their shooting/melee skills (very low chance once skills are past 10)
-- **Dynamic Flee Chance**: Lower-skilled children have higher chance (80% base) to flee when taking damage, with chance decreasing based on combined shooting/melee skills (down to 5% minimum)
-- **Comfort Mechanics**: After fleeing, children attempt to find a parent or most liked pawn to cry to, with `JobDriver_ChildGoCryToParent.cs` handling the comfort-seeking behavior
-- **Custom Job Driver**: `JobDriver_ChildGoCryToParent.cs` creates a job where children follow their parent and attempt to comfort themselves based on parent's social skill level
-- **Thought System**: Children gain ChildCrying thought when in flee in terror state, with conditional thoughts added based on comfort success/failure
-- **Social Skill-Based Comfort**: Success of comfort attempts depends on parent's social skill level (20% to 80% success chance based on skill)
-- **Custom Thought Definitions**: New thought definitions in XML files (ChildCrying, ChildBoredom, etc.) for the child misbehavior system
-
-### Child Play Tag System
-- **New Job System**: Three new specialized job drivers for tag gameplay:
-  - `JobDriver_InviteToPlayTag.cs`: Manages the invitation process where one child asks another to play tag
-  - `JobDriver_PlayTagRunner.cs`: Handles the "it" child who runs around to different locations
-  - `JobDriver_PlayTagChaser.cs`: Manages the chasing child who follows the runner
-- **XML Definitions**: New job definitions in `1.5/Defs/JobDefs/JobDefs_Children_Tag.xml` with proper defNames (`SI_InviteToPlayTag`, `SI_PlayTagRunner`, `SI_PlayTagChaser`)
-- **Interaction Definition**: New `ChildPlayTag` interaction defined in `InteractionDefs_Children.xml` with appropriate log rules
-- **DefOf Integration**: New definitions added to `SI_InteractionDefOf.cs` and `SI_JobDefOf.cs` for type safety
-- **Misbehavior Integration**: Added as a Level 2 misbehavior option in `ChildrenMisbehaviorManager.cs`, triggered when children have sufficient misbehavior factor
-- **Gameplay Flow**: Child A invites Child B to play tag; if accepted, Child A becomes the runner and Child B becomes the chaser; runner moves to random locations while chaser follows
-- **Settings Control**: Integrated with the existing children misbehavior system settings
-
-### Child Spying System
-- **Job Driver**: `JobDriver_ChildSpyOnLovin.cs` handles children sneaking to watch other pawns engaged in intimate activities
-- **Interruption Mechanism**: Includes logic to potentially disrupt the intimate activity with configurable chance
-- **Thought System**: Adds specific thoughts for disrupted couples and the spying child
-- **LLM Integration**: Generates appropriate monologue text about what the child observed
-- **Def Integration**: Added to `SI_JobDefOf.cs` and associated with `ChildAnnoying` interaction type
-- **Misbehavior Level**: Implemented as part of Level 2 misbehavior in the children system
-- **Target Detection**: Includes logic to identify pawns engaged in both vanilla Lovin' and modded DateLovin' activities
-- **Disruption Handling**: Properly interrupts the intimate activity and sends both participants fleeing if caught
-- **Mood Effects**: Applies appropriate mood changes to all involved pawns when disrupting intimate moments
-
-### Child Building Breaking System
-- **Job Driver**: `JobDriver_ChildBreakBuilding.cs` allows children to target buildings with breakdownable components and break them
-- **Mechanics**: Uses melee attack animations to "bonk" the building for a duration, then triggers the breakdown effect
-- **Target Selection**: Finds buildings with `CompBreakdownable` component (workbenches, furniture, etc.) excluding critical infrastructure like doors and walls
-- **Def Integration**: Added as `ChildBreakBuilding` job def in `SI_JobDefOf.cs` and XML definition in `JobDefs/JobDefs_Children_BreakBuilding.xml`
-- **Misbehavior Level**: Integrated as part of Level 3 misbehavior (property damage) in `ChildrenMisbehaviorManager.cs`
-- **Feedback System**: Includes messages to the player, mood effects, LLM monologue generation, and thought memories
-- **Safety Checks**: Excludes critical infrastructure (doors, walls, vents) from being broken by children
-
-### Child Radio Leaking System
-- **Job Driver**: `JobDriver_ChildPlayWithRadio.cs` enables children to play with comms consoles with risk of leaking colony location
-- **Mechanics**: Child plays with radio for 15 seconds, then has a chance based on social skill to leak location (0 skill = 100% chance, decreasing by 9% per skill level, min 10%)
-- **Raid Trigger**: If location is leaked, schedules a raid to occur in ~1 day with warning message to the player
-- **Def Integration**: Added as `ChildPlayWithRadio` job def in `SI_JobDefOf.cs` and XML definition in `JobDefs/JobDefs_Children_Radio.xml`
-- **Misbehavior Level**: Implemented as part of Level 4 misbehavior (dangerous behavior) in `ChildrenMisbehaviorManager.cs`
-- **Target Finding**: Uses `GenClosest.ClosestThingReachable` to find available comms consoles
-- **Skill-Based Outcome**: Chance of leaking location decreases with higher social skill of the child
+### Raid Negotiation
+1. A raid spawns. `RaidNegotiationUtility.GetNegotiableRaids()` identifies eligible raids (humanlike faction, not yet in combat, assault-type lord job).
+2. Player selects a colonist and clicks the "Negotiate" gizmo (added by `Pawn_GetGizmos_Patch`).
+3. `JobDriver_HaveChatWith` detects the negotiation target and applies `SI_Negotiating` hediff for protection.
+4. `Dialog_PawnNegotiation` opens. Player interacts via LLM-generated choices or typed input.
+5. `NegotiationManager` processes each turn, determines outcomes (`POSITIVE`, `NEUTRAL`, `NEGATIVE`).
+6. On window close, outcome is applied: `LordJob_NegotiatedRaid` replaces the assault lord job.
+7. Raiders enter peaceful phases (linger → plunder via `LordToil_Plunder` → exit).
+8. On critical success, `SI_JoinRequestLetter` may offer a raider as a colonist recruit.
+9. `NegotiationCooldown_GameComponent` enforces cooldowns on the pawn and faction.
