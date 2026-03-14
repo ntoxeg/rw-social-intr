@@ -40,7 +40,6 @@ namespace SocialInteractions.Children
 
         // Track when the child is allowed to misbehave next
         private Dictionary<Pawn, int> nextAllowedMisbehaviorTick = new Dictionary<Pawn, int>();
-        private int misbehaviorCheckInterval = 3000; // Check every 3000 ticks
 
         /// <summary>
         /// Calculates the misbehavior factor for a child pawn based on parental opinion and other factors

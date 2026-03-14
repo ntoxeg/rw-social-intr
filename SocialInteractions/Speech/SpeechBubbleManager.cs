@@ -161,10 +161,10 @@ namespace SocialInteractions.Speech
                             }
                         }
 
-                        if (!hasMoreBubblesInConversation)
-                        {
-                            EndConversation(bubble.conversationId);
-                        }
+                    if (!hasMoreBubblesInConversation)
+                    {
+                        EndConversationInternal(bubble.conversationId);
+                    }
                     }
                 }
             }
@@ -199,7 +199,7 @@ namespace SocialInteractions.Speech
 
                     foreach (int convId in conversationsToRemove)
                     {
-                        EndConversation(convId);
+                        EndConversationInternal(convId);
                     }
                 }
             }
@@ -324,9 +324,17 @@ namespace SocialInteractions.Speech
 
             lock (manager.queueLock)
             {
-                manager.activeConversations.Remove(conversationId);
-                manager.activeConversationStartTimes.Remove(conversationId);
+                manager.EndConversationInternal(conversationId);
             }
+        }
+
+        /// <summary>
+        /// Core logic for ending a conversation. Caller must already hold queueLock.
+        /// </summary>
+        private void EndConversationInternal(int conversationId)
+        {
+            activeConversations.Remove(conversationId);
+            activeConversationStartTimes.Remove(conversationId);
         }
 
         public static bool IsConversationActive(int conversationId)
@@ -337,7 +345,10 @@ namespace SocialInteractions.Speech
                 return false;
             }
 
-            return manager.activeConversations.Contains(conversationId);
+            lock (manager.queueLock)
+            {
+                return manager.activeConversations.Contains(conversationId);
+            }
         }
 
         public static bool IsLlmCurrentlyBusy()
@@ -732,7 +743,15 @@ namespace SocialInteractions.Speech
         public static bool HasActiveConversations()
         {
             SpeechBubbleManager manager = Current;
-            return manager != null && manager.activeConversations.Count > 0;
+            if (manager == null)
+            {
+                return false;
+            }
+
+            lock (manager.queueLock)
+            {
+                return manager.activeConversations.Count > 0;
+            }
         }
 
         public static string FormatLlmText(string text)

@@ -118,7 +118,7 @@ namespace SocialInteractions.UI
             contentRect.yMin = contentRect.yMin + 40f;
 
             // Get chat log and update conversation groups only if needed
-            List<ChatMessage> currentChatLog = ChatLogManager.Current?.GetChatLog() ?? new List<ChatMessage>();
+            IReadOnlyList<ChatMessage> currentChatLog = ChatLogManager.Current?.GetChatLog() ?? (IReadOnlyList<ChatMessage>)new List<ChatMessage>();
 
             // Check if the chat log has changed since last time
             if (currentChatLog.Count != lastChatLog.Count)
@@ -202,7 +202,7 @@ namespace SocialInteractions.UI
             }
         }
 
-        private void GroupMessages(List<ChatMessage> chatLog)
+        private void GroupMessages(IReadOnlyList<ChatMessage> chatLog)
         {
             conversationGroups.Clear();
 

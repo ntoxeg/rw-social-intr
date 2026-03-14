@@ -158,6 +158,7 @@ Current event: [pawn1] [subject]
                 Scribe_Values.Look(ref llmRepetitionPenalty, "llmRepetitionPenalty", 1.0f);
                 Scribe_Values.Look(ref ollamaModelName, "ollamaModelName", "llama3.2");
                 Scribe_Values.Look(ref lmStudioModelName, "lmStudioModelName", "gemma-2-2b-it");
+                Scribe_Values.Look(ref openAiModelName, "openAiModelName", "gpt-3.5-turbo");
                 Scribe_Values.Look(ref geminiModelName, "geminiModelName", "gemini-2.5-flash");
                 Scribe_Values.Look(ref qwenModelName, "qwenModelName", "qwen-max");
                 Scribe_Values.Look(ref deepseekModelName, "deepseekModelName", "deepseek-chat");

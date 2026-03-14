@@ -113,7 +113,7 @@ namespace SocialInteractions.UI
             AddMessage(chatMessage);
         }
 
-        public List<ChatMessage> GetChatLog()
+        public IReadOnlyList<ChatMessage> GetChatLog()
         {
             // Filter out combat messages
             List<ChatMessage> filteredLog = new List<ChatMessage>();

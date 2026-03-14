@@ -19,7 +19,7 @@ namespace SocialInteractions.Dating
         public override void ExposeData()
         {
             base.ExposeData();
-            DatingManager.Current.ExposeData();
+            // DatingManager is now a GameComponent — engine calls its ExposeData() automatically.
             Scribe_Values.Look(ref lastCleanupTick, "lastCleanupTick", 0);
         }
 
