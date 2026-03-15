@@ -6,7 +6,6 @@ using System.Linq;
 using System;
 using Verse.Utility;
 using SocialInteractions;
-using SocialInteractions.Speech;
 using SocialInteractions.DefOfs;
 
 namespace SocialInteractions.Dating
@@ -155,7 +154,7 @@ namespace SocialInteractions.Dating
                     SLog.Message(string.Format("[SocialInteractions] JobDriver_GoOnDate: Recipient {0} is no longer available (Downed/Drafted/OnDate), cancelling.", recipient.LabelShort));
                     Find.PlayLog.Add(new PlayLogEntry_Interaction(DefDatabase<InteractionDef>.GetNamed("DateRejected"), this.pawn, this.Partner, null));
                     DatingManager.Current.RejectDate(this.pawn, this.Partner);
-                    SocialInteractions.HandleNonStoppingInteraction(this.pawn, this.Partner, SI_InteractionDefOf.DateRejected, SpeechBubbleManager.GetDateRejectionSubject(this.pawn, this.Partner));
+                    SocialInteractions.HandleNonStoppingInteraction(this.pawn, this.Partner, SI_InteractionDefOf.DateRejected, Services.Speech?.GetDateRejectionSubject(this.pawn, this.Partner) ?? "");
                     this.EndJobWith(JobCondition.Incompletable);
                     return;
                 }
@@ -201,7 +200,7 @@ namespace SocialInteractions.Dating
                 {
                     Find.PlayLog.Add(new PlayLogEntry_Interaction(DefDatabase<InteractionDef>.GetNamed("DateRejected"), this.pawn, this.Partner, null));
                     DatingManager.Current.RejectDate(this.pawn, this.Partner);
-                    SocialInteractions.HandleNonStoppingInteraction(this.pawn, this.Partner, SI_InteractionDefOf.DateRejected, SpeechBubbleManager.GetDateRejectionSubject(this.pawn, this.Partner));
+                    SocialInteractions.HandleNonStoppingInteraction(this.pawn, this.Partner, SI_InteractionDefOf.DateRejected, Services.Speech?.GetDateRejectionSubject(this.pawn, this.Partner) ?? "");
                     this.EndJobWith(JobCondition.Incompletable);
                 }
             };
@@ -247,7 +246,7 @@ namespace SocialInteractions.Dating
                 }
                 else
                 {
-                    dateSubject = SpeechBubbleManager.GetDateSubject(this.pawn, this.Partner, joyJob.targetA);
+                    dateSubject = Services.Speech?.GetDateSubject(this.pawn, this.Partner, joyJob.targetA) ?? "";
                 }
 
 

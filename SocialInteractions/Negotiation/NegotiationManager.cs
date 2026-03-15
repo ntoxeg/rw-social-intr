@@ -12,8 +12,6 @@ using Verse.Sound;
 using Verse.AI.Group;
 using SocialInteractions.Api;
 using SocialInteractions;
-using SocialInteractions.Speech;
-using SocialInteractions.UI;
 using SocialInteractions.DefOfs;
 
 namespace SocialInteractions.Negotiation
@@ -962,11 +960,11 @@ namespace SocialInteractions.Negotiation
                     // Log to ChatLogManager
                     if (conversationId < 0)
                     {
-                        conversationId = SpeechBubbleManager.StartConversation();
+                        conversationId = Services.Speech?.StartConversation() ?? -1;
                     }
                     string fallbackText = string.Format("{0} negotiates with {1}.", speakerPawn.Name.ToStringShort, recipientPawn.Name.ToStringShort);
                     string loggedText = speaker + ": " + text;
-                    ChatLogManager.Current?.AddMessage(new ChatMessage(speakerPawn, recipientPawn, loggedText, MessageType.LLMChat, conversationId, Color.white, fallbackText, loggedText));
+                    Services.ChatLog?.AddMessage(new ChatMessage(speakerPawn, recipientPawn, loggedText, MessageType.LLMChat, conversationId, Color.white, fallbackText, loggedText));
 
                     SLog.Message("[Negotiation] Added dialogue: " + speaker + ": " + text.Substring(0, Math.Min(50, text.Length)));
                 }
@@ -983,7 +981,7 @@ namespace SocialInteractions.Negotiation
         {
             foreach (var line in batch)
             {
-                TTSManager.Current?.Speak(line.Text, line.Speaker, SocialInteractions.Settings.Api.ttsSpeed, (int)SocialInteractions.Settings.Api.ttsVolume);
+                global::SocialInteractions.Speech.TTSManager.Current?.Speak(line.Text, line.Speaker, SocialInteractions.Settings.Api.ttsSpeed, (int)SocialInteractions.Settings.Api.ttsVolume);
                 // Stagger requests by 200ms (realtime) to force FIFO processing on server/network
                 yield return new WaitForSecondsRealtime(0.5f);
             }
@@ -1193,7 +1191,7 @@ namespace SocialInteractions.Negotiation
                 for (int i = startIndex; i < lastDialogueLines.Count; i++)
                 {
                     DialogueLine line = lastDialogueLines[i];
-                    totalDuration += SpeechBubbleManager.EstimateReadingTime(line.Text);
+                    totalDuration += Services.Speech?.EstimateReadingTime(line.Text) ?? 1f;
                 }
 
                 // Initiate delayed close
@@ -1204,7 +1202,7 @@ namespace SocialInteractions.Negotiation
             if (conversationId != -1)
             {
                 SLog.Message("[Negotiation] Ending conversation ID: " + conversationId);
-                SpeechBubbleManager.EndConversation(conversationId);
+                Services.Speech?.EndConversation(conversationId);
             }
         }
 

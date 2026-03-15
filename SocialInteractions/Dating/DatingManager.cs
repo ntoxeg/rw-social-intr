@@ -6,7 +6,6 @@ using System.Linq;
 using Verse.AI;
 using UnityEngine;
 using SocialInteractions;
-using SocialInteractions.Speech;
 using SocialInteractions.DefOfs;
 
 namespace SocialInteractions.Dating
@@ -59,6 +58,7 @@ namespace SocialInteractions.Dating
 
         public DatingManager(Game game)
         {
+            Services.GetDatePartner = (pawn) => DatingManager.Current?.GetPartnerOfDateWith(pawn);
         }
         private List<Date> dates = new List<Date>();
         private readonly object datesLock = new object();
@@ -735,7 +735,7 @@ namespace SocialInteractions.Dating
 
                         // Trigger LLM interaction for bad date
                         SocialInteractions.HandleNonStoppingInteraction(date.Initiator, date.Partner, SI_InteractionDefOf.DateLovin,
-                            SpeechBubbleManager.GetDateWentBadlySubject(date.Initiator, date.Partner), true);
+                            Services.Speech?.GetDateWentBadlySubject(date.Initiator, date.Partner) ?? "", true);
 
                         // End the date without giving positive buffs
                         EndDate(date);
@@ -796,7 +796,7 @@ namespace SocialInteractions.Dating
                     if (SocialInteractions.Settings.Features.enableLovin && date.Initiator != null && date.Partner != null && date.ReachedLovinStage)
                     {
                         SocialInteractions.HandleNonStoppingInteraction(date.Initiator, date.Partner, SI_InteractionDefOf.DateLovin,
-                            SpeechBubbleManager.GetPostDateLovinSubject(date.Initiator, date.Partner), true);
+                            Services.Speech?.GetPostDateLovinSubject(date.Initiator, date.Partner) ?? "", true);
                     }
 
                     // Apply positive social thoughts for successful date completion (for both lovin' and non-lovin' dates)
@@ -923,7 +923,7 @@ namespace SocialInteractions.Dating
                 // Only if lovin interactions are enabled in settings
                 if (SocialInteractions.Settings.Features.enableLovin)
                 {
-                    SocialInteractions.HandleNonStoppingInteraction(date.Initiator, date.Partner, SI_InteractionDefOf.DateLovin, SpeechBubbleManager.GetDateLovinSubject(date.Initiator, date.Partner), true);
+                    SocialInteractions.HandleNonStoppingInteraction(date.Initiator, date.Partner, SI_InteractionDefOf.DateLovin, Services.Speech?.GetDateLovinSubject(date.Initiator, date.Partner) ?? "", true);
                 }
             }
             else

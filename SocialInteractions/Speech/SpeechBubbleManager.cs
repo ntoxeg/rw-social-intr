@@ -6,12 +6,11 @@ using System;
 using System.Linq;
 using System.Text.RegularExpressions; // Add this using directive
 using SocialInteractions;
-using SocialInteractions.UI;
 using SocialInteractions.DefOfs;
 
 namespace SocialInteractions.Speech
 {
-    public class SpeechBubbleManager : GameComponent
+    public class SpeechBubbleManager : GameComponent, ISpeechService
     {
         public static SpeechBubbleManager Current => Verse.Current.Game?.GetComponent<SpeechBubbleManager>();
 
@@ -41,9 +40,10 @@ namespace SocialInteractions.Speech
             pauseStartTime = -1f; // Initialize pause tracking
             currentConversationId = 0;
             activeConversations.Clear();
+            Services.Speech = this;
 
             // Clear the chat log on game load
-            ChatLogManager.Current?.ClearChatLog();
+            Services.ChatLog?.ClearChatLog();
 
             // Reset TTS state on game load
             TTSManager.Current?.Initialize();
@@ -458,7 +458,7 @@ namespace SocialInteractions.Speech
             {
                 fallbackText = string.Format("{0} talks with {1}.", speaker.LabelShort, recipient.LabelShort);
             }
-            ChatLogManager.Current?.AddMessage(new ChatMessage(speaker, recipient, rawMessage, messageType, conversationId, messageColor, fallbackText, formattedMessage));
+            Services.ChatLog?.AddMessage(new ChatMessage(speaker, recipient, rawMessage, messageType, conversationId, messageColor, fallbackText, formattedMessage));
 
             SpeechBubbleManager manager = Current;
             if (manager == null)
@@ -484,7 +484,7 @@ namespace SocialInteractions.Speech
         {
             string wrappedMessage = SocialInteractions.WrapText(text, SocialInteractions.Settings.Display.wordsPerLineLimit);
             // Add to chat log with fallback text
-            ChatLogManager.Current?.AddMessage(new ChatMessage(speaker, null, text, MessageType.LLMChat, conversationId, Color.grey, text, text));
+            Services.ChatLog?.AddMessage(new ChatMessage(speaker, null, text, MessageType.LLMChat, conversationId, Color.grey, text, text));
 
             SpeechBubbleManager manager = Current;
             if (manager == null)
@@ -512,7 +512,7 @@ namespace SocialInteractions.Speech
             string fallbackText = string.IsNullOrEmpty(subject)
                 ? string.Format("{0} thinks to themselves.", speaker.LabelShort)
                 : string.Format("{0} ponders about {1}", speaker.LabelShort, subject);
-            ChatLogManager.Current?.AddMessage(new ChatMessage(speaker, null, text, MessageType.LLMChat, conversationId, color ?? Color.grey, fallbackText, text));
+            Services.ChatLog?.AddMessage(new ChatMessage(speaker, null, text, MessageType.LLMChat, conversationId, color ?? Color.grey, fallbackText, text));
 
 
             SpeechBubbleManager manager = Current;
@@ -594,7 +594,7 @@ namespace SocialInteractions.Speech
             // Add to chat log
             Color messageColor = isHighPriority ? new Color(1.0f, 0.6f, 0.2f) : Color.white; // Orange for high priority, white for normal
             string fallbackText = string.Format("{0} talks with {1}.", speaker.LabelShort, recipient.LabelShort);
-            ChatLogManager.Current?.AddMessage(new ChatMessage(speaker, recipient, rawMessage, MessageType.LLMChat, -1, messageColor, fallbackText, formattedMessage));
+            Services.ChatLog?.AddMessage(new ChatMessage(speaker, recipient, rawMessage, MessageType.LLMChat, -1, messageColor, fallbackText, formattedMessage));
 
             float endTime;
             if (manager.pawnBubbleEndTimes.TryGetValue(speaker, out endTime) && Time.time < endTime)
@@ -871,6 +871,46 @@ namespace SocialInteractions.Speech
                 TTSManager.Current?.Speak(cleanText, speaker, SocialInteractions.Settings.Api.ttsSpeed, (int)SocialInteractions.Settings.Api.ttsVolume);
             }
         }
+
+        #region ISpeechService explicit implementations
+
+        int ISpeechService.StartConversation() => SpeechBubbleManager.StartConversation();
+
+        int ISpeechService.GetNextConversationId() => SpeechBubbleManager.GetNextConversationId();
+
+        void ISpeechService.EndConversation(int conversationId) => SpeechBubbleManager.EndConversation(conversationId);
+
+        bool ISpeechService.IsConversationActive(int conversationId) => SpeechBubbleManager.IsConversationActive(conversationId);
+
+        bool ISpeechService.IsLlmCurrentlyBusy() => SpeechBubbleManager.IsLlmCurrentlyBusy();
+
+        bool ISpeechService.HasPendingSpeechBubbles(int conversationId) => SpeechBubbleManager.HasPendingSpeechBubbles(conversationId);
+
+        bool ISpeechService.HasPendingSpeechBubblesForPawn(Pawn pawn) => SpeechBubbleManager.HasPendingSpeechBubblesForPawn(pawn);
+
+        bool ISpeechService.HasActiveConversations() => SpeechBubbleManager.HasActiveConversations();
+
+        void ISpeechService.ClearQueues() => SpeechBubbleManager.ClearQueues();
+
+        void ISpeechService.EnqueueJob(Action jobAction) => SpeechBubbleManager.EnqueueJob(jobAction);
+
+        void ISpeechService.EnqueueInstant(Pawn speaker, string text, float duration, Color? color, bool useCustomMote) => SpeechBubbleManager.EnqueueInstant(speaker, text, duration, color, useCustomMote);
+
+        float ISpeechService.EstimateReadingTime(string text) => SpeechBubbleManager.EstimateReadingTime(text);
+
+        string ISpeechService.GetDateSubject(Pawn initiator, Pawn recipient, LocalTargetInfo joySpot) => SpeechBubbleManager.GetDateSubject(initiator, recipient, joySpot);
+
+        string ISpeechService.GetDateRejectionSubject(Pawn initiator, Pawn recipient) => SpeechBubbleManager.GetDateRejectionSubject(initiator, recipient);
+
+        string ISpeechService.GetDateEndSubject(Pawn initiator, Pawn recipient) => SpeechBubbleManager.GetDateEndSubject(initiator, recipient);
+
+        string ISpeechService.GetDateLovinSubject(Pawn initiator, Pawn recipient) => SpeechBubbleManager.GetDateLovinSubject(initiator, recipient);
+
+        string ISpeechService.GetPostDateLovinSubject(Pawn initiator, Pawn recipient) => SpeechBubbleManager.GetPostDateLovinSubject(initiator, recipient);
+
+        string ISpeechService.GetDateWentBadlySubject(Pawn initiator, Pawn recipient) => SpeechBubbleManager.GetDateWentBadlySubject(initiator, recipient);
+
+        #endregion
     }
 
     public class SpeechBubble

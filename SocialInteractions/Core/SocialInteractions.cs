@@ -41,6 +41,9 @@ namespace SocialInteractions
 
         static SocialInteractions()
         {
+            // Initialize logging before anything else
+            SLog.Logger = new VerseLogger(() => Settings?.Features.verboseLogging ?? false);
+
             var harmony = new Harmony("com.gemini.socialinteractions");
             harmony.PatchAll();
 

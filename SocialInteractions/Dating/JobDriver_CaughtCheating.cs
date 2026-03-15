@@ -5,7 +5,6 @@ using System.Collections.Generic;
 using UnityEngine; // Added for Texture2D
 using System; // Added for Exception
 using SocialInteractions;
-using SocialInteractions.Speech;
 
 namespace SocialInteractions.Dating
 {
@@ -110,7 +109,7 @@ namespace SocialInteractions.Dating
             {
                 if (this.conversationId != -1)
                 {
-                    SpeechBubbleManager.EndConversation(this.conversationId);
+                    Services.Speech?.EndConversation(this.conversationId);
                     SLog.Message(string.Format("[SocialInteractions] JobDriver_CaughtCheating: Ended conversation ID: {0} via finish action.", this.conversationId));
                     this.conversationId = -1;
                 }
@@ -222,7 +221,7 @@ namespace SocialInteractions.Dating
                         // Check if this conversation is still active or has pending speech bubbles
                         if (this.conversationId != -1)
                         {
-                            isConversationFinished = !SpeechBubbleManager.IsConversationActive(this.conversationId) && !SpeechBubbleManager.HasPendingSpeechBubbles(this.conversationId);
+                            isConversationFinished = !(Services.Speech?.IsConversationActive(this.conversationId) ?? false) && !(Services.Speech?.HasPendingSpeechBubbles(this.conversationId) ?? false);
                         }
                     }
                     catch (Exception ex)
@@ -257,7 +256,7 @@ namespace SocialInteractions.Dating
                         if (this.conversationId != -1)
                         {
                             SLog.Message(string.Format("[SocialInteractions] JobDriver_CaughtCheating: Ending 3p conversation ID: {0}", this.conversationId));
-                            SpeechBubbleManager.EndConversation(this.conversationId);
+                            Services.Speech?.EndConversation(this.conversationId);
                             this.conversationId = -1;
                         }
 
@@ -336,7 +335,7 @@ namespace SocialInteractions.Dating
                         // Check if this conversation is still active or has pending speech bubbles
                         if (conversationId != -1)
                         {
-                            isConversationFinished = !SpeechBubbleManager.IsConversationActive(conversationId) && !SpeechBubbleManager.HasPendingSpeechBubbles(conversationId);
+                            isConversationFinished = !(Services.Speech?.IsConversationActive(conversationId) ?? false) && !(Services.Speech?.HasPendingSpeechBubbles(conversationId) ?? false);
                         }
                     }
                     catch (Exception ex)
@@ -417,7 +416,7 @@ namespace SocialInteractions.Dating
                             if (this.conversationId != -1)
                             {
                                 SLog.Message(string.Format("[SocialInteractions] JobDriver_CaughtCheating: Ending conversation ID: {0}", this.conversationId));
-                                SpeechBubbleManager.EndConversation(this.conversationId);
+                                Services.Speech?.EndConversation(this.conversationId);
                                 this.conversationId = -1;
                             }
                             // End the job and let the mental state handle the fighting
@@ -431,7 +430,7 @@ namespace SocialInteractions.Dating
                             if (this.conversationId != -1)
                             {
                                 SLog.Message(string.Format("[SocialInteractions] JobDriver_CaughtCheating: Ending conversation ID: {0}", this.conversationId));
-                                SpeechBubbleManager.EndConversation(this.conversationId);
+                                Services.Speech?.EndConversation(this.conversationId);
                                 this.conversationId = -1;
                             }
                             pawn.jobs.EndCurrentJob(JobCondition.Succeeded);

@@ -4,7 +4,6 @@ using Verse;
 using System;
 using UnityEngine;
 using SocialInteractions;
-using SocialInteractions.Speech;
 
 namespace SocialInteractions.Combat
 {
@@ -391,7 +390,7 @@ namespace SocialInteractions.Combat
             {
                 string taunt = CombatTaunts.MeleeAttackingTaunts.RandomElement();
                 float duration = SocialInteractions.EstimateReadingTime(taunt);
-                SpeechBubbleManager.EnqueueInstant(__instance.CasterPawn, taunt, duration, null, false); // Use standard mote for combat taunts
+                Services.Speech?.EnqueueInstant(__instance.CasterPawn, taunt, duration, null, false); // Use standard mote for combat taunts
             }
         }
     }
@@ -406,7 +405,7 @@ namespace SocialInteractions.Combat
                 Pawn casterPawn = __instance.CasterPawn;
                 string taunt = CombatTaunts.AttackingTaunts.RandomElement();
                 float duration = SocialInteractions.EstimateReadingTime(taunt);
-                SpeechBubbleManager.EnqueueInstant(casterPawn, taunt, duration, null, false); // Use standard mote for combat taunts
+                Services.Speech?.EnqueueInstant(casterPawn, taunt, duration, null, false); // Use standard mote for combat taunts
             }
         }
     }
@@ -429,7 +428,7 @@ namespace SocialInteractions.Combat
                 {
                     string complaint = CombatTaunts.GettingHitComplaints.RandomElement();
                     float duration = SocialInteractions.EstimateReadingTime(complaint);
-                    SpeechBubbleManager.EnqueueInstant(pawn, complaint, duration, Color.yellow, false); // Use standard mote for combat taunts
+                    Services.Speech?.EnqueueInstant(pawn, complaint, duration, Color.yellow, false); // Use standard mote for combat taunts
                 }
             }
         }
@@ -446,7 +445,7 @@ namespace SocialInteractions.Combat
             {
                 string callForHelp = CombatTaunts.DownedCallsForHelp.RandomElement();
                 float duration = SocialInteractions.EstimateReadingTime(callForHelp);
-                SpeechBubbleManager.EnqueueInstant(pawn, callForHelp, duration, Color.red, false); // Use standard mote for combat taunts
+                Services.Speech?.EnqueueInstant(pawn, callForHelp, duration, Color.red, false); // Use standard mote for combat taunts
             }
         }
     }
