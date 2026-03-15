@@ -48,7 +48,7 @@ SocialInteractions/
 ├── Children/               # Child misbehavior system (manager, tracker, job drivers, mental states)
 ├── Combat/                 # Combat taunt patches
 ├── Components/             # GameComponents and utility classes
-├── Core/                   # Entry point, settings, logging, assembly info
+├── Core/                   # Entry point, settings, logging, service interfaces, service locator
 ├── Dating/                 # Dating system (manager, trackers, job drivers, joy givers, thoughts)
 ├── DefOfs/                 # DefOf static references (jobs, hediffs, interactions, traits, etc.)
 ├── Defs/                   # Non-versioned defs (main tabs, TTS mute)
@@ -88,8 +88,34 @@ SocialInteractions/
 - **Multi-API Support**: Configuration options for different LLM API types with their specific settings.
 
 #### `SLog.cs`
-- **Static class** providing a wrapper around `Verse.Log` with a verbosity toggle based on mod settings.
-- **Conditional Logging**: Only outputs messages when verbose logging is enabled in the mod settings.
+- **Static logging facade** that delegates to an injected `IModLogger` instance.
+- When `Logger` is `null` (e.g. in unit tests before setup), all calls are silent no-ops.
+- Production code sets `SLog.Logger = new VerseLogger(...)` in the static constructor of `SocialInteractions.cs`.
+
+#### `IModLogger.cs`
+- **Interface** with `Message(string)`, `Warning(string)`, and `Error(string)` methods.
+- Allows test code to substitute `TestLogger` or `NullLogger` without a game runtime.
+
+#### `VerseLogger.cs`
+- **Production implementation** of `IModLogger`; wraps `Verse.Log`.
+- Accepts a `Func<bool>` verbosity predicate so verbose-only messages are gated by mod settings.
+
+#### `ISpeechService.cs`
+- **Interface** abstracting all `SpeechBubbleManager` capabilities needed by other subsystems.
+- Covers conversation lifecycle (`StartConversation`, `EndConversation`, `IsConversationActive`), bubble queuing (`Enqueue`, `EnqueueInstant`), state queries, and date subject helpers.
+
+#### `IChatLog.cs`
+- **Interface** abstracting `ChatLogManager` for callers that only need to post messages.
+- Method: `AddMessage(ChatMessage)` and `ClearChatLog()`.
+
+#### `ChatMessage.cs`
+- **Data transfer object** (previously defined inside `ChatLogManager.cs` in the `UI` namespace).
+- Moved to the `SocialInteractions` (Core) namespace to break lateral dependencies from `Speech` and `Negotiation` into `UI`.
+- Includes `MessageType` enum (`LLMChat`, `GameEvent`, `DateEvent`, `CombatEvent`, `DramaEvent`) and `GetFormattedMessage()`.
+
+#### `Services.cs`
+- **Static service locator** exposing `ISpeechService Speech`, `IChatLog ChatLog`, and `Func<Pawn, Pawn> GetDatePartner`.
+- Game components assign themselves on construction; subsystems reference the interface rather than the concrete type, eliminating lateral namespace coupling.
 
 #### `AssemblyInfo.cs`
 - Standard assembly metadata for the mod DLL.
@@ -102,14 +128,21 @@ A clean abstraction layer for communicating with multiple LLM providers. Uses an
 - **Interface** defining the contract for all LLM clients.
 - **Key Method**: `GenerateText()` — async method accepting prompt, max length, temperature, stop sequences, and sampling parameters (XTC, top-k, top-p, min-p, repetition penalty).
 
+#### `LlmClientConfig.cs`
+- **Plain data object (POCO)** capturing LLM sampling parameters at client construction time.
+- Properties mirror the `ApiSettings` fields: `MaxTokens`, `Temperature`, `TopP`, `TopK`, `MinP`, `RepetitionPenalty`, `EnableXtcSampling`, `DisableThinking`, `DefaultStopSequences`.
+- `LlmClientConfig.FromSettings(settings)` is the only place that reads the global settings singleton; clients receive the config object and never touch `SocialInteractions.Settings` directly, making them unit-testable without a game runtime.
+
 #### `LlmClientBase.cs`
 - **Abstract base class** implementing `ILlmClient`.
+- Accepts a `LlmClientConfig` (defaulting to `new LlmClientConfig()`) and exposes it as the protected `Config` property.
 - **Shared Infrastructure**: HTTP client management, JSON serialization/deserialization, error handling, response cleaning (removes thinking tags).
 - **Template Method Pattern**: Subclasses implement `BuildRequestBody()` and `ExtractText()` for API-specific formats.
-- **Utility Methods**: `BuildStopSequenceList()`, `CleanChatResponse()`, `IsValidHeaderValue()`.
+- **Utility Methods**: `BuildStopSequenceList()` (reads `Config.DefaultStopSequences`), `CleanChatResponse()`, `IsValidHeaderValue()`.
 
 #### `LlmClientFactory.cs`
 - **Factory class** that creates the appropriate API client based on `LlmApiType` setting.
+- Constructs a single `LlmClientConfig.FromSettings(settings)` and passes it to every client constructor.
 - **Supported Types**: KoboldCpp, Ollama, LMStudio, OpenAI, Gemini, Qwen, Deepseek, Grok, Claude, Player2.
 - **Player2 Heartbeat**: Special `UpdatePlayer2Heartbeat()` method for health/usage tracking.
 
@@ -131,13 +164,13 @@ A clean abstraction layer for communicating with multiple LLM providers. Uses an
 ### Speech/ — Speech Bubbles, TTS, and Voice Management
 
 #### `SpeechBubbleManager.cs`
-- **GameComponent** managing the display and queuing of speech bubbles.
+- **GameComponent** managing the display and queuing of speech bubbles. Implements **`ISpeechService`** and registers itself as `Services.Speech` on construction.
 - **Queuing System**: Ensures sequential display of multi-line LLM dialogue.
 - **Spam/Busy Management**: Prevents new LLM interactions from firing while one is already in progress, falling back to default bubbles.
-- **Threading**: Uses locks to safely manage shared queues (`speechBubbleQueue`, `pendingJobs`) across asynchronous LLM calls and the main game thread.
+- **Threading**: Uses locks to safely manage shared queues (`speechBubbleQueue`, `pendingJobs`) across asynchronous LLM calls and the main game thread. Reads and mutations of `activeConversations` are both performed under `queueLock`.
 - **Display Methods**: `Enqueue` (for sequential), `EnqueueInstant` (for immediate, e.g., taunts), `ShowDefaultBubble` (for non-LLM summaries).
-- **Conversation Management**: Tracks conversation IDs and active conversations to prevent overlapping dialogues.
-- **Chat Log Integration**: Integrates with `ChatLogManager` to store all interactions for later review.
+- **Conversation Management**: Tracks conversation IDs and active conversations to prevent overlapping dialogues. `EndConversationInternal()` is called directly from `GameComponentTick` to avoid redundant `Current` lookups.
+- **Chat Log Integration**: Posts to `Services.ChatLog` (via `IChatLog`) instead of referencing `ChatLogManager` directly.
 - **Efficiency System**: Implements scheduled unlock timing to optimize LLM request handling with `ScheduleUnlock` method.
 - **Animal Support**: Includes fallback logic for non-humanlike targets (animals, mechs) to bypass UI windows and use default bubble-only mode.
 
@@ -348,9 +381,9 @@ A complete negotiation pipeline: detection → dialogue → outcome application 
 ### UI/ — User Interface
 
 #### `ChatLogManager.cs`
-- **Static class** managing storage and retrieval of all chat messages.
-- **ChatMessage Class**: Speaker, recipient, timestamp, type, formatting.
-- **Message Types**: LLMChat, GameEvent, DateEvent, CombatEvent for filtering.
+- **GameComponent** managing storage and retrieval of all chat messages. Implements **`IChatLog`** and registers itself as `Services.ChatLog` on construction.
+- `ChatMessage` and `MessageType` have been moved to `SocialInteractions` (Core); only the window and manager logic remain in this namespace.
+- `GetChatLog()` returns `IReadOnlyList<ChatMessage>` to communicate immutability intent at the API boundary.
 
 #### `ChatLogTabWindow.cs`
 - **Main tab window** for displaying chat logs with conversation grouping, search functionality, and message caching.
@@ -387,7 +420,7 @@ A complete negotiation pipeline: detection → dialogue → outcome application 
 ### Combat/ — Combat Taunts
 
 #### `CombatPatches.cs`
-- Patches various combat methods (`CheckMeleeAttackAt`, `TakeDamage`, etc.) to trigger combat taunts and complaints via `SpeechBubbleManager.EnqueueInstant`.
+- Patches various combat methods (`CheckMeleeAttackAt`, `TakeDamage`, etc.) to trigger combat taunts and complaints via `Services.Speech?.EnqueueInstant`.
 - Visual differentiation from regular dialogue.
 
 ## Harmony Patches
