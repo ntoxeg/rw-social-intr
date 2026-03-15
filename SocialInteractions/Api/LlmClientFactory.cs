@@ -21,28 +21,30 @@ namespace SocialInteractions.Api
                 throw new ArgumentNullException("settings");
             }
 
+            var config = LlmClientConfig.FromSettings(settings);
+
             switch (apiType)
             {
                 case LlmApiType.KoboldCpp:
-                    return new KoboldApiClient(settings.Api.llmApiUrl, settings.Api.llmApiKey);
+                    return new KoboldApiClient(settings.Api.llmApiUrl, settings.Api.llmApiKey, config);
                 case LlmApiType.Ollama:
-                    return new OllamaApiClient(settings.Api.llmApiUrl, settings.Api.ollamaModelName);
+                    return new OllamaApiClient(settings.Api.llmApiUrl, settings.Api.ollamaModelName, config);
                 case LlmApiType.LMStudio:
-                    return new LMStudioApiClient(settings.Api.llmApiUrl, settings.Api.lmStudioModelName);
+                    return new LMStudioApiClient(settings.Api.llmApiUrl, settings.Api.lmStudioModelName, config);
                 case LlmApiType.OpenAI:
-                    return new OpenAiApiClient(settings.Api.llmApiUrl, settings.Api.openAiModelName, settings.Api.llmApiKey);
+                    return new OpenAiApiClient(settings.Api.llmApiUrl, settings.Api.openAiModelName, settings.Api.llmApiKey, config);
                 case LlmApiType.Gemini:
-                    return new GeminiApiClient(settings.Api.llmApiUrl, settings.Api.llmApiKey);
+                    return new GeminiApiClient(settings.Api.llmApiUrl, settings.Api.llmApiKey, config);
                 case LlmApiType.Qwen:
-                    return new QwenApiClient(settings.Api.llmApiUrl, settings.Api.qwenModelName, settings.Api.llmApiKey);
+                    return new QwenApiClient(settings.Api.llmApiUrl, settings.Api.qwenModelName, settings.Api.llmApiKey, config);
                 case LlmApiType.Deepseek:
-                    return new DeepseekApiClient(settings.Api.llmApiUrl, settings.Api.deepseekModelName, settings.Api.llmApiKey);
+                    return new DeepseekApiClient(settings.Api.llmApiUrl, settings.Api.deepseekModelName, settings.Api.llmApiKey, config);
                 case LlmApiType.Grok:
-                    return new GrokApiClient(settings.Api.llmApiUrl, settings.Api.grokModelName, settings.Api.llmApiKey);
+                    return new GrokApiClient(settings.Api.llmApiUrl, settings.Api.grokModelName, settings.Api.llmApiKey, config);
                 case LlmApiType.Claude:
-                    return new ClaudeApiClient(settings.Api.llmApiUrl, settings.Api.claudeModelName, settings.Api.llmApiKey);
+                    return new ClaudeApiClient(settings.Api.llmApiUrl, settings.Api.claudeModelName, settings.Api.llmApiKey, config);
                 case LlmApiType.Player2:
-                    return new Player2ApiClient(settings.Api.llmApiUrl, settings.Api.player2ModelName, settings.Api.llmApiKey, settings.Api.player2GameClientId);
+                    return new Player2ApiClient(settings.Api.llmApiUrl, settings.Api.player2ModelName, settings.Api.llmApiKey, settings.Api.player2GameClientId, config);
                 default:
                     throw new ArgumentOutOfRangeException("apiType", apiType, "Unknown API type");
             }

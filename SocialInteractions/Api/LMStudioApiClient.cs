@@ -133,12 +133,12 @@ namespace SocialInteractions.Api
 
         public override string Name => "LMStudio";
 
-        public LMStudioApiClient(string apiUrl, string modelName) : base(apiUrl)
+        public LMStudioApiClient(string apiUrl, string modelName, LlmClientConfig config = null) : base(apiUrl, config)
         {
             _modelName = modelName;
         }
 
-        private static bool UseChatCompletion => SocialInteractions.Settings != null && SocialInteractions.Settings.Api.forceChatCompletion;
+        private bool UseChatCompletion => Config.ForceChatCompletion;
 
         protected override object BuildRequestBody(string prompt, int? maxLength, float? temperature, List<string> stopSequence, bool? enableXtcSampling, int? topK, float? topP, float? minP, float? repetitionPenalty)
         {
@@ -147,12 +147,12 @@ namespace SocialInteractions.Api
                 var chatRequest = new LMStudioChatRequest
                 {
                     Model = _modelName,
-                    Temperature = temperature ?? SocialInteractions.Settings.Api.llmTemperature,
-                    MaxTokens = maxLength ?? SocialInteractions.Settings.Api.llmMaxTokens,
-                    TopK = topK ?? (SocialInteractions.Settings.Api.llmTopK > 0 ? (int?)SocialInteractions.Settings.Api.llmTopK : null),
-                    TopP = topP ?? (SocialInteractions.Settings.Api.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.Api.llmTopP : null),
-                    MinP = minP ?? (SocialInteractions.Settings.Api.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.Api.llmMinP : null),
-                    RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.Api.llmRepetitionPenalty : null),
+                    Temperature = temperature ?? Config.Temperature,
+                    MaxTokens = maxLength ?? Config.MaxTokens,
+                    TopK = topK ?? (Config.TopK > 0 ? (int?)Config.TopK : null),
+                    TopP = topP ?? (Config.TopP < 1.0f ? (float?)Config.TopP : null),
+                    MinP = minP ?? (Config.MinP > 0.0f ? (float?)Config.MinP : null),
+                    RepetitionPenalty = repetitionPenalty ?? (Config.RepetitionPenalty != 1.0f ? (float?)Config.RepetitionPenalty : null),
                     Stream = false,
                     Stop = BuildStopSequenceList(stopSequence)
                 };
@@ -166,12 +166,12 @@ namespace SocialInteractions.Api
             {
                 Model = _modelName,
                 Prompt = prompt,
-                Temperature = temperature ?? SocialInteractions.Settings.Api.llmTemperature,
-                MaxTokens = maxLength ?? SocialInteractions.Settings.Api.llmMaxTokens,
-                TopK = topK ?? (SocialInteractions.Settings.Api.llmTopK > 0 ? (int?)SocialInteractions.Settings.Api.llmTopK : null),
-                TopP = topP ?? (SocialInteractions.Settings.Api.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.Api.llmTopP : null),
-                MinP = minP ?? (SocialInteractions.Settings.Api.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.Api.llmMinP : null),
-                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.Api.llmRepetitionPenalty : null),
+                Temperature = temperature ?? Config.Temperature,
+                MaxTokens = maxLength ?? Config.MaxTokens,
+                TopK = topK ?? (Config.TopK > 0 ? (int?)Config.TopK : null),
+                TopP = topP ?? (Config.TopP < 1.0f ? (float?)Config.TopP : null),
+                MinP = minP ?? (Config.MinP > 0.0f ? (float?)Config.MinP : null),
+                RepetitionPenalty = repetitionPenalty ?? (Config.RepetitionPenalty != 1.0f ? (float?)Config.RepetitionPenalty : null),
                 Stream = false,
                 Stop = BuildStopSequenceList(stopSequence)
             };

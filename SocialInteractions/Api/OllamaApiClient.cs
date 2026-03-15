@@ -119,23 +119,23 @@ namespace SocialInteractions.Api
 
         public override string Name => "Ollama";
 
-        public OllamaApiClient(string apiUrl, string modelName) : base(apiUrl)
+        public OllamaApiClient(string apiUrl, string modelName, LlmClientConfig config = null) : base(apiUrl, config)
         {
             _modelName = modelName;
         }
 
-        private static bool UseChatCompletion => SocialInteractions.Settings != null && SocialInteractions.Settings.Api.forceChatCompletion;
+        private bool UseChatCompletion => Config.ForceChatCompletion;
 
         protected override object BuildRequestBody(string prompt, int? maxLength, float? temperature, List<string> stopSequence, bool? enableXtcSampling, int? topK, float? topP, float? minP, float? repetitionPenalty)
         {
             var options = new OllamaApiOptions
             {
-                Temperature = temperature ?? SocialInteractions.Settings.Api.llmTemperature,
-                TopK = topK ?? (SocialInteractions.Settings.Api.llmTopK > 0 ? (int?)SocialInteractions.Settings.Api.llmTopK : null),
-                TopP = topP ?? (SocialInteractions.Settings.Api.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.Api.llmTopP : null),
-                MinP = minP ?? (SocialInteractions.Settings.Api.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.Api.llmMinP : null),
-                RepeatPenalty = repetitionPenalty ?? (SocialInteractions.Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.Api.llmRepetitionPenalty : null),
-                NumPredict = maxLength ?? SocialInteractions.Settings.Api.llmMaxTokens,
+                Temperature = temperature ?? Config.Temperature,
+                TopK = topK ?? (Config.TopK > 0 ? (int?)Config.TopK : null),
+                TopP = topP ?? (Config.TopP < 1.0f ? (float?)Config.TopP : null),
+                MinP = minP ?? (Config.MinP > 0.0f ? (float?)Config.MinP : null),
+                RepeatPenalty = repetitionPenalty ?? (Config.RepetitionPenalty != 1.0f ? (float?)Config.RepetitionPenalty : null),
+                NumPredict = maxLength ?? Config.MaxTokens,
                 Stop = BuildStopSequenceList(stopSequence)
             };
 

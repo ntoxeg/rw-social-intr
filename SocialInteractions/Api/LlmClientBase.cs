@@ -15,13 +15,15 @@ namespace SocialInteractions.Api
         private static readonly HttpClient SharedHttpClient = new HttpClient();
 
         protected string ApiUrl { get; }
+        protected LlmClientConfig Config { get; }
         protected HttpClient HttpClient => SharedHttpClient;
 
         private bool _disposed;
 
-        protected LlmClientBase(string apiUrl)
+        protected LlmClientBase(string apiUrl, LlmClientConfig config = null)
         {
             ApiUrl = apiUrl ?? string.Empty;
+            Config = config ?? new LlmClientConfig();
         }
 
         public abstract string Name { get; }
@@ -125,19 +127,9 @@ namespace SocialInteractions.Api
             }
         }
 
-        protected static List<string> BuildStopSequenceList(List<string> stopSequence)
+        protected List<string> BuildStopSequenceList(List<string> stopSequence)
         {
-            if (stopSequence != null)
-            {
-                return stopSequence;
-            }
-
-            if (SocialInteractions.Settings == null || string.IsNullOrEmpty(SocialInteractions.Settings.Prompts.llmStoppingStrings))
-            {
-                return new List<string>();
-            }
-
-            return new List<string>(SocialInteractions.Settings.Prompts.llmStoppingStrings.Split(new[] { Environment.NewLine }, StringSplitOptions.RemoveEmptyEntries));
+            return stopSequence ?? new List<string>(Config.DefaultStopSequences);
         }
 
         protected static bool IsValidHeaderValue(string value)

@@ -112,7 +112,7 @@ namespace SocialInteractions.Api
 
         public override string Name => "Claude";
 
-        public ClaudeApiClient(string apiUrl, string modelName, string apiKey) : base(apiUrl)
+        public ClaudeApiClient(string apiUrl, string modelName, string apiKey, LlmClientConfig config = null) : base(apiUrl, config)
         {
             _modelName = modelName;
             _apiKey = apiKey != null ? apiKey.Trim() : null;
@@ -123,19 +123,19 @@ namespace SocialInteractions.Api
             var request = new ClaudeApiRequest
             {
                 Model = _modelName,
-                MaxTokens = maxLength ?? SocialInteractions.Settings.Api.llmMaxTokens,
-                Temperature = temperature ?? SocialInteractions.Settings.Api.llmTemperature,
-                TopP = topP ?? (SocialInteractions.Settings.Api.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.Api.llmTopP : null),
-                TopK = topK ?? (SocialInteractions.Settings.Api.llmTopK > 0 ? (int?)SocialInteractions.Settings.Api.llmTopK : null),
-                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.Api.llmRepetitionPenalty : null),
+                MaxTokens = maxLength ?? Config.MaxTokens,
+                Temperature = temperature ?? Config.Temperature,
+                TopP = topP ?? (Config.TopP < 1.0f ? (float?)Config.TopP : null),
+                TopK = topK ?? (Config.TopK > 0 ? (int?)Config.TopK : null),
+                RepetitionPenalty = repetitionPenalty ?? (Config.RepetitionPenalty != 1.0f ? (float?)Config.RepetitionPenalty : null),
                 System = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary. Do not include tags like <thinking> or explanations.",
                 StopSequences = BuildStopSequenceList(stopSequence)
             };
 
             request.Messages.Add(new ClaudeApiMessage { Role = "user", Content = prompt });
-            request.Thinking = SocialInteractions.Settings.Api.disableLlmThinking
+            request.Thinking = Config.DisableThinking
                 ? new ClaudeApiThinking { Type = "disabled" }
-                : new ClaudeApiThinking { Type = "enabled", BudgetTokens = Math.Max(1024, SocialInteractions.Settings.Api.llmMaxTokens) };
+                : new ClaudeApiThinking { Type = "enabled", BudgetTokens = Math.Max(1024, Config.MaxTokens) };
 
             return request;
         }

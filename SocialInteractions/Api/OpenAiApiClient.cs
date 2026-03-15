@@ -93,7 +93,7 @@ namespace SocialInteractions.Api
 
         public override string Name => "OpenAI";
 
-        public OpenAiApiClient(string apiUrl, string modelName, string apiKey) : base(apiUrl)
+        public OpenAiApiClient(string apiUrl, string modelName, string apiKey, LlmClientConfig config = null) : base(apiUrl, config)
         {
             _modelName = modelName;
             _apiKey = apiKey != null ? apiKey.Trim() : null;
@@ -104,17 +104,17 @@ namespace SocialInteractions.Api
             var request = new OpenAiApiRequest
             {
                 Model = _modelName,
-                Temperature = temperature ?? SocialInteractions.Settings.Api.llmTemperature,
-                MaxTokens = maxLength ?? SocialInteractions.Settings.Api.llmMaxTokens,
+                Temperature = temperature ?? Config.Temperature,
+                MaxTokens = maxLength ?? Config.MaxTokens,
                 Stream = false,
                 Stop = BuildStopSequenceList(stopSequence),
-                TopK = topK ?? (SocialInteractions.Settings.Api.llmTopK > 0 ? (int?)SocialInteractions.Settings.Api.llmTopK : null),
-                TopP = topP ?? (SocialInteractions.Settings.Api.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.Api.llmTopP : null),
-                MinP = minP ?? (SocialInteractions.Settings.Api.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.Api.llmMinP : null),
-                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.Api.llmRepetitionPenalty : null)
+                TopK = topK ?? (Config.TopK > 0 ? (int?)Config.TopK : null),
+                TopP = topP ?? (Config.TopP < 1.0f ? (float?)Config.TopP : null),
+                MinP = minP ?? (Config.MinP > 0.0f ? (float?)Config.MinP : null),
+                RepetitionPenalty = repetitionPenalty ?? (Config.RepetitionPenalty != 1.0f ? (float?)Config.RepetitionPenalty : null)
             };
 
-            if (enableXtcSampling ?? SocialInteractions.Settings.Api.enableXtcSampling)
+            if (enableXtcSampling ?? Config.EnableXtcSampling)
             {
                 request.XtcProbability = 0.5f;
                 request.XtcThreshold = 0.1f;

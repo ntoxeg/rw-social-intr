@@ -96,7 +96,7 @@ namespace SocialInteractions.Api
         private static string _healthBaseUrl;
         private static string _healthGameClientId;
 
-        public Player2ApiClient(string apiUrl, string modelName, string apiKey, string gameClientId = null) : base(apiUrl)
+        public Player2ApiClient(string apiUrl, string modelName, string apiKey, string gameClientId = null, LlmClientConfig config = null) : base(apiUrl, config)
         {
             _modelName = modelName;
             _apiKey = (apiKey != null) ? apiKey.Trim() : null;
@@ -167,14 +167,14 @@ namespace SocialInteractions.Api
             var request = new Player2ApiRequest
             {
                 Model = _modelName,
-                Temperature = temperature ?? SocialInteractions.Settings.Api.llmTemperature,
-                MaxTokens = maxLength ?? SocialInteractions.Settings.Api.llmMaxTokens,
+                Temperature = temperature ?? Config.Temperature,
+                MaxTokens = maxLength ?? Config.MaxTokens,
                 Stream = false,
                 Stop = BuildStopSequenceList(stopSequence),
-                TopK = topK ?? (SocialInteractions.Settings.Api.llmTopK > 0 ? (int?)SocialInteractions.Settings.Api.llmTopK : null),
-                TopP = topP ?? (SocialInteractions.Settings.Api.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.Api.llmTopP : null),
-                MinP = minP ?? (SocialInteractions.Settings.Api.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.Api.llmMinP : null),
-                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.Api.llmRepetitionPenalty : null)
+                TopK = topK ?? (Config.TopK > 0 ? (int?)Config.TopK : null),
+                TopP = topP ?? (Config.TopP < 1.0f ? (float?)Config.TopP : null),
+                MinP = minP ?? (Config.MinP > 0.0f ? (float?)Config.MinP : null),
+                RepetitionPenalty = repetitionPenalty ?? (Config.RepetitionPenalty != 1.0f ? (float?)Config.RepetitionPenalty : null)
             };
 
             request.Messages.Add(new Player2ApiMessage

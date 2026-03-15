@@ -116,12 +116,12 @@ namespace SocialInteractions.Api
 
         public override string Name => "KoboldCpp";
 
-        public KoboldApiClient(string apiUrl, string apiKey) : base(apiUrl)
+        public KoboldApiClient(string apiUrl, string apiKey, LlmClientConfig config = null) : base(apiUrl, config)
         {
             _apiKey = apiKey != null ? apiKey.Trim() : null;
         }
 
-        private static bool UseChatCompletion => SocialInteractions.Settings != null && SocialInteractions.Settings.Api.forceChatCompletion;
+        private bool UseChatCompletion => Config.ForceChatCompletion;
 
         protected override object BuildRequestBody(string prompt, int? maxLength, float? temperature, List<string> stopSequence, bool? enableXtcSampling, int? topK, float? topP, float? minP, float? repetitionPenalty)
         {
@@ -129,13 +129,13 @@ namespace SocialInteractions.Api
             {
                 var chatRequest = new KoboldChatRequest
                 {
-                    MaxTokens = maxLength ?? SocialInteractions.Settings.Api.llmMaxTokens,
-                    Temperature = temperature ?? SocialInteractions.Settings.Api.llmTemperature,
+                    MaxTokens = maxLength ?? Config.MaxTokens,
+                    Temperature = temperature ?? Config.Temperature,
                     Stop = BuildStopSequenceList(stopSequence),
-                    TopK = topK ?? (SocialInteractions.Settings.Api.llmTopK > 0 ? (int?)SocialInteractions.Settings.Api.llmTopK : null),
-                    TopP = topP ?? (SocialInteractions.Settings.Api.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.Api.llmTopP : null),
-                    MinP = minP ?? (SocialInteractions.Settings.Api.llmMinP > 0.0f ? (float?)SocialInteractions.Settings.Api.llmMinP : null),
-                    RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.Api.llmRepetitionPenalty : null)
+                    TopK = topK ?? (Config.TopK > 0 ? (int?)Config.TopK : null),
+                    TopP = topP ?? (Config.TopP < 1.0f ? (float?)Config.TopP : null),
+                    MinP = minP ?? (Config.MinP > 0.0f ? (float?)Config.MinP : null),
+                    RepetitionPenalty = repetitionPenalty ?? (Config.RepetitionPenalty != 1.0f ? (float?)Config.RepetitionPenalty : null)
                 };
 
                 chatRequest.Messages.Add(new KoboldChatMessage { Role = "system", Content = "You are generating dialogue for characters in a story. Respond with only the dialogue lines, without any thinking, reasoning, or meta-commentary." });
@@ -146,17 +146,17 @@ namespace SocialInteractions.Api
             var request = new KoboldApiRequest
             {
                 Prompt = prompt,
-                MaxLength = maxLength ?? SocialInteractions.Settings.Api.llmMaxTokens,
-                Temperature = temperature ?? SocialInteractions.Settings.Api.llmTemperature,
+                MaxLength = maxLength ?? Config.MaxTokens,
+                Temperature = temperature ?? Config.Temperature,
                 StopSequence = BuildStopSequenceList(stopSequence),
-                TopK = topK ?? SocialInteractions.Settings.Api.llmTopK,
-                TopP = topP ?? SocialInteractions.Settings.Api.llmTopP,
-                MinP = minP ?? SocialInteractions.Settings.Api.llmMinP,
-                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.Api.llmRepetitionPenalty : null),
+                TopK = topK ?? Config.TopK,
+                TopP = topP ?? Config.TopP,
+                MinP = minP ?? Config.MinP,
+                RepetitionPenalty = repetitionPenalty ?? (Config.RepetitionPenalty != 1.0f ? (float?)Config.RepetitionPenalty : null),
                 SamplerOrder = new[] { 6, 0, 1, 3, 4, 2, 5 }
             };
 
-            if (enableXtcSampling ?? SocialInteractions.Settings.Api.enableXtcSampling)
+            if (enableXtcSampling ?? Config.EnableXtcSampling)
             {
                 request.XtcProbability = 0.5f;
                 request.XtcThreshold = 0.1f;

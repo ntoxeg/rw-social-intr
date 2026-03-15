@@ -84,7 +84,7 @@ namespace SocialInteractions.Api
 
         public override string Name => "Qwen";
 
-        public QwenApiClient(string apiUrl, string modelName, string apiKey) : base(apiUrl)
+        public QwenApiClient(string apiUrl, string modelName, string apiKey, LlmClientConfig config = null) : base(apiUrl, config)
         {
             _modelName = modelName;
             _apiKey = apiKey != null ? apiKey.Trim() : null;
@@ -95,11 +95,11 @@ namespace SocialInteractions.Api
             var request = new QwenApiRequest
             {
                 Model = _modelName,
-                Temperature = temperature ?? SocialInteractions.Settings.Api.llmTemperature,
-                MaxTokens = maxLength ?? SocialInteractions.Settings.Api.llmMaxTokens,
-                TopP = topP ?? (SocialInteractions.Settings.Api.llmTopP < 1.0f ? (float?)SocialInteractions.Settings.Api.llmTopP : null),
-                TopK = topK ?? (SocialInteractions.Settings.Api.llmTopK > 0 ? (int?)SocialInteractions.Settings.Api.llmTopK : null),
-                RepetitionPenalty = repetitionPenalty ?? (SocialInteractions.Settings.Api.llmRepetitionPenalty != 1.0f ? (float?)SocialInteractions.Settings.Api.llmRepetitionPenalty : null),
+                Temperature = temperature ?? Config.Temperature,
+                MaxTokens = maxLength ?? Config.MaxTokens,
+                TopP = topP ?? (Config.TopP < 1.0f ? (float?)Config.TopP : null),
+                TopK = topK ?? (Config.TopK > 0 ? (int?)Config.TopK : null),
+                RepetitionPenalty = repetitionPenalty ?? (Config.RepetitionPenalty != 1.0f ? (float?)Config.RepetitionPenalty : null),
                 Stream = false,
                 Stop = BuildStopSequenceList(stopSequence)
             };
