@@ -64,6 +64,11 @@ namespace SocialInteractions.Patches
             SLog.Message(string.Format("[SocialInteractions] Marriage ceremony beginning detected for {0} and {1}",
                 firstPawn.LabelShort, secondPawn.LabelShort));
 
+            // --- Buffer marriage event for memory system ---
+            SocialInteractions.BufferInteractionEvent(firstPawn, string.Format("Married {0}", secondPawn.LabelShort));
+            SocialInteractions.BufferInteractionEvent(secondPawn, string.Format("Married {0}", firstPawn.LabelShort));
+            // --- End Buffer marriage event ---
+
             // Create a subject for the marriage ceremony based on the pawn names and context
             string subject = string.Format("{0} and {1} are exchanging vows in their marriage ceremony.",
                 firstPawn.LabelShort, secondPawn.LabelShort);

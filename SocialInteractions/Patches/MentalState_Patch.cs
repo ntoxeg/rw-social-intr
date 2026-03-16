@@ -45,6 +45,13 @@ namespace SocialInteractions.Patches
             // Put the pawn on cooldown
             monologueCooldowns[pawn] = Find.TickManager.TicksGame + MonologueCooldownTicks;
 
+            // --- Buffer mental break event for memory system ---
+            string mentalBreakDesc = !string.IsNullOrEmpty(reason)
+                ? string.Format("Had a mental break: {0} because {1}", stateDef.LabelCap, reason)
+                : string.Format("Had a mental break: {0}", stateDef.LabelCap);
+            SocialInteractions.BufferInteractionEvent(pawn, mentalBreakDesc);
+            // --- End Buffer mental break event ---
+
             // The subject of the monologue will be the label of the mental state (e.g., "Berserk", "Sad wander")
             // Include the reason if available
             string subject;

@@ -44,7 +44,10 @@ namespace SocialInteractions.Patches
 
                 if (mother != null && baby != null)
                 {
-                    // SLog.Message("[SocialInteractions] Found mother and baby, looking for doctor");
+                    // --- Buffer birth event for memory system ---
+                    string babyName = baby.Name != null ? baby.Name.ToStringShort : baby.LabelShort;
+                    SocialInteractions.BufferInteractionEvent(mother, string.Format("Gave birth to {0}", babyName));
+                    // --- End Buffer birth event ---
 
                     // Try to find the doctor who delivered the baby
                     Pawn doctor = FindDoctorWhoDeliveredBaby(mother);
@@ -54,6 +57,10 @@ namespace SocialInteractions.Patches
                     // If we found a doctor and it's not the mother herself, trigger the LLM interaction
                     if (doctor != null && doctor != mother)
                     {
+                        // --- Buffer delivery event for doctor ---
+                        SocialInteractions.BufferInteractionEvent(doctor, string.Format("Helped deliver {0}'s baby {1}", mother.LabelShort, babyName));
+                        // --- End Buffer delivery event ---
+
                         // Create a descriptive subject for the interaction
                         string subject = CreateBirthSubject(doctor, mother, baby);
 

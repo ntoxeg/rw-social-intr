@@ -29,6 +29,15 @@ namespace SocialInteractions.Interactions
                 SocialInteractions.CheaterPartners[recipient.ThingID] = partner;
             }
 
+            // --- Buffer caught cheating event for memory system ---
+            SocialInteractions.BufferInteractionEvent(initiator, string.Format("Caught {0} cheating", recipient.LabelShort));
+            SocialInteractions.BufferInteractionEvent(recipient, string.Format("Was caught cheating by {0}", initiator.LabelShort));
+            if (partner != null)
+            {
+                SocialInteractions.BufferInteractionEvent(partner, string.Format("Was cheated on by {0}", recipient.LabelShort));
+            }
+            // --- End Buffer caught cheating event ---
+
             // Don't start the job immediately - let the initiator move to the recipient first
             // The Goto job is already created by Pawn_Tick_Patch
             // When the initiator arrives, the JobDriver_CaughtCheating will be started automatically

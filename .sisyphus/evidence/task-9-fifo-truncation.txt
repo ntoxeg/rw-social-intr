@@ -1,0 +1,32 @@
+Task 9 Evidence - FIFO Truncation Safety Net
+Date: 2026-03-16
+
+Command:
+grep -n "CompactMemory\|ShouldCompact" "SocialInteractions/Memory/PawnMemory_GameComponent.cs"
+
+Output:
+220:                        await CompactMemory(pawnId);
+232:        private async Task CompactMemory(int pawnId)
+248:            if (ShouldCompact(pawnId) && CanAttemptCompactionToday(pawnId))
+294:        private bool ShouldCompact(int pawnId)
+
+Command:
+grep -n "memoryCharacterLimit\|memoryCompactionThreshold" "SocialInteractions/Memory/PawnMemory_GameComponent.cs"
+
+Output:
+241:            int charLimit = SocialInteractions.Settings.Memory.memoryCharacterLimit;
+302:            int threshold = SocialInteractions.Settings.Memory.memoryCompactionThreshold;
+305:                threshold = (int)(SocialInteractions.Settings.Memory.memoryCharacterLimit * 0.8f);
+402:            int charLimit = SocialInteractions.Settings.Memory.memoryCharacterLimit;
+
+Command:
+grep -n "ApplyFifoTruncation\|LastIndexOfAny" "SocialInteractions/Memory/PawnMemory_GameComponent.cs"
+
+Output:
+274:            string truncatedMemory = ApplyFifoTruncation(currentMemory, charLimit);
+342:        private static string ApplyFifoTruncation(string memory, int charLimit)
+360:                int sentenceBoundary = compacted.LastIndexOfAny(new char[] { '.', '\n' }, cutPoint - 1);
+
+Result:
+- FIFO truncation exists and is always applied in CompactMemory.
+- Truncation is sentence-aware using period/newline boundary search.

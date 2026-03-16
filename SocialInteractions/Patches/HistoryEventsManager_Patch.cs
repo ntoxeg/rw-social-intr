@@ -42,6 +42,13 @@ namespace SocialInteractions.Patches
             // Put the pawn on cooldown
             monologueCooldowns[doer] = Find.TickManager.TicksGame + MonologueCooldownTicks;
 
+            // --- Buffer bonding event for memory system ---
+            // Try to find which animal was bonded
+            Pawn bondedAnimal = historyEvent.args.GetArg<Pawn>(HistoryEventArgsNames.Subject);
+            string animalLabel = bondedAnimal != null ? bondedAnimal.LabelShort : "an animal";
+            SocialInteractions.BufferInteractionEvent(doer, string.Format("Bonded with {0}", animalLabel));
+            // --- End Buffer bonding event ---
+
             string subject = " bonded with an animal";
 
             SocialInteractions.HandleMonologue(doer, subject, false, "monologue");

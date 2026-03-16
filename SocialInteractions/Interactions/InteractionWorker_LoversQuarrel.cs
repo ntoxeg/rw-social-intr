@@ -62,6 +62,24 @@ namespace SocialInteractions.Interactions
             // Handle the LLM interaction
             SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, SI_InteractionDefOf.LoversQuarrel, subject);
 
+            // Buffer memory: both participants get entries with their perspective
+            switch (outcome)
+            {
+                case QuarrelOutcome.Reconciliation:
+                    SocialInteractions.BufferInteractionEvent(initiator, string.Format("Had a lover's quarrel with {0}. We reconciled and made up.", recipient.LabelShort));
+                    SocialInteractions.BufferInteractionEvent(recipient, string.Format("Had a lover's quarrel with {0}. We reconciled and made up.", initiator.LabelShort));
+                    break;
+                case QuarrelOutcome.NearBreakup:
+                    SocialInteractions.BufferInteractionEvent(initiator, string.Format("Had a lover's quarrel with {0}. Near-breakup — things got really bad.", recipient.LabelShort));
+                    SocialInteractions.BufferInteractionEvent(recipient, string.Format("Had a lover's quarrel with {0}. Near-breakup — things got really bad.", initiator.LabelShort));
+                    break;
+                case QuarrelOutcome.Neutral:
+                default:
+                    SocialInteractions.BufferInteractionEvent(initiator, string.Format("Had a lover's quarrel with {0}. We argued but nothing was resolved.", recipient.LabelShort));
+                    SocialInteractions.BufferInteractionEvent(recipient, string.Format("Had a lover's quarrel with {0}. We argued but nothing was resolved.", initiator.LabelShort));
+                    break;
+            }
+
             // Call base Interacted method to create normal log entry
             base.Interacted(initiator, recipient, extraSentencePacks, out letterText, out letterLabel, out letterDef, out lookTargets);
 

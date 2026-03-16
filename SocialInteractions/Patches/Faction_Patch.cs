@@ -23,6 +23,10 @@ namespace SocialInteractions.Patches
                 return;
             }
 
+            // --- Buffer leadership event for memory system ---
+            SocialInteractions.BufferInteractionEvent(newLeader, "Became faction leader");
+            // --- End Buffer leadership event ---
+
             string subject = " has become the new leader";
 
             // Call the monologue handler

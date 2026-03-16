@@ -68,6 +68,10 @@ namespace SocialInteractions.Patches
                     worker.LabelShort, itemName, quality));
             }
 
+            // --- Buffer masterwork crafting event for memory system ---
+            SocialInteractions.BufferInteractionEvent(worker, string.Format("Crafted a {0} {1}", quality, itemName));
+            // --- End Buffer masterwork crafting event ---
+
             // Trigger the monologue - using "masterpiece" as the topic
             SocialInteractions.HandleMonologue(worker, subject, false, "masterpiece");
         }

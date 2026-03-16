@@ -40,6 +40,10 @@ namespace SocialInteractions.Patches
             SLog.Message(string.Format("[SocialInteractions] Inspiration received by {0}: {1}",
                 pawn.LabelShort, inspirationType));
 
+            // --- Buffer inspiration event for memory system ---
+            SocialInteractions.BufferInteractionEvent(pawn, string.Format("Became inspired: {0}", inspirationType));
+            // --- End Buffer inspiration event ---
+
             // Trigger the monologue - using "inspiration" as the topic
             SocialInteractions.HandleMonologue(pawn, subject, false, "inspiration");
         }

@@ -1687,7 +1687,7 @@ namespace SocialInteractions
         /// Helper method to buffer an interaction event for a pawn's memory.
         /// Checks if memory system is enabled and pawn is a colonist before buffering.
         /// </summary>
-        private static void BufferInteractionEvent(Pawn pawn, string eventDescription)
+        public static void BufferInteractionEvent(Pawn pawn, string eventDescription)
         {
             if (pawn == null || !pawn.IsColonist)
                 return;

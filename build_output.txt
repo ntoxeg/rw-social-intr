@@ -1,9 +1,15 @@
   Determining projects to restore...
   All projects are up-to-date for restore.
-  SocialInteractions -> C:\Users\gento\dev\GitHub\rimworldmods\SocialInteractions\1.5\Assemblies\SocialInteractions.dll
+C:\Users\gento\dev\GitHub\rimworldmods\SocialInteractions\Core\SocialInteractionsSettings.cs(650,172): error CS1739: The best overload for 'Slider' does not have a parameter named 'roundTo' [C:\Users\gento\dev\GitHub\rimworldmods\SocialInteractions\SocialInteractions.csproj]
+C:\Users\gento\dev\GitHub\rimworldmods\SocialInteractions\Core\SocialInteractionsSettings.cs(653,182): error CS1739: The best overload for 'Slider' does not have a parameter named 'roundTo' [C:\Users\gento\dev\GitHub\rimworldmods\SocialInteractions\SocialInteractions.csproj]
+C:\Users\gento\dev\GitHub\rimworldmods\SocialInteractions\Core\SocialInteractionsSettings.cs(656,170): error CS1739: The best overload for 'Slider' does not have a parameter named 'roundTo' [C:\Users\gento\dev\GitHub\rimworldmods\SocialInteractions\SocialInteractions.csproj]
 
-Build succeeded.
+Build FAILED.
+
+C:\Users\gento\dev\GitHub\rimworldmods\SocialInteractions\Core\SocialInteractionsSettings.cs(650,172): error CS1739: The best overload for 'Slider' does not have a parameter named 'roundTo' [C:\Users\gento\dev\GitHub\rimworldmods\SocialInteractions\SocialInteractions.csproj]
+C:\Users\gento\dev\GitHub\rimworldmods\SocialInteractions\Core\SocialInteractionsSettings.cs(653,182): error CS1739: The best overload for 'Slider' does not have a parameter named 'roundTo' [C:\Users\gento\dev\GitHub\rimworldmods\SocialInteractions\SocialInteractions.csproj]
+C:\Users\gento\dev\GitHub\rimworldmods\SocialInteractions\Core\SocialInteractionsSettings.cs(656,170): error CS1739: The best overload for 'Slider' does not have a parameter named 'roundTo' [C:\Users\gento\dev\GitHub\rimworldmods\SocialInteractions\SocialInteractions.csproj]
     0 Warning(s)
-    0 Error(s)
+    3 Error(s)
 
-Time Elapsed 00:00:00.98
+Time Elapsed 00:00:00.76

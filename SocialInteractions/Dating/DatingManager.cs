@@ -118,6 +118,11 @@ namespace SocialInteractions.Dating
                 // Add to active dates
                 dates.Add(new Date(initiator, partner));
                 SLog.Message(string.Format("[SocialInteractions] StartDate: Date started between {0} and {1}.", initiator.LabelShort, partner.LabelShort));
+
+                // --- Buffer date event for memory system ---
+                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Went on a date with {0}", partner.LabelShort));
+                SocialInteractions.BufferInteractionEvent(partner, string.Format("Went on a date with {0}", initiator.LabelShort));
+                // --- End Buffer date event ---
             }
         }
 

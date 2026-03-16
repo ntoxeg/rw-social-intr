@@ -1,0 +1,42 @@
+=== Task 7: Dual Perspective Evidence ===
+
+Each interaction writes buffer entries for BOTH initiator and recipient:
+
+--- InteractionWorker_Badmouthing.cs ---
+84:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Badmouthed {0} to {1}. We bonded over shared dislike.", targetPawn.LabelShort, recipient.LabelShort));
+85:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("Gossiped with {0} about {1}. We bonded over shared dislike.", initiator.LabelShort, targetPawn.LabelShort));
+101:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Badmouthed {0} to {1}. {1} believed me and now thinks worse of {0}.", targetPawn.LabelShort, recipient.LabelShort));
+102:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} told me negative things about {1}. I believed them.", initiator.LabelShort, targetPawn.LabelShort));
+118:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Badmouthed {0} to {1}. It backfired — {1} lost respect for me instead.", targetPawn.LabelShort, recipient.LabelShort));
+119:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} tried to badmouth {1} to me. I lost respect for {0} instead.", initiator.LabelShort, targetPawn.LabelShort));
+
+--- InteractionWorker_Backstabbing.cs ---
+227:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Attempted to backstab {0} by turning {1} against them. Success — {1} now distrusts {0}.", targetPawn.LabelShort, recipient.LabelShort));
+228:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} revealed troubling things about {1}. I now see {1} differently.", initiator.LabelShort, targetPawn.LabelShort));
+232:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Attempted to backstab {0} by turning {1} against them. Failed — {1} saw through my deception.", targetPawn.LabelShort, recipient.LabelShort));
+233:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} tried to turn me against {1}. I saw through the manipulation.", initiator.LabelShort, targetPawn.LabelShort));
+
+--- InteractionWorker_Admiration.cs ---
+57:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Expressed admiration for {0}. {1}. Well received.", recipient.LabelShort, typeLabel));
+58:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} expressed admiration for me. {1}. I appreciated it.", initiator.LabelShort, typeLabel));
+62:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Expressed admiration for {0}. {1}. It fell flat.", recipient.LabelShort, typeLabel));
+63:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} tried to flatter me. {1}. I was unimpressed.", initiator.LabelShort, typeLabel));
+
+--- InteractionWorker_MakeUp.cs ---
+63:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Attempted to reconcile with {0}. Success — we cleared the air.", recipient.LabelShort));
+64:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} apologized and we reconciled. I accepted their apology.", initiator.LabelShort));
+68:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Attempted to reconcile with {0}. Failed — they weren't ready to forgive.", recipient.LabelShort));
+69:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} tried to apologize but I wasn't convinced. Reconciliation failed.", initiator.LabelShort));
+
+--- InteractionWorker_EnhancedInsult.cs ---
+68:            SocialInteractions.BufferInteractionEvent(initiator, string.Format("Insulted {0} ({1}).{2}", recipient.LabelShort, severityLabel, fightNote));
+69:            SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} insulted me ({1}).{2}", initiator.LabelShort, severityLabel, fightNote));
+
+--- InteractionWorker_LoversQuarrel.cs ---
+69:                    SocialInteractions.BufferInteractionEvent(initiator, string.Format("Had a lover's quarrel with {0}. We reconciled and made up.", recipient.LabelShort));
+70:                    SocialInteractions.BufferInteractionEvent(recipient, string.Format("Had a lover's quarrel with {0}. We reconciled and made up.", initiator.LabelShort));
+73:                    SocialInteractions.BufferInteractionEvent(initiator, string.Format("Had a lover's quarrel with {0}. Near-breakup — things got really bad.", recipient.LabelShort));
+74:                    SocialInteractions.BufferInteractionEvent(recipient, string.Format("Had a lover's quarrel with {0}. Near-breakup — things got really bad.", initiator.LabelShort));
+78:                    SocialInteractions.BufferInteractionEvent(initiator, string.Format("Had a lover's quarrel with {0}. We argued but nothing was resolved.", recipient.LabelShort));
+79:                    SocialInteractions.BufferInteractionEvent(recipient, string.Format("Had a lover's quarrel with {0}. We argued but nothing was resolved.", initiator.LabelShort));
+

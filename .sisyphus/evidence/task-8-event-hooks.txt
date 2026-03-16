@@ -1,0 +1,53 @@
+=== Task 8: Event Hooks Evidence ===
+
+--- Files with BufferInteractionEvent calls ---
+SocialInteractions/Patches/Faction_Patch.cs:27:            SocialInteractions.BufferInteractionEvent(newLeader, "Became faction leader");
+SocialInteractions/Patches/HistoryEventsManager_Patch.cs:49:            SocialInteractions.BufferInteractionEvent(doer, string.Format("Bonded with {0}", animalLabel));
+SocialInteractions/Patches/InspirationHandler_TryStartInspiration_Patch.cs:44:            SocialInteractions.BufferInteractionEvent(pawn, string.Format("Became inspired: {0}", inspirationType));
+SocialInteractions/Patches/MarriageCeremonyStart_Patch.cs:68:            SocialInteractions.BufferInteractionEvent(firstPawn, string.Format("Married {0}", secondPawn.LabelShort));
+SocialInteractions/Patches/MarriageCeremonyStart_Patch.cs:69:            SocialInteractions.BufferInteractionEvent(secondPawn, string.Format("Married {0}", firstPawn.LabelShort));
+SocialInteractions/Patches/MentalState_Patch.cs:52:            SocialInteractions.BufferInteractionEvent(pawn, mentalBreakDesc);
+SocialInteractions/Patches/Precept_RoleMulti_Patch.cs:20:            SocialInteractions.BufferInteractionEvent(p, string.Format("Assigned role: {0}", __instance.LabelCap));
+SocialInteractions/Patches/Precept_RoleSingle_Patch.cs:20:            SocialInteractions.BufferInteractionEvent(p, string.Format("Assigned role: {0}", __instance.LabelCap));
+SocialInteractions/Patches/QualityUtility_SendCraftNotification_Patch.cs:72:            SocialInteractions.BufferInteractionEvent(worker, string.Format("Crafted a {0} {1}", quality, itemName));
+SocialInteractions/Patches/TaleRecorder_Patch.cs:49:                    SocialInteractions.BufferInteractionEvent(mother, string.Format("Gave birth to {0}", babyName));
+SocialInteractions/Patches/TaleRecorder_Patch.cs:61:                        SocialInteractions.BufferInteractionEvent(doctor, string.Format("Helped deliver {0}'s baby {1}", mother.LabelShort, babyName));
+SocialInteractions/Combat/CombatPatches.cs:425:                    SocialInteractions.BufferInteractionEvent(attacker, string.Format("Killed {0} in combat", pawn.LabelShort));
+SocialInteractions/Combat/CombatPatches.cs:426:                    SocialInteractions.BufferInteractionEvent(pawn, string.Format("Was killed by {0}", attacker.LabelShort));
+SocialInteractions/Combat/CombatPatches.cs:431:                    SocialInteractions.BufferInteractionEvent(attacker, string.Format("Downed {0} in combat", pawn.LabelShort));
+SocialInteractions/Combat/CombatPatches.cs:464:                SocialInteractions.BufferInteractionEvent(pawn, "Was downed in combat");
+SocialInteractions/Interactions/InteractionWorker_CaughtCheating.cs:33:            SocialInteractions.BufferInteractionEvent(initiator, string.Format("Caught {0} cheating", recipient.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_CaughtCheating.cs:34:            SocialInteractions.BufferInteractionEvent(recipient, string.Format("Was caught cheating by {0}", initiator.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_CaughtCheating.cs:37:                SocialInteractions.BufferInteractionEvent(partner, string.Format("Was cheated on by {0}", recipient.LabelShort));
+SocialInteractions/Dating/DatingManager.cs:123:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Went on a date with {0}", partner.LabelShort));
+SocialInteractions/Dating/DatingManager.cs:124:                SocialInteractions.BufferInteractionEvent(partner, string.Format("Went on a date with {0}", initiator.LabelShort));
+SocialInteractions/Core/SocialInteractions.cs:1575:                            BufferInteractionEvent(pawn, bufferEntry);
+SocialInteractions/Core/SocialInteractions.cs:1690:        public static void BufferInteractionEvent(Pawn pawn, string eventDescription)
+SocialInteractions/Core/SocialInteractions.cs:1792:                        BufferInteractionEvent(initiator, bufferEntry);
+SocialInteractions/Core/SocialInteractions.cs:1793:                        BufferInteractionEvent(recipient, string.Format("[{0}] with {1}: {2}", 
+SocialInteractions/Core/SocialInteractions.cs:1986:                        BufferInteractionEvent(initiator, jobGiverBufferEntry);
+SocialInteractions/Core/SocialInteractions.cs:1987:                        BufferInteractionEvent(recipient, string.Format("[{0}] with {1}: {2}", 
+
+--- Event types captured ---
+1. Marriage: MarriageCeremonyStart_Patch.cs
+2. Birth: TaleRecorder_Patch.cs (mother + doctor)
+3. Mental breaks: MentalState_Patch.cs
+4. Inspiration: InspirationHandler_TryStartInspiration_Patch.cs
+5. Masterwork crafting: QualityUtility_SendCraftNotification_Patch.cs
+6. Leadership: Faction_Patch.cs
+7. Animal bonding: HistoryEventsManager_Patch.cs
+8. Role assignment: Precept_RoleMulti_Patch.cs + Precept_RoleSingle_Patch.cs
+9. Combat (kills/downs): CombatPatches.cs
+10. Caught cheating: InteractionWorker_CaughtCheating.cs
+11. Date events: DatingManager.cs
+
+--- Build result ---
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  SocialInteractions -> C:\Users\gento\dev\GitHub\rimworldmods\SocialInteractions\1.5\Assemblies\SocialInteractions.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.57

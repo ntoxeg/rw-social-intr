@@ -1,0 +1,33 @@
+=== Task 8: Combat Selective Evidence ===
+
+--- Combat buffer writes in CombatPatches.cs ---
+290:        public static readonly string[] DownedCallsForHelp = new string[]
+393:                Services.Speech?.EnqueueInstant(__instance.CasterPawn, taunt, duration, null, false); // Use standard mote for combat taunts
+408:                Services.Speech?.EnqueueInstant(casterPawn, taunt, duration, null, false); // Use standard mote for combat taunts
+419:            // --- Buffer selective combat events for memory system (kills/downs only) ---
+424:                    // Kill event — buffer for the attacker
+425:                    SocialInteractions.BufferInteractionEvent(attacker, string.Format("Killed {0} in combat", pawn.LabelShort));
+426:                    SocialInteractions.BufferInteractionEvent(pawn, string.Format("Was killed by {0}", attacker.LabelShort));
+428:                else if (pawn.Downed)
+430:                    // Down event — buffer for the attacker
+431:                    SocialInteractions.BufferInteractionEvent(attacker, string.Format("Downed {0} in combat", pawn.LabelShort));
+434:            // --- End Buffer selective combat events ---
+438:            if (pawn == null || !pawn.Spawned || pawn.Downed || !pawn.Awake() || !pawn.RaceProps.Humanlike || ShamblerHelper.IsShambler(pawn)) return;
+448:                    Services.Speech?.EnqueueInstant(pawn, complaint, duration, Color.yellow, false); // Use standard mote for combat taunts
+454:    [HarmonyPatch(typeof(Pawn_HealthTracker), "MakeDowned")]
+455:    public static class Pawn_HealthTracker_MakeDowned_Patch
+464:                SocialInteractions.BufferInteractionEvent(pawn, "Was downed in combat");
+471:                string callForHelp = CombatTaunts.DownedCallsForHelp.RandomElement();
+473:                Services.Speech?.EnqueueInstant(pawn, callForHelp, duration, Color.red, false); // Use standard mote for combat taunts
+
+--- Analysis ---
+Buffer writes ONLY fire on:
+  1. pawn.Dead (kill event) - attacker gets 'Killed X in combat', target gets 'Was killed by X'
+  2. pawn.Downed (down event) - attacker gets 'Downed X in combat'
+  3. MakeDowned patch - downed pawn gets 'Was downed in combat'
+
+NOT buffered:
+  - Every hit/damage tick
+  - Combat taunts
+  - Getting hit complaints
+  - Melee/ranged shots that don't kill or down

@@ -32,6 +32,9 @@ namespace SocialInteractions.Memory
         private int lastDailyMemoryProcessingTick;
         private bool isProcessingDailyMemories;
 
+        // Tracks the last in-game day when compaction was attempted per pawn
+        private Dictionary<int, int> lastCompactionDayByPawn = new Dictionary<int, int>();
+
         public PawnMemory_GameComponent()
         {
         }
@@ -119,9 +122,15 @@ namespace SocialInteractions.Memory
 
             Scribe_Values.Look(ref lastDailyMemoryProcessingTick, "lastDailyMemoryProcessingTick", 0);
             Scribe_Values.Look(ref isProcessingDailyMemories, "isProcessingDailyMemories", false);
+            Scribe_Collections.Look(ref lastCompactionDayByPawn, "lastCompactionDayByPawn", LookMode.Value, LookMode.Value);
 
             if (Scribe.mode == LoadSaveMode.PostLoadInit)
             {
+                if (lastCompactionDayByPawn == null)
+                {
+                    lastCompactionDayByPawn = new Dictionary<int, int>();
+                }
+
                 // Never resume a previously in-progress async run after loading.
                 isProcessingDailyMemories = false;
             }
@@ -208,6 +217,7 @@ namespace SocialInteractions.Memory
                         }
 
                         SetMemory(pawnId, responseText.Trim());
+                        await CompactMemory(pawnId);
                         SLog.Message(string.Format("[SocialInteractions] Memory updated for {0}", pawn.Name != null ? pawn.Name.ToStringShort : pawn.LabelShort));
                     }
                     catch (Exception ex)
@@ -217,6 +227,152 @@ namespace SocialInteractions.Memory
                     }
                 }
             }
+        }
+
+        private async Task CompactMemory(int pawnId)
+        {
+            string currentMemory = GetMemory(pawnId);
+            if (string.IsNullOrEmpty(currentMemory))
+            {
+                return;
+            }
+
+            int beforeLength = currentMemory.Length;
+            int charLimit = SocialInteractions.Settings.Memory.memoryCharacterLimit;
+            if (charLimit <= 0)
+            {
+                return;
+            }
+
+            bool attemptedLlmCompaction = false;
+            if (ShouldCompact(pawnId) && CanAttemptCompactionToday(pawnId))
+            {
+                attemptedLlmCompaction = true;
+                MarkCompactionAttemptForToday(pawnId);
+
+                Pawn pawn = FindPawnById(pawnId);
+                string pawnName = pawn != null && pawn.Name != null ? pawn.Name.ToStringShort : (pawn != null ? pawn.LabelShort : string.Format("Pawn #{0}", pawnId));
+                string compactionPrompt = BuildCompactionPrompt(pawnName, currentMemory, charLimit);
+
+                try
+                {
+                    using (ILlmClient client = LlmClientFactory.Create(SocialInteractions.Settings))
+                    {
+                        string compacted = await client.GenerateText(compactionPrompt);
+                        if (!string.IsNullOrWhiteSpace(compacted))
+                        {
+                            currentMemory = compacted.Trim();
+                        }
+                    }
+                }
+                catch (Exception ex)
+                {
+                    SLog.Warning(string.Format("[SocialInteractions] Memory compaction LLM failed for {0}: {1}", pawnName, ex.Message));
+                }
+            }
+
+            string truncatedMemory = ApplyFifoTruncation(currentMemory, charLimit);
+            if (!string.Equals(truncatedMemory, currentMemory, StringComparison.Ordinal))
+            {
+                currentMemory = truncatedMemory;
+            }
+
+            if (!string.Equals(GetMemory(pawnId), currentMemory, StringComparison.Ordinal))
+            {
+                SetMemory(pawnId, currentMemory);
+            }
+
+            int afterLength = string.IsNullOrEmpty(currentMemory) ? 0 : currentMemory.Length;
+            if (attemptedLlmCompaction || beforeLength != afterLength)
+            {
+                Pawn pawn = FindPawnById(pawnId);
+                string pawnName = pawn != null && pawn.Name != null ? pawn.Name.ToStringShort : (pawn != null ? pawn.LabelShort : string.Format("Pawn #{0}", pawnId));
+                SLog.Message(string.Format("[SocialInteractions] Compacted memories for {0}: {1} → {2}", pawnName, beforeLength, afterLength));
+            }
+        }
+
+        private bool ShouldCompact(int pawnId)
+        {
+            string memory = GetMemory(pawnId);
+            if (string.IsNullOrEmpty(memory))
+            {
+                return false;
+            }
+
+            int threshold = SocialInteractions.Settings.Memory.memoryCompactionThreshold;
+            if (threshold <= 0)
+            {
+                threshold = (int)(SocialInteractions.Settings.Memory.memoryCharacterLimit * 0.8f);
+            }
+
+            return memory.Length > threshold;
+        }
+
+        private bool CanAttemptCompactionToday(int pawnId)
+        {
+            int currentDay = Find.TickManager != null
+                ? Find.TickManager.TicksGame / DailyMemoryProcessingIntervalTicks
+                : 0;
+
+            int lastAttemptDay;
+            if (lastCompactionDayByPawn.TryGetValue(pawnId, out lastAttemptDay))
+            {
+                return lastAttemptDay < currentDay;
+            }
+
+            return true;
+        }
+
+        private void MarkCompactionAttemptForToday(int pawnId)
+        {
+            int currentDay = Find.TickManager != null
+                ? Find.TickManager.TicksGame / DailyMemoryProcessingIntervalTicks
+                : 0;
+            lastCompactionDayByPawn[pawnId] = currentDay;
+        }
+
+        private static string BuildCompactionPrompt(string pawnName, string fullMemories, int charLimit)
+        {
+            return SocialInteractions.Settings.Memory.memoryCompactionPromptTemplate
+                .Replace("[pawn_name]", string.IsNullOrEmpty(pawnName) ? "Unknown" : pawnName)
+                .Replace("[full_memories]", string.IsNullOrEmpty(fullMemories) ? "None" : fullMemories)
+                .Replace("[char_limit]", charLimit.ToString());
+        }
+
+        private static string ApplyFifoTruncation(string memory, int charLimit)
+        {
+            if (string.IsNullOrEmpty(memory) || charLimit <= 0 || memory.Length <= charLimit)
+            {
+                return memory;
+            }
+
+            string compacted = memory;
+            while (compacted.Length > charLimit)
+            {
+                int charsToRemove = compacted.Length - charLimit;
+                int cutPoint = charsToRemove;
+                if (cutPoint <= 0 || cutPoint >= compacted.Length)
+                {
+                    break;
+                }
+
+                int sentenceBoundary = compacted.LastIndexOfAny(new char[] { '.', '\n' }, cutPoint - 1);
+                int removeUntil = sentenceBoundary >= 0 ? sentenceBoundary + 1 : cutPoint;
+
+                while (removeUntil < compacted.Length && char.IsWhiteSpace(compacted[removeUntil]))
+                {
+                    removeUntil++;
+                }
+
+                compacted = removeUntil >= compacted.Length ? string.Empty : compacted.Substring(removeUntil);
+
+                if (removeUntil == 0)
+                {
+                    break;
+                }
+            }
+
+            return compacted;
         }
 
         private static Pawn FindPawnById(int pawnId)
@@ -398,6 +554,7 @@ namespace SocialInteractions.Memory
         public void ClearMemory(int pawnId)
         {
             memories.Remove(pawnId);
+            lastCompactionDayByPawn.Remove(pawnId);
             lock (bufferLock)
             {
                 buffer.Remove(pawnId);

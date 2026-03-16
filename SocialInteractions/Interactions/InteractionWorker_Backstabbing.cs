@@ -221,6 +221,18 @@ namespace SocialInteractions.Interactions
             // Skip spam protection for backstabbing as these are rare, important events that should be witnessed
             SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, SI_InteractionDefOf.Backstabbing, subject, true, false);
 
+            // Buffer memory: both participants get entries with their perspective
+            if (backstabSuccessful)
+            {
+                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Attempted to backstab {0} by turning {1} against them. Success — {1} now distrusts {0}.", targetPawn.LabelShort, recipient.LabelShort));
+                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} revealed troubling things about {1}. I now see {1} differently.", initiator.LabelShort, targetPawn.LabelShort));
+            }
+            else
+            {
+                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Attempted to backstab {0} by turning {1} against them. Failed — {1} saw through my deception.", targetPawn.LabelShort, recipient.LabelShort));
+                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} tried to turn me against {1}. I saw through the manipulation.", initiator.LabelShort, targetPawn.LabelShort));
+            }
+
             // Create a custom log entry for the backstabbing interaction to ensure it's properly recorded in social history
             try
             {

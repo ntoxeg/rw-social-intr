@@ -567,26 +567,30 @@ public class SocialInteractionsMod : Mod
         private Vector2 scrollPosition = Vector2.zero;
         private string llmApiUrlBuffer;
         private string llmApiKeyBuffer;
-        private string llmPromptTemplateBuffer;
-        private string llmMonologuePromptTemplateBuffer;
-        private string openAiModelNameBuffer;
+         private string llmPromptTemplateBuffer;
+         private string llmMonologuePromptTemplateBuffer;
+         private string memoryPromptTemplateBuffer;
+         private string memoryCompactionPromptTemplateBuffer;
+         private string openAiModelNameBuffer;
 
-        // TTS Buffers
-        private string ttsApiUrlBuffer;
-        private string ttsApiKeyBuffer;
-        private string ttsModelBuffer;
+         // TTS Buffers
+         private string ttsApiUrlBuffer;
+         private string ttsApiKeyBuffer;
+         private string ttsModelBuffer;
 
         public SocialInteractionsMod(ModContentPack content)
             : base(content)
         {
             SocialInteractions.Settings = GetSettings<SocialInteractionsModSettings>();
-            llmApiUrlBuffer = SocialInteractions.Settings.Api.llmApiUrl;
-            llmApiKeyBuffer = SocialInteractions.Settings.Api.llmApiKey;
-            llmPromptTemplateBuffer = SocialInteractions.Settings.Prompts.llmPromptTemplate;
-            llmMonologuePromptTemplateBuffer = SocialInteractions.Settings.Prompts.llmMonologuePromptTemplate;
-            ttsApiUrlBuffer = SocialInteractions.Settings.Api.ttsApiUrl;
-            ttsApiKeyBuffer = SocialInteractions.Settings.Api.ttsApiKey;
-            ttsModelBuffer = SocialInteractions.Settings.Api.ttsModel;
+             llmApiUrlBuffer = SocialInteractions.Settings.Api.llmApiUrl;
+             llmApiKeyBuffer = SocialInteractions.Settings.Api.llmApiKey;
+             llmPromptTemplateBuffer = SocialInteractions.Settings.Prompts.llmPromptTemplate;
+             llmMonologuePromptTemplateBuffer = SocialInteractions.Settings.Prompts.llmMonologuePromptTemplate;
+             memoryPromptTemplateBuffer = SocialInteractions.Settings.Prompts.memoryPromptTemplate;
+             memoryCompactionPromptTemplateBuffer = SocialInteractions.Settings.Prompts.memoryCompactionPromptTemplate;
+             ttsApiUrlBuffer = SocialInteractions.Settings.Api.ttsApiUrl;
+             ttsApiKeyBuffer = SocialInteractions.Settings.Api.ttsApiKey;
+             ttsModelBuffer = SocialInteractions.Settings.Api.ttsModel;
             openAiModelNameBuffer = SocialInteractions.Settings.Api.openAiModelName;
         }
 
@@ -631,13 +635,54 @@ public class SocialInteractionsMod : Mod
             listingStandard.Label(string.Format("SocialInteractions_BaseLovinChance".Translate() + " {0}", SocialInteractions.Settings.Gameplay.baseLovinChance.ToString("F2")));
             SocialInteractions.Settings.Gameplay.baseLovinChance = listingStandard.Slider(SocialInteractions.Settings.Gameplay.baseLovinChance, 0f, 1f);
 
-            // Children misbehavior settings
-            listingStandard.Gap();
-            listingStandard.CheckboxLabeled("SocialInteractions_EnableChildrenMisbehavior".Translate(), ref SocialInteractions.Settings.Features.enableChildrenMisbehavior, "SocialInteractions_EnableChildrenMisbehaviorDesc".Translate());
-            listingStandard.Label(string.Format("SocialInteractions_BaseChance".Translate() + ": {0:F3}", SocialInteractions.Settings.Gameplay.baseChildrenMisbehaviorChance));
-            SocialInteractions.Settings.Gameplay.baseChildrenMisbehaviorChance = listingStandard.Slider(SocialInteractions.Settings.Gameplay.baseChildrenMisbehaviorChance, 0f, 1f);
+             // Children misbehavior settings
+             listingStandard.Gap();
+             listingStandard.CheckboxLabeled("SocialInteractions_EnableChildrenMisbehavior".Translate(), ref SocialInteractions.Settings.Features.enableChildrenMisbehavior, "SocialInteractions_EnableChildrenMisbehaviorDesc".Translate());
+             listingStandard.Label(string.Format("SocialInteractions_BaseChance".Translate() + ": {0:F3}", SocialInteractions.Settings.Gameplay.baseChildrenMisbehaviorChance));
+             SocialInteractions.Settings.Gameplay.baseChildrenMisbehaviorChance = listingStandard.Slider(SocialInteractions.Settings.Gameplay.baseChildrenMisbehaviorChance, 0f, 1f);
 
-            // Add a button to open the chat log window
+             // Memory system settings
+             listingStandard.Gap();
+             listingStandard.Label("SocialInteractions_MemorySystemSettings".Translate());
+             listingStandard.CheckboxLabeled("SocialInteractions_EnableMemorySystem".Translate(), ref SocialInteractions.Settings.Features.enableMemorySystem, "SocialInteractions_EnableMemorySystemDesc".Translate());
+             
+             listingStandard.Label(string.Format("SocialInteractions_MemoryCharacterLimit".Translate() + ": {0}", SocialInteractions.Settings.Features.memoryCharacterLimit));
+             SocialInteractions.Settings.Features.memoryCharacterLimit = (int)listingStandard.Slider(SocialInteractions.Settings.Features.memoryCharacterLimit, 500, 5000);
+             
+             listingStandard.Label(string.Format("SocialInteractions_MemoryCompactionThreshold".Translate() + ": {0}", SocialInteractions.Settings.Features.memoryCompactionThreshold));
+             SocialInteractions.Settings.Features.memoryCompactionThreshold = (int)listingStandard.Slider(SocialInteractions.Settings.Features.memoryCompactionThreshold, 500, 5000);
+             
+             listingStandard.Label(string.Format("SocialInteractions_MemoryBufferEntryCap".Translate() + ": {0}", SocialInteractions.Settings.Features.memoryBufferEntryCap));
+             SocialInteractions.Settings.Features.memoryBufferEntryCap = (int)listingStandard.Slider(SocialInteractions.Settings.Features.memoryBufferEntryCap, 10, 100);
+             
+             listingStandard.Gap();
+             listingStandard.Label("SocialInteractions_MemoryPromptTemplate".Translate());
+             string newMemoryPromptTemplate = Widgets.TextArea(listingStandard.GetRect(150f), memoryPromptTemplateBuffer);
+             if (newMemoryPromptTemplate != memoryPromptTemplateBuffer)
+             {
+                 memoryPromptTemplateBuffer = newMemoryPromptTemplate;
+                 SocialInteractions.Settings.Prompts.memoryPromptTemplate = newMemoryPromptTemplate;
+             }
+             
+             listingStandard.Gap();
+             listingStandard.Label("SocialInteractions_MemoryCompactionPromptTemplate".Translate());
+             string newMemoryCompactionPromptTemplate = Widgets.TextArea(listingStandard.GetRect(150f), memoryCompactionPromptTemplateBuffer);
+             if (newMemoryCompactionPromptTemplate != memoryCompactionPromptTemplateBuffer)
+             {
+                 memoryCompactionPromptTemplateBuffer = newMemoryCompactionPromptTemplate;
+                 SocialInteractions.Settings.Prompts.memoryCompactionPromptTemplate = newMemoryCompactionPromptTemplate;
+             }
+             
+             listingStandard.Gap();
+             if (listingStandard.ButtonText("SocialInteractions_ResetMemoryTemplates".Translate()))
+             {
+                 SocialInteractions.Settings.Prompts.memoryPromptTemplate = SocialInteractionsModSettings.DEFAULT_MEMORY_WRITING_TEMPLATE;
+                 SocialInteractions.Settings.Prompts.memoryCompactionPromptTemplate = SocialInteractionsModSettings.DEFAULT_MEMORY_COMPACTION_TEMPLATE;
+                 memoryPromptTemplateBuffer = SocialInteractions.Settings.Prompts.memoryPromptTemplate;
+                 memoryCompactionPromptTemplateBuffer = SocialInteractions.Settings.Prompts.memoryCompactionPromptTemplate;
+             }
+
+             // Add a button to open the chat log window
             if (listingStandard.ButtonText("SocialInteractions_OpenChatLogWindow".Translate()))
             {
                 // Open the chat log tab

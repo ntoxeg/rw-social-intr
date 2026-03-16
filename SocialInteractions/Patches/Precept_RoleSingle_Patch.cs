@@ -16,6 +16,10 @@ namespace SocialInteractions.Patches
                 return;
             }
 
+            // --- Buffer role assignment event for memory system ---
+            SocialInteractions.BufferInteractionEvent(p, string.Format("Assigned role: {0}", __instance.LabelCap));
+            // --- End Buffer role assignment event ---
+
             string subject = " has been assigned the role of " + __instance.LabelCap;
 
             // Call the monologue handler

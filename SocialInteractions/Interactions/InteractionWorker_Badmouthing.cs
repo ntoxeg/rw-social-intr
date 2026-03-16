@@ -79,6 +79,10 @@ namespace SocialInteractions.Interactions
 
                 // Handle the LLM interaction
                 SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, SI_InteractionDefOf.Badmouthing, subject);
+
+                // Buffer memory: both participants get entries with their perspective
+                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Badmouthed {0} to {1}. We bonded over shared dislike.", targetPawn.LabelShort, recipient.LabelShort));
+                SocialInteractions.BufferInteractionEvent(recipient, string.Format("Gossiped with {0} about {1}. We bonded over shared dislike.", initiator.LabelShort, targetPawn.LabelShort));
             }
             else if (recipientOpinionOfTarget <= recipientOpinionOfInitiator)
             {
@@ -92,6 +96,10 @@ namespace SocialInteractions.Interactions
 
                 // Handle the LLM interaction
                 SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, SI_InteractionDefOf.Badmouthing, subject);
+
+                // Buffer memory: initiator succeeded, recipient believed them
+                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Badmouthed {0} to {1}. {1} believed me and now thinks worse of {0}.", targetPawn.LabelShort, recipient.LabelShort));
+                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} told me negative things about {1}. I believed them.", initiator.LabelShort, targetPawn.LabelShort));
             }
             else
             {
@@ -105,6 +113,10 @@ namespace SocialInteractions.Interactions
 
                 // Handle the LLM interaction
                 SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, SI_InteractionDefOf.Badmouthing, subject);
+
+                // Buffer memory: backfired on initiator
+                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Badmouthed {0} to {1}. It backfired — {1} lost respect for me instead.", targetPawn.LabelShort, recipient.LabelShort));
+                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} tried to badmouth {1} to me. I lost respect for {0} instead.", initiator.LabelShort, targetPawn.LabelShort));
             }
 
             // We removed the target-specific sentence rulepacks because they caused grammar resolution issues

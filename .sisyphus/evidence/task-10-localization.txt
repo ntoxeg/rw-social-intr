@@ -1,0 +1,8 @@
+60:   <SocialInteractions_EnableMemorySystem>Enable Pawn Memory System</SocialInteractions_EnableMemorySystem>
+61:   <SocialInteractions_EnableMemorySystemDesc>If enabled, pawns will accumulate memories from events and interactions, which will be integrated into future LLM-generated dialogue.</SocialInteractions_EnableMemorySystemDesc>
+62:   <SocialInteractions_MemoryCharacterLimit>Memory Character Limit</SocialInteractions_MemoryCharacterLimit>
+63:   <SocialInteractions_MemoryCompactionThreshold>Memory Compaction Threshold</SocialInteractions_MemoryCompactionThreshold>
+64:   <SocialInteractions_MemoryBufferEntryCap>Memory Buffer Entry Cap</SocialInteractions_MemoryBufferEntryCap>
+65:   <SocialInteractions_MemoryPromptTemplate>Memory Writing Prompt Template:</SocialInteractions_MemoryPromptTemplate>
+66:   <SocialInteractions_MemoryCompactionPromptTemplate>Memory Compaction Prompt Template:</SocialInteractions_MemoryCompactionPromptTemplate>
+67:   <SocialInteractions_ResetMemoryTemplates>Reset Memory Templates to Default</SocialInteractions_ResetMemoryTemplates>

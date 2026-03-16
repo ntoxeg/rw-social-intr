@@ -52,10 +52,21 @@
   <SocialInteractions_EnableChildrenMisbehavior>Enable Children Misbehavior</SocialInteractions_EnableChildrenMisbehavior>
   <SocialInteractions_EnableChildrenMisbehaviorDesc>If enabled, children will engage in mischievous behavior like annoying adults and misplacing items.</SocialInteractions_EnableChildrenMisbehaviorDesc>
 
-  <!-- MakeUp/Apologizing Settings -->
-  <SocialInteractions_MakeUpSettings>Make-Up/Apologizing Settings:</SocialInteractions_MakeUpSettings>
-  
-  <!-- LLM API Configuration -->
+   <!-- MakeUp/Apologizing Settings -->
+   <SocialInteractions_MakeUpSettings>Make-Up/Apologizing Settings:</SocialInteractions_MakeUpSettings>
+   
+   <!-- Memory System Settings -->
+   <SocialInteractions_MemorySystemSettings>Pawn Memory System Settings:</SocialInteractions_MemorySystemSettings>
+   <SocialInteractions_EnableMemorySystem>Enable Pawn Memory System</SocialInteractions_EnableMemorySystem>
+   <SocialInteractions_EnableMemorySystemDesc>If enabled, pawns will accumulate memories from events and interactions, which will be integrated into future LLM-generated dialogue.</SocialInteractions_EnableMemorySystemDesc>
+   <SocialInteractions_MemoryCharacterLimit>Memory Character Limit</SocialInteractions_MemoryCharacterLimit>
+   <SocialInteractions_MemoryCompactionThreshold>Memory Compaction Threshold</SocialInteractions_MemoryCompactionThreshold>
+   <SocialInteractions_MemoryBufferEntryCap>Memory Buffer Entry Cap</SocialInteractions_MemoryBufferEntryCap>
+   <SocialInteractions_MemoryPromptTemplate>Memory Writing Prompt Template:</SocialInteractions_MemoryPromptTemplate>
+   <SocialInteractions_MemoryCompactionPromptTemplate>Memory Compaction Prompt Template:</SocialInteractions_MemoryCompactionPromptTemplate>
+   <SocialInteractions_ResetMemoryTemplates>Reset Memory Templates to Default</SocialInteractions_ResetMemoryTemplates>
+   
+   <!-- LLM API Configuration -->
   <SocialInteractions_LLMConfiguration>LLM API Configuration</SocialInteractions_LLMConfiguration>
   <SocialInteractions_LLMType>LLM API Type:</SocialInteractions_LLMType>
   <SocialInteractions_APIURL>API URL:</SocialInteractions_APIURL>

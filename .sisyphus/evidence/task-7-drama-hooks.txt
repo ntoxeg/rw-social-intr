@@ -1,0 +1,48 @@
+=== Task 7: Drama InteractionWorker Buffer Hooks ===
+
+--- Files with BufferInteractionEvent calls ---
+SocialInteractions/Interactions/InteractionWorker_Admiration.cs
+SocialInteractions/Interactions/InteractionWorker_Backstabbing.cs
+SocialInteractions/Interactions/InteractionWorker_Badmouthing.cs
+SocialInteractions/Interactions/InteractionWorker_EnhancedInsult.cs
+SocialInteractions/Interactions/InteractionWorker_LoversQuarrel.cs
+SocialInteractions/Interactions/InteractionWorker_MakeUp.cs
+
+--- All BufferInteractionEvent calls in InteractionWorkers ---
+SocialInteractions/Interactions/InteractionWorker_Admiration.cs:57:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Expressed admiration for {0}. {1}. Well received.", recipient.LabelShort, typeLabel));
+SocialInteractions/Interactions/InteractionWorker_Admiration.cs:58:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} expressed admiration for me. {1}. I appreciated it.", initiator.LabelShort, typeLabel));
+SocialInteractions/Interactions/InteractionWorker_Admiration.cs:62:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Expressed admiration for {0}. {1}. It fell flat.", recipient.LabelShort, typeLabel));
+SocialInteractions/Interactions/InteractionWorker_Admiration.cs:63:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} tried to flatter me. {1}. I was unimpressed.", initiator.LabelShort, typeLabel));
+SocialInteractions/Interactions/InteractionWorker_Backstabbing.cs:227:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Attempted to backstab {0} by turning {1} against them. Success — {1} now distrusts {0}.", targetPawn.LabelShort, recipient.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_Backstabbing.cs:228:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} revealed troubling things about {1}. I now see {1} differently.", initiator.LabelShort, targetPawn.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_Backstabbing.cs:232:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Attempted to backstab {0} by turning {1} against them. Failed — {1} saw through my deception.", targetPawn.LabelShort, recipient.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_Backstabbing.cs:233:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} tried to turn me against {1}. I saw through the manipulation.", initiator.LabelShort, targetPawn.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_Badmouthing.cs:84:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Badmouthed {0} to {1}. We bonded over shared dislike.", targetPawn.LabelShort, recipient.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_Badmouthing.cs:85:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("Gossiped with {0} about {1}. We bonded over shared dislike.", initiator.LabelShort, targetPawn.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_Badmouthing.cs:101:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Badmouthed {0} to {1}. {1} believed me and now thinks worse of {0}.", targetPawn.LabelShort, recipient.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_Badmouthing.cs:102:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} told me negative things about {1}. I believed them.", initiator.LabelShort, targetPawn.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_Badmouthing.cs:118:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Badmouthed {0} to {1}. It backfired — {1} lost respect for me instead.", targetPawn.LabelShort, recipient.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_Badmouthing.cs:119:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} tried to badmouth {1} to me. I lost respect for {0} instead.", initiator.LabelShort, targetPawn.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_EnhancedInsult.cs:68:            SocialInteractions.BufferInteractionEvent(initiator, string.Format("Insulted {0} ({1}).{2}", recipient.LabelShort, severityLabel, fightNote));
+SocialInteractions/Interactions/InteractionWorker_EnhancedInsult.cs:69:            SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} insulted me ({1}).{2}", initiator.LabelShort, severityLabel, fightNote));
+SocialInteractions/Interactions/InteractionWorker_LoversQuarrel.cs:69:                    SocialInteractions.BufferInteractionEvent(initiator, string.Format("Had a lover's quarrel with {0}. We reconciled and made up.", recipient.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_LoversQuarrel.cs:70:                    SocialInteractions.BufferInteractionEvent(recipient, string.Format("Had a lover's quarrel with {0}. We reconciled and made up.", initiator.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_LoversQuarrel.cs:73:                    SocialInteractions.BufferInteractionEvent(initiator, string.Format("Had a lover's quarrel with {0}. Near-breakup — things got really bad.", recipient.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_LoversQuarrel.cs:74:                    SocialInteractions.BufferInteractionEvent(recipient, string.Format("Had a lover's quarrel with {0}. Near-breakup — things got really bad.", initiator.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_LoversQuarrel.cs:78:                    SocialInteractions.BufferInteractionEvent(initiator, string.Format("Had a lover's quarrel with {0}. We argued but nothing was resolved.", recipient.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_LoversQuarrel.cs:79:                    SocialInteractions.BufferInteractionEvent(recipient, string.Format("Had a lover's quarrel with {0}. We argued but nothing was resolved.", initiator.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_MakeUp.cs:63:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Attempted to reconcile with {0}. Success — we cleared the air.", recipient.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_MakeUp.cs:64:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} apologized and we reconciled. I accepted their apology.", initiator.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_MakeUp.cs:68:                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Attempted to reconcile with {0}. Failed — they weren't ready to forgive.", recipient.LabelShort));
+SocialInteractions/Interactions/InteractionWorker_MakeUp.cs:69:                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} tried to apologize but I wasn't convinced. Reconciliation failed.", initiator.LabelShort));
+
+--- Build result ---
+  Determining projects to restore...
+  All projects are up-to-date for restore.
+  SocialInteractions -> C:\Users\gento\dev\GitHub\rimworldmods\SocialInteractions\1.5\Assemblies\SocialInteractions.dll
+
+Build succeeded.
+    0 Warning(s)
+    0 Error(s)
+
+Time Elapsed 00:00:00.86

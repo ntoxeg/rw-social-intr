@@ -57,6 +57,18 @@ namespace SocialInteractions.Interactions
             // Handle the LLM interaction with the generated subject
             SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, SI_InteractionDefOf.MakeUp, subject, true);
 
+            // Buffer memory: both participants get entries with their perspective
+            if (reconciliationSuccessful)
+            {
+                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Attempted to reconcile with {0}. Success — we cleared the air.", recipient.LabelShort));
+                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} apologized and we reconciled. I accepted their apology.", initiator.LabelShort));
+            }
+            else
+            {
+                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Attempted to reconcile with {0}. Failed — they weren't ready to forgive.", recipient.LabelShort));
+                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} tried to apologize but I wasn't convinced. Reconciliation failed.", initiator.LabelShort));
+            }
+
             // Add topic-specific sentence rulepacks based on the outcome
             if (extraSentencePacks == null)
             {

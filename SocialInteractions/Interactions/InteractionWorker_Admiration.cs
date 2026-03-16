@@ -50,6 +50,19 @@ namespace SocialInteractions.Interactions
             // Handle the LLM interaction with the generated subject that reflects the outcomes
             SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, SI_InteractionDefOf.Admiration, subject);
 
+            // Buffer memory: both participants get entries with their perspective
+            string typeLabel = admirationType.ToString();
+            if (opinionChange.success)
+            {
+                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Expressed admiration for {0}. {1}. Well received.", recipient.LabelShort, typeLabel));
+                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} expressed admiration for me. {1}. I appreciated it.", initiator.LabelShort, typeLabel));
+            }
+            else
+            {
+                SocialInteractions.BufferInteractionEvent(initiator, string.Format("Expressed admiration for {0}. {1}. It fell flat.", recipient.LabelShort, typeLabel));
+                SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} tried to flatter me. {1}. I was unimpressed.", initiator.LabelShort, typeLabel));
+            }
+
             // Call the base Interacted method to create the normal log entry using XML rules
             base.Interacted(initiator, recipient, extraSentencePacks, out letterText, out letterLabel, out letterDef, out lookTargets);
 

@@ -414,9 +414,26 @@ namespace SocialInteractions.Combat
     {
         public static void Postfix(Pawn_HealthTracker __instance, DamageInfo dinfo, float totalDamageDealt)
         {
-            if (!SocialInteractions.Settings.Features.enableCombatTaunts) return;
-
             Pawn pawn = (Pawn)AccessTools.Field(typeof(Pawn_HealthTracker), "pawn").GetValue(__instance);
+
+            // --- Buffer selective combat events for memory system (kills/downs only) ---
+            if (pawn != null && dinfo.Instigator is Pawn attacker && dinfo.Def.ExternalViolenceFor(pawn))
+            {
+                if (pawn.Dead)
+                {
+                    // Kill event — buffer for the attacker
+                    SocialInteractions.BufferInteractionEvent(attacker, string.Format("Killed {0} in combat", pawn.LabelShort));
+                    SocialInteractions.BufferInteractionEvent(pawn, string.Format("Was killed by {0}", attacker.LabelShort));
+                }
+                else if (pawn.Downed)
+                {
+                    // Down event — buffer for the attacker
+                    SocialInteractions.BufferInteractionEvent(attacker, string.Format("Downed {0} in combat", pawn.LabelShort));
+                }
+            }
+            // --- End Buffer selective combat events ---
+
+            if (!SocialInteractions.Settings.Features.enableCombatTaunts) return;
 
             if (pawn == null || !pawn.Spawned || pawn.Downed || !pawn.Awake() || !pawn.RaceProps.Humanlike || ShamblerHelper.IsShambler(pawn)) return;
 
@@ -439,8 +456,16 @@ namespace SocialInteractions.Combat
     {
         public static void Postfix(Pawn_HealthTracker __instance)
         {
-            if (!SocialInteractions.Settings.Features.enableCombatTaunts) return;
             Pawn pawn = (Pawn)AccessTools.Field(typeof(Pawn_HealthTracker), "pawn").GetValue(__instance);
+
+            // --- Buffer downed event for memory system ---
+            if (pawn != null && pawn.Spawned)
+            {
+                SocialInteractions.BufferInteractionEvent(pawn, "Was downed in combat");
+            }
+            // --- End Buffer downed event ---
+
+            if (!SocialInteractions.Settings.Features.enableCombatTaunts) return;
             if (pawn.Spawned && pawn.RaceProps.Humanlike && !ShamblerHelper.IsShambler(pawn) && Rand.Value < SocialInteractions.Settings.Gameplay.downedCallForHelpProbability)
             {
                 string callForHelp = CombatTaunts.DownedCallsForHelp.RandomElement();

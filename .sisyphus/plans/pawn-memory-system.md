@@ -676,7 +676,7 @@ Max Concurrent: 4 (Waves 3 & Final)
   - Message: `feat(memory): add memory tab to Bio editor dialog`
   - Files: `SocialInteractions/UI/Dialog_EditPawnFlavorText.cs`
 
-- [ ] 7. Drama Interaction Capture — Badmouthing, Backstabbing, Admiration, Make-Up Hooks
+- [x] 7. Drama Interaction Capture — Badmouthing, Backstabbing, Admiration, Make-Up Hooks
 
   **What to do**:
   - Hook into each drama InteractionWorker to buffer event descriptions when colony pawns are involved
@@ -748,7 +748,7 @@ Max Concurrent: 4 (Waves 3 & Final)
   - Message: `feat(memory): capture drama interaction events to memory buffer`
   - Files: `SocialInteractions/Interactions/InteractionWorker_Badmouthing.cs`, `InteractionWorker_Backstabbing.cs`, `InteractionWorker_Admiration.cs`, `InteractionWorker_MakeUp.cs`, `InteractionWorker_EnhancedInsult.cs`, `InteractionWorker_LoversQuarrel.cs`
 
-- [ ] 8. Game Event + Combat Capture — Life Events, Raids, Injuries
+- [x] 8. Game Event + Combat Capture — Life Events, Raids, Injuries
 
   **What to do**:
   - Hook into existing Harmony patches and event handlers to buffer significant game events for colony pawns
@@ -823,7 +823,7 @@ Max Concurrent: 4 (Waves 3 & Final)
   - Message: `feat(memory): capture game events and combat to memory buffer`
   - Files: Multiple patch files (see list above)
 
-- [ ] 9. Hybrid Compaction — FIFO Truncation + LLM Summarization
+- [x] 9. Hybrid Compaction — FIFO Truncation + LLM Summarization
 
   **What to do**:
   - Implement compaction logic that runs AFTER the daily memory writer updates a pawn's memory (in Task 5's daily processing flow, or as a separate method called from there)
@@ -898,7 +898,7 @@ Max Concurrent: 4 (Waves 3 & Final)
   - Message: `feat(memory): implement hybrid FIFO + LLM compaction`
   - Files: `SocialInteractions/Memory/MemoryCompactor.cs` (or method in PawnMemory_GameComponent)
 
-- [ ] 10. Settings UI — Add Memory Section to Mod Settings Page
+- [x] 10. Settings UI — Add Memory Section to Mod Settings Page
 
   **What to do**:
   - In `SocialInteractions/Core/SocialInteractionsSettings.cs`, in the `DoSettingsWindowContents` method (the mod settings page), add a new section for Memory settings

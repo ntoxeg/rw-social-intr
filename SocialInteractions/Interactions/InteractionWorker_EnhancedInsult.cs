@@ -62,6 +62,12 @@ namespace SocialInteractions.Interactions
             // Handle the LLM interaction with the generated subject
             SocialInteractions.HandleNonStoppingInteraction(initiator, recipient, SI_InteractionDefOf.EnhancedInsult, subject);
 
+            // Buffer memory: both participants get entries with their perspective
+            string severityLabel = severity.ToString();
+            string fightNote = fightOccurred ? " A fight broke out." : "";
+            SocialInteractions.BufferInteractionEvent(initiator, string.Format("Insulted {0} ({1}).{2}", recipient.LabelShort, severityLabel, fightNote));
+            SocialInteractions.BufferInteractionEvent(recipient, string.Format("{0} insulted me ({1}).{2}", initiator.LabelShort, severityLabel, fightNote));
+
             // Call the base Interacted method to create the normal log entry using XML rules
             base.Interacted(initiator, recipient, extraSentencePacks, out letterText, out letterLabel, out letterDef, out lookTargets);
 

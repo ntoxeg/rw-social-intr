@@ -1,0 +1,15 @@
+647:             listingStandard.CheckboxLabeled("SocialInteractions_EnableMemorySystem".Translate(), ref SocialInteractions.Settings.Features.enableMemorySystem, "SocialInteractions_EnableMemorySystemDesc".Translate());
+649:             listingStandard.Label(string.Format("SocialInteractions_MemoryCharacterLimit".Translate() + ": {0}", SocialInteractions.Settings.Features.memoryCharacterLimit));
+652:             listingStandard.Label(string.Format("SocialInteractions_MemoryCompactionThreshold".Translate() + ": {0}", SocialInteractions.Settings.Features.memoryCompactionThreshold));
+655:             listingStandard.Label(string.Format("SocialInteractions_MemoryBufferEntryCap".Translate() + ": {0}", SocialInteractions.Settings.Features.memoryBufferEntryCap));
+659:             listingStandard.Label("SocialInteractions_MemoryPromptTemplate".Translate());
+660:             string newMemoryPromptTemplate = Widgets.TextArea(listingStandard.GetRect(150f), memoryPromptTemplateBuffer);
+661:             if (newMemoryPromptTemplate != memoryPromptTemplateBuffer)
+663:                 memoryPromptTemplateBuffer = newMemoryPromptTemplate;
+664:                 SocialInteractions.Settings.Prompts.memoryPromptTemplate = newMemoryPromptTemplate;
+668:             listingStandard.Label("SocialInteractions_MemoryCompactionPromptTemplate".Translate());
+669:             string newMemoryCompactionPromptTemplate = Widgets.TextArea(listingStandard.GetRect(150f), memoryCompactionPromptTemplateBuffer);
+670:             if (newMemoryCompactionPromptTemplate != memoryCompactionPromptTemplateBuffer)
+672:                 memoryCompactionPromptTemplateBuffer = newMemoryCompactionPromptTemplate;
+673:                 SocialInteractions.Settings.Prompts.memoryCompactionPromptTemplate = newMemoryCompactionPromptTemplate;
+677:             if (listingStandard.ButtonText("SocialInteractions_ResetMemoryTemplates".Translate()))
