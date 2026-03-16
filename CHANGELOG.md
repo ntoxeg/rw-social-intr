@@ -5,6 +5,16 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.0.3] - 2026-03-16
+
+### Changed
+- Conversation interruptions are now significantly shorter — recipients (BeTalkedTo) are released after 10 seconds (600 ticks) instead of waiting for the entire conversation to finish
+- Conversation fail-safe timeout reduced from 30s to 15s
+- Default max dialogue lines reduced from 10 to 6 for new games
+
+### Fixed
+- `JobDriver_HaveDeepTalk` now enforces the `llmMaxDialogueLines` limit (was missing, unlike all other handlers)
+
 ## [2.0.2] - 2026-03-15
 
 ### Changed
