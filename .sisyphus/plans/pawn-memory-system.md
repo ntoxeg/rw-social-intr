@@ -273,7 +273,7 @@ Max Concurrent: 4 (Waves 3 & Final)
   - Files: `SocialInteractions/Memory/PawnMemory_GameComponent.cs`
   - Pre-commit: `dotnet build SocialInteractions/SocialInteractions.csproj` succeeds
 
-- [ ] 2. Memory Settings — Toggle, Character Limit, and Prompt Template
+- [x] 2. Memory Settings — Toggle, Character Limit, and Prompt Template
 
   **What to do**:
   - Add memory-related settings to `SocialInteractions/Core/SocialInteractionsSettings.cs`
@@ -350,7 +350,7 @@ Max Concurrent: 4 (Waves 3 & Final)
   - Message: `feat(memory): add memory settings, toggle, char limit, prompt template`
   - Files: `SocialInteractions/Core/SocialInteractionsSettings.cs`
 
-- [ ] 3. Memory Prompt Integration (Reading) — `[pawn#_memories]` in ExtractPawnData
+- [x] 3. Memory Prompt Integration (Reading) — `[pawn#_memories]` in ExtractPawnData
 
   **What to do**:
   - In `SocialInteractions/Core/SocialInteractions.cs`, modify `ExtractPawnData()` method (around line 808 where `[pawn#_bio]` and `[pawn#_journal]` are set)

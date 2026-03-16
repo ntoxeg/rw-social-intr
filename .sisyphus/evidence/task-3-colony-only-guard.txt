@@ -1,0 +1,3 @@
+153:            if (!pawn.IsColonist)
+662:            else if (pawn.IsColonist)
+932:            int guests = map.mapPawns.AllPawnsSpawned.Count(p => p.guest != null && p.guest.GuestStatus == GuestStatus.Guest && !p.HostileTo(Faction.OfPlayer) && !p.IsColonist);

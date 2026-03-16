@@ -52,3 +52,40 @@
 - Task 3: PawnMemory_Patch (depends on this component)
 - Task 4: Memory persistence tests
 - Tasks 5-11: All memory-related features
+
+## Task 2: Memory Settings Implementation
+
+### Completed
+- Added 4 new fields to FeatureToggles class:
+  - `enableMemorySystem` (bool, default true)
+  - `memoryCharacterLimit` (int, default 2500)
+  - `memoryCompactionThreshold` (int, default 2000)
+  - `memoryBufferEntryCap` (int, default 50)
+
+- Added 2 new fields to PromptSettings class:
+  - `memoryPromptTemplate` (string, uses DEFAULT_MEMORY_WRITING_TEMPLATE)
+  - `memoryCompactionPromptTemplate` (string, uses DEFAULT_MEMORY_COMPACTION_TEMPLATE)
+
+- Created 2 default template constants:
+  - DEFAULT_MEMORY_WRITING_TEMPLATE: Instructs LLM to write memory entries in first-person, integrate events with existing memories, maintain personality, stay under char limit
+  - DEFAULT_MEMORY_COMPACTION_TEMPLATE: Instructs LLM to condense memories while preserving personality-defining events and relationships
+
+- Added all Scribe_Values.Look calls for serialization in both FeatureToggles.ExposeData() and PromptSettings.ExposeData()
+
+### Pattern Notes
+- Followed existing FeatureToggles pattern for boolean/numeric settings (lines 184-270)
+- Followed existing PromptSettings pattern for template storage (lines 272-291)
+- All new fields properly initialized with defaults
+- All new fields properly serialized via Scribe_Values.Look
+
+### Template Placeholders
+Memory Writing Template uses:
+- [pawn_name], [existing_memories], [todays_events], [pawn_traits], [pawn_mood], [char_limit]
+
+Memory Compaction Template uses:
+- [pawn_name], [full_memories], [char_limit]
+
+### Build Status
+- Pre-existing error in SocialInteractions.cs (line 817) unrelated to these changes
+- All new settings fields compile correctly
+- No new compilation errors introduced

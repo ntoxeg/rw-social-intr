@@ -1,0 +1,50 @@
+        public const string DEFAULT_MEMORY_WRITING_TEMPLATE = @"You are [pawn_name], a character in RimWorld. Write a brief memory entry from your perspective about today's events.
+
+Your existing memories:
+[existing_memories]
+
+Today's events:
+[todays_events]
+
+Your traits: [pawn_traits]
+Your current mood: [pawn_mood]
+
+Write a concise memory entry (under [char_limit] characters) that:
+1. Integrates today's events with your existing memories
+2. Maintains your personality and perspective
+3. Preserves important personality-defining memories
+4. Stays under the character limit
+
+Write in first-person perspective as if you're writing in a personal journal.";
+
+        public const string DEFAULT_MEMORY_COMPACTION_TEMPLATE = @"You are [pawn_name]. Your memory log has become too long and needs to be condensed while preserving the most important information.
+
+Full memories:
+[full_memories]
+
+Condense these memories to under [char_limit] characters by:
+1. Removing redundancy and repetitive entries
+2. Keeping personality-defining events and relationships
+3. Preserving key emotional moments
+4. Maintaining chronological sense where important
+5. Keeping details about important relationships
+
+Provide the condensed memory log in the same format as the original.";
+
+        public ApiSettings Api = new ApiSettings();
+        public FeatureToggles Features = new FeatureToggles();
+        public PromptSettings Prompts = new PromptSettings();
+        public DisplaySettings Display = new DisplaySettings();
+        public GameplaySettings Gameplay = new GameplaySettings();
+
+        public class ApiSettings : IExposable
+--
+            public string memoryPromptTemplate = DEFAULT_MEMORY_WRITING_TEMPLATE;
+            public string memoryCompactionPromptTemplate = DEFAULT_MEMORY_COMPACTION_TEMPLATE;
+
+            public void ExposeData()
+            {
+                Scribe_Values.Look(ref llmPromptTemplate, "llmPromptTemplate", "");
+                Scribe_Values.Look(ref llmMonologuePromptTemplate, "llmMonologuePromptTemplate", "");
+                Scribe_Values.Look(ref llmStoppingStrings, "llmStoppingStrings", "");
+                Scribe_Values.Look(ref memoryPromptTemplate, "memoryPromptTemplate", "");

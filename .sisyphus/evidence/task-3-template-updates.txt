@@ -1,0 +1,8 @@
+[pawn1]'s memories: [pawn1_memories]
+[pawn2]'s memories: [pawn2_memories]
+
+The colony is in a [tile] area, has [colony], and [event]. 
+--
+[pawn1]'s memories: [pawn1_memories]
+
+The colony is in a [tile] area, has [colony], and [event].

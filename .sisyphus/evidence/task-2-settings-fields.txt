@@ -1,0 +1,12 @@
+259:            public bool enableMemorySystem = true; // Whether pawn memory system is enabled
+260:            public int memoryCharacterLimit = 2500; // Maximum characters for pawn memory
+261:            public int memoryCompactionThreshold = 2000; // Threshold at which memory compaction is triggered
+262:            public int memoryBufferEntryCap = 50; // Maximum number of memory buffer entries before compaction
+306:                Scribe_Values.Look(ref enableMemorySystem, "enableMemorySystem", true);
+307:                Scribe_Values.Look(ref memoryCharacterLimit, "memoryCharacterLimit", 2500);
+308:                Scribe_Values.Look(ref memoryCompactionThreshold, "memoryCompactionThreshold", 2000);
+309:                Scribe_Values.Look(ref memoryBufferEntryCap, "memoryBufferEntryCap", 50);
+325:            public string memoryPromptTemplate = DEFAULT_MEMORY_WRITING_TEMPLATE;
+326:            public string memoryCompactionPromptTemplate = DEFAULT_MEMORY_COMPACTION_TEMPLATE;
+333:                Scribe_Values.Look(ref memoryPromptTemplate, "memoryPromptTemplate", "");
+334:                Scribe_Values.Look(ref memoryCompactionPromptTemplate, "memoryCompactionPromptTemplate", "");

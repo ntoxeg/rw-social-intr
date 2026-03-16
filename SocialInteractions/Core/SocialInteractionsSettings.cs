@@ -57,9 +57,10 @@ namespace SocialInteractions
          * [pawn#_afflictions]: Medical conditions/hediffs
          * [pawn#_family]: Family relationships
          * [pawn#_bio]: Backstory/bio
-         * [pawn#_action]: Current job/activity
-         * [pawn#_journal]: Recent log entry (when last spoke)
-         * [pawn#_opinion]: Opinion of the conversation target
+          * [pawn#_action]: Current job/activity
+          * [pawn#_journal]: Recent log entry (when last spoke)
+          * [pawn#_memories]: Accumulated memories from past events
+          * [pawn#_opinion]: Opinion of the conversation target
          * 
          * [relation]: Relationship between pawns (Spouse, Lover, etc.)
          * [tile]: Biome/terrain type of the map
@@ -83,6 +84,8 @@ namespace SocialInteractions
 [pawn1]'s opinion of [pawn2]: [pawn1_opinion]
 [pawn2]'s opinion of [pawn1]: [pawn2_opinion]
 Last time they spoke: [pawn1_journal]
+[pawn1]'s memories: [pawn1_memories]
+[pawn2]'s memories: [pawn2_memories]
 
 The colony is in a [tile] area, has [colony], and [event]. 
 It's currently [time], on [date] and the weather is [weather].
@@ -95,6 +98,7 @@ Current event: [subject]
 
 [pawn1] is a [pawn1_sex], age [pawn1_age], a [pawn1_title] of the [pawn1_faction] faction, following the [pawn1_ideology] ideology, has the following traits: [pawn1_traits]; Xenotype: [pawn1_genes]; [pawn1] is proficient in: [pawn1_proficiencies]; [pawn1] is incapable of: [pawn1_noskills]; [pawn1]'s mood is [pawn1_mood], positives: [pawn1_likes] / negatives: [pawn1_dislikes]; Medical status: [pawn1_afflictions]. [pawn1_bio]
 [pawn1] is currently [pawn1_action]
+[pawn1]'s memories: [pawn1_memories]
 
 The colony is in a [tile] area, has [colony], and [event].
 It's currently [time], on [date] and the weather is [weather].
@@ -103,11 +107,45 @@ Current event: [pawn1] [subject]
 
 ";
 
+        public const string DEFAULT_MEMORY_WRITING_TEMPLATE = @"You are [pawn_name], a character in RimWorld. Write a brief memory entry from your perspective about today's events.
+
+Your existing memories:
+[existing_memories]
+
+Today's events:
+[todays_events]
+
+Your traits: [pawn_traits]
+Your current mood: [pawn_mood]
+
+Write a concise memory entry (under [char_limit] characters) that:
+1. Integrates today's events with your existing memories
+2. Maintains your personality and perspective
+3. Preserves important personality-defining memories
+4. Stays under the character limit
+
+Write in first-person perspective as if you're writing in a personal journal.";
+
+        public const string DEFAULT_MEMORY_COMPACTION_TEMPLATE = @"You are [pawn_name]. Your memory log has become too long and needs to be condensed while preserving the most important information.
+
+Full memories:
+[full_memories]
+
+Condense these memories to under [char_limit] characters by:
+1. Removing redundancy and repetitive entries
+2. Keeping personality-defining events and relationships
+3. Preserving key emotional moments
+4. Maintaining chronological sense where important
+5. Keeping details about important relationships
+
+Provide the condensed memory log in the same format as the original.";
+
         public ApiSettings Api = new ApiSettings();
         public FeatureToggles Features = new FeatureToggles();
         public PromptSettings Prompts = new PromptSettings();
         public DisplaySettings Display = new DisplaySettings();
         public GameplaySettings Gameplay = new GameplaySettings();
+        public MemorySettings Memory = new MemorySettings();
 
         public class ApiSettings : IExposable
         {
@@ -223,6 +261,10 @@ Current event: [pawn1] [subject]
             public bool enableBackstabbing = true; // Whether backstabbing interactions are enabled
             public bool enableChildrenMisbehavior = true; // Whether children misbehavior is enabled
             public bool enablePesterPrisonerFeature = true; // Whether pester prisoner feature is enabled
+            public bool enableMemorySystem = true; // Whether pawn memory system is enabled
+            public int memoryCharacterLimit = 2500; // Maximum characters for pawn memory
+            public int memoryCompactionThreshold = 2000; // Threshold at which memory compaction is triggered
+            public int memoryBufferEntryCap = 50; // Maximum number of memory buffer entries before compaction
 
             public void ExposeData()
             {
@@ -266,6 +308,10 @@ Current event: [pawn1] [subject]
                 Scribe_Values.Look(ref enableBackstabbing, "enableBackstabbing", true);
                 Scribe_Values.Look(ref enableChildrenMisbehavior, "enableChildrenMisbehavior", true);
                 Scribe_Values.Look(ref enablePesterPrisonerFeature, "enablePesterPrisonerFeature", true);
+                Scribe_Values.Look(ref enableMemorySystem, "enableMemorySystem", true);
+                Scribe_Values.Look(ref memoryCharacterLimit, "memoryCharacterLimit", 2500);
+                Scribe_Values.Look(ref memoryCompactionThreshold, "memoryCompactionThreshold", 2000);
+                Scribe_Values.Look(ref memoryBufferEntryCap, "memoryBufferEntryCap", 50);
             }
         }
 
@@ -281,12 +327,16 @@ Current event: [pawn1] [subject]
 <END>
 **end**
 (end)";
+            public string memoryPromptTemplate = DEFAULT_MEMORY_WRITING_TEMPLATE;
+            public string memoryCompactionPromptTemplate = DEFAULT_MEMORY_COMPACTION_TEMPLATE;
 
             public void ExposeData()
             {
                 Scribe_Values.Look(ref llmPromptTemplate, "llmPromptTemplate", "");
                 Scribe_Values.Look(ref llmMonologuePromptTemplate, "llmMonologuePromptTemplate", "");
                 Scribe_Values.Look(ref llmStoppingStrings, "llmStoppingStrings", "");
+                Scribe_Values.Look(ref memoryPromptTemplate, "memoryPromptTemplate", "");
+                Scribe_Values.Look(ref memoryCompactionPromptTemplate, "memoryCompactionPromptTemplate", "");
             }
         }
 
@@ -424,6 +474,26 @@ Current event: [pawn1] [subject]
             }
         }
 
+        public class MemorySettings : IExposable
+        {
+            public bool enableMemorySystem = true;
+            public int memoryCharacterLimit = 2500;
+            public int memoryCompactionThreshold = 2000;
+            public int memoryBufferEntryCap = 50;
+            public string memoryPromptTemplate = DEFAULT_MEMORY_WRITING_TEMPLATE;
+            public string memoryCompactionPromptTemplate = DEFAULT_MEMORY_COMPACTION_TEMPLATE;
+
+            public void ExposeData()
+            {
+                Scribe_Values.Look(ref enableMemorySystem, "enableMemorySystem", true);
+                Scribe_Values.Look(ref memoryCharacterLimit, "memoryCharacterLimit", 2500);
+                Scribe_Values.Look(ref memoryCompactionThreshold, "memoryCompactionThreshold", 2000);
+                Scribe_Values.Look(ref memoryBufferEntryCap, "memoryBufferEntryCap", 50);
+                Scribe_Values.Look(ref memoryPromptTemplate, "memoryPromptTemplate", DEFAULT_MEMORY_WRITING_TEMPLATE);
+                Scribe_Values.Look(ref memoryCompactionPromptTemplate, "memoryCompactionPromptTemplate", DEFAULT_MEMORY_COMPACTION_TEMPLATE);
+            }
+        }
+
         public override void ExposeData()
         {
             base.ExposeData();
@@ -432,6 +502,7 @@ Current event: [pawn1] [subject]
             Prompts.ExposeData();
             Display.ExposeData();
             Gameplay.ExposeData();
+            Memory.ExposeData();
             Scribe_Values.Look(ref modVersion, "modVersion", CURRENT_VERSION);
 
             if (Scribe.mode == LoadSaveMode.LoadingVars)

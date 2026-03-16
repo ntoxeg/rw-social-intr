@@ -17,6 +17,7 @@ using SocialInteractions.UI;
 using SocialInteractions.Patches;
 using SocialInteractions.DefOfs;
 using SocialInteractions.Components;
+using SocialInteractions.Memory;
 
 namespace SocialInteractions
 {
@@ -128,6 +129,45 @@ namespace SocialInteractions
                     PawnFlavorTexts[pawn.thingIDNumber] = flavorText;
                 }
             }
+        }
+
+        /// <summary>
+        /// Gets the memory text for a pawn
+        /// </summary>
+        /// <param name="pawn">The pawn to get memory for</param>
+        /// <returns>The pawn's memory text, or empty string if memory system is disabled or pawn is not a colonist</returns>
+        public static string GetPawnMemory(Pawn pawn)
+        {
+            if (pawn == null)
+            {
+                return string.Empty;
+            }
+
+            // Check if memory system is enabled
+            if (!Settings.Memory.enableMemorySystem)
+            {
+                return string.Empty;
+            }
+
+            // Only return memories for colonists
+            if (!pawn.IsColonist)
+            {
+                return string.Empty;
+            }
+
+            // Try to get from the game component
+            PawnMemory_GameComponent gameComp = null;
+            if (Current.Game != null)
+            {
+                gameComp = Current.Game.GetComponent<PawnMemory_GameComponent>();
+            }
+
+            if (gameComp != null)
+            {
+                return gameComp.GetMemory(pawn.thingIDNumber);
+            }
+
+            return string.Empty;
         }
 
         public static bool IsLlmInteractionEnabled(InteractionDef interactionDef)
@@ -812,6 +852,9 @@ namespace SocialInteractions
 
             // Add custom flavor text (bio) for the pawn
             data[prefix + "_bio"] = GetPawnFlavorText(pawn);
+
+            // Add pawn memories
+            data[prefix + "_memories"] = GetPawnMemory(pawn);
 
             // Opinion of target
             data[prefix + "_opinion"] = GetOpinion(pawn, target);
