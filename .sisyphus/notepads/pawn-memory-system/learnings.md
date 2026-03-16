@@ -89,3 +89,47 @@ Memory Compaction Template uses:
 - Pre-existing error in SocialInteractions.cs (line 817) unrelated to these changes
 - All new settings fields compile correctly
 - No new compilation errors introduced
+
+## Task 5: Daily Memory Writer via GameComponentTick
+
+### Core Implementation
+- Added `GameComponentTick()` override in `PawnMemory_GameComponent` with a daily interval gate:
+  - `DailyMemoryProcessingIntervalTicks = 60000`
+  - Tick source: `Find.TickManager.TicksGame`
+  - Reprocessing guard: `lastDailyMemoryProcessingTick`
+  - Overlap guard: `isProcessingDailyMemories`
+
+- Daily writer runs asynchronously via `Task.Run(async () => ...)` to avoid blocking the game thread.
+
+- Daily processing is sequential (single `foreach` + awaited `GenerateText`) to avoid parallel LLM overload.
+
+### LLM Pattern Applied
+- Client creation follows project pattern: `using (ILlmClient client = LlmClientFactory.Create(SocialInteractions.Settings))`
+- Per pawn, async call uses `await client.GenerateText(prompt)`
+- Prompt built from `Settings.Memory.memoryPromptTemplate` with placeholders:
+  - `[pawn_name]`, `[existing_memories]`, `[todays_events]`, `[pawn_traits]`, `[pawn_mood]`, `[char_limit]`
+
+### Pawn Selection / Safety
+- Uses `GetAllPawnsWithBufferEntries()` to discover candidate pawn IDs.
+- Resolves pawn by ID via `PawnsFinder.AllMapsWorldAndTemporary_AliveOrDead`.
+- Skips and cleans buffer for invalid/dead/non-spawned pawns.
+
+### Failure Semantics
+- Buffer is retrieved atomically via `GetAndClearBuffer(pawnId)`.
+- On LLM null/empty response or exception, entries are restored with `RestoreBufferEntries(...)` so retry can happen next day.
+- On success, memory is updated via `SetMemory(pawnId, responseText.Trim())`.
+
+### Logging
+- Start log: `Processing memories for N pawns`
+- Per-pawn success and failure logs added with `SLog.Message` / `SLog.Warning`.
+
+### Verification Evidence
+- `.sisyphus/evidence/task-5-daily-tick.txt`
+- `.sisyphus/evidence/task-5-async-llm.txt`
+- `.sisyphus/evidence/task-5-dead-pawn-handling.txt`
+- Build: `.sisyphus/evidence/task-5-build.txt` (0 warnings, 0 errors)
+
+## Task 6: Bio Tab Toggle
+- Used `Widgets.ButtonText` with `GUI.color` to create a simple tab toggle instead of RimWorld's `TabDrawer` which requires a specific layout structure.
+- Split `DoWindowContents` into `DrawBioTab` and `DrawMemoriesTab` to keep the code clean and maintainable.
+- Ensured the tab toggle is hidden when `SocialInteractions.Settings.Memory.enableMemorySystem` is disabled, preserving the original UI behavior.

@@ -1,0 +1,11 @@
+180:            using (ILlmClient client = LlmClientFactory.Create(SocialInteractions.Settings))
+187:                        GetAndClearBuffer(pawnId);
+192:                    List<string> todaysEvents = GetAndClearBuffer(pawnId);
+202:                        string responseText = await client.GenerateText(prompt);
+205:                            RestoreBufferEntries(pawnId, todaysEvents);
+210:                        SetMemory(pawnId, responseText.Trim());
+215:                        RestoreBufferEntries(pawnId, todaysEvents);
+248:            return SocialInteractions.Settings.Memory.memoryPromptTemplate
+296:        private void RestoreBufferEntries(int pawnId, List<string> entries)
+324:        public void SetMemory(int pawnId, string memory)
+361:        public List<string> GetAndClearBuffer(int pawnId)

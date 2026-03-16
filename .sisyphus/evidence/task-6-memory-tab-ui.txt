@@ -1,0 +1,10 @@
+47:                this.memoryText = Services.Memory.GetMemory(pawn.thingIDNumber);
+124:                Widgets.BeginScrollView(dossierRect, ref dossierScrollPosition, dossierViewRect);
+126:                Widgets.EndScrollView();
+150:            Widgets.BeginScrollView(outRect, ref scrollPosition, viewRect);
+152:            Widgets.EndScrollView();
+254:            Widgets.BeginScrollView(outRect, ref memoryScrollPosition, viewRect);
+267:            Widgets.EndScrollView();
+291:                    memoryText = Services.Memory.GetMemory(pawn.thingIDNumber);
+305:                        Services.Memory.ClearMemory(pawn.thingIDNumber);
+318:                    Services.Memory.SetMemory(pawn.thingIDNumber, memoryText);

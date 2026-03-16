@@ -1,0 +1,11 @@
+63:                string.Format("SocialInteractions_EditBioFor".Translate(), pawn.Name.ToStringShort));
+76:                if (Widgets.ButtonText(bioTabRect, "Bio"))
+82:                if (Widgets.ButtonText(memTabRect, "Memories"))
+93:                DrawBioTab(inRect, curY);
+97:                DrawMemoriesTab(inRect, curY);
+101:        private void DrawBioTab(Rect inRect, float startY)
+180:            string autoGenLabel = isGenerating ? "SocialInteractions_AutoGenerateBioGenerating".Translate() : "SocialInteractions_AutoGenerateBio".Translate();
+191:                        string result = await SocialInteractions.GenerateBioAsync(pawn);
+205:                TooltipHandler.TipRegion(autoGenButtonRect, "SocialInteractions_AutoGenerateBioDisabledTooltip".Translate());
+209:                TooltipHandler.TipRegion(autoGenButtonRect, "SocialInteractions_AutoGenerateBioTooltip".Translate());
+231:        private void DrawMemoriesTab(Rect inRect, float startY)

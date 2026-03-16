@@ -495,7 +495,7 @@ Max Concurrent: 4 (Waves 3 & Final)
   - Message: `feat(memory): capture LLM dialogue and monologue events to memory buffer`
   - Files: `SocialInteractions/Core/SocialInteractions.cs`
 
-- [ ] 5. Daily Memory Writer — GameComponentTick + Async LLM Processing
+- [x] 5. Daily Memory Writer — GameComponentTick + Async LLM Processing
 
   **What to do**:
   - Add `GameComponentTick()` override to `PawnMemory_GameComponent` (or create a separate `SocialInteractions/Memory/DailyMemoryWriter.cs` component if separation of concerns is preferred — follow the pattern most consistent with the codebase)
@@ -589,7 +589,7 @@ Max Concurrent: 4 (Waves 3 & Final)
   - Message: `feat(memory): implement daily async memory writer via GameComponentTick`
   - Files: `SocialInteractions/Memory/PawnMemory_GameComponent.cs` (or `SocialInteractions/Memory/DailyMemoryWriter.cs`)
 
-- [ ] 6. Bio Editor Memory Tab — Extend Dialog_EditPawnFlavorText
+- [x] 6. Bio Editor Memory Tab — Extend Dialog_EditPawnFlavorText
 
   **What to do**:
   - Modify `SocialInteractions/UI/Dialog_EditPawnFlavorText.cs` to add a second panel/tab for viewing and editing pawn memories

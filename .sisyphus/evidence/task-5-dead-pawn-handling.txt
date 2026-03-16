@@ -1,0 +1,8 @@
+185:                    if (pawn == null || pawn.Destroyed || pawn.Dead || !pawn.Spawned)
+187:                        GetAndClearBuffer(pawnId);
+188:                        SLog.Warning(string.Format("[SocialInteractions] Skipping memory processing for missing/dead pawn {0}; cleaned buffer.", pawnId));
+192:                    List<string> todaysEvents = GetAndClearBuffer(pawnId);
+224:            if (PawnsFinder.AllMapsWorldAndTemporary_AliveOrDead == null)
+229:            for (int i = 0; i < PawnsFinder.AllMapsWorldAndTemporary_AliveOrDead.Count; i++)
+231:                Pawn pawn = PawnsFinder.AllMapsWorldAndTemporary_AliveOrDead[i];
+361:        public List<string> GetAndClearBuffer(int pawnId)

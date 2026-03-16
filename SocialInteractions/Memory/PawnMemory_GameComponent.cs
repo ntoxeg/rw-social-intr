@@ -1,7 +1,9 @@
 using RimWorld;
 using Verse;
 using System.Collections.Generic;
-using SocialInteractions;
+using System;
+using System.Threading.Tasks;
+using SocialInteractions.Api;
 
 namespace SocialInteractions.Memory
 {
@@ -23,6 +25,13 @@ namespace SocialInteractions.Memory
         // Maximum entries per pawn in buffer
         private const int BufferCapacity = 50;
 
+        // Daily processing cadence (60000 ticks = 1 in-game day)
+        private const int DailyMemoryProcessingIntervalTicks = 60000;
+
+        // Tick tracking and overlap prevention for daily memory processing
+        private int lastDailyMemoryProcessingTick;
+        private bool isProcessingDailyMemories;
+
         public PawnMemory_GameComponent()
         {
         }
@@ -31,6 +40,11 @@ namespace SocialInteractions.Memory
         {
             // Register component for global access
             Services.Memory = this;
+
+            lastDailyMemoryProcessingTick = Find.TickManager != null
+                ? Find.TickManager.TicksGame
+                : 0;
+            isProcessingDailyMemories = false;
         }
 
         public override void ExposeData()
@@ -101,6 +115,194 @@ namespace SocialInteractions.Memory
                         Scribe.ExitNode();
                     }
                 }
+            }
+
+            Scribe_Values.Look(ref lastDailyMemoryProcessingTick, "lastDailyMemoryProcessingTick", 0);
+            Scribe_Values.Look(ref isProcessingDailyMemories, "isProcessingDailyMemories", false);
+
+            if (Scribe.mode == LoadSaveMode.PostLoadInit)
+            {
+                // Never resume a previously in-progress async run after loading.
+                isProcessingDailyMemories = false;
+            }
+        }
+
+        public override void GameComponentTick()
+        {
+            base.GameComponentTick();
+
+            if (!SocialInteractions.Settings.Memory.enableMemorySystem)
+            {
+                return;
+            }
+
+            if (isProcessingDailyMemories || Find.TickManager == null)
+            {
+                return;
+            }
+
+            int currentTick = Find.TickManager.TicksGame;
+            if (currentTick - lastDailyMemoryProcessingTick < DailyMemoryProcessingIntervalTicks)
+            {
+                return;
+            }
+
+            lastDailyMemoryProcessingTick = currentTick;
+            isProcessingDailyMemories = true;
+
+            Task.Run(async () =>
+            {
+                try
+                {
+                    await ProcessDailyMemoriesAsync();
+                }
+                catch (Exception ex)
+                {
+                    SLog.Warning(string.Format("[SocialInteractions] Daily memory processing failed: {0}", ex.Message));
+                }
+                finally
+                {
+                    isProcessingDailyMemories = false;
+                }
+            });
+        }
+
+        private async Task ProcessDailyMemoriesAsync()
+        {
+            List<int> pawnsWithEntries = GetAllPawnsWithBufferEntries();
+            if (pawnsWithEntries.Count == 0)
+            {
+                return;
+            }
+
+            SLog.Message(string.Format("[SocialInteractions] Processing memories for {0} pawns", pawnsWithEntries.Count));
+
+            using (ILlmClient client = LlmClientFactory.Create(SocialInteractions.Settings))
+            {
+                foreach (int pawnId in pawnsWithEntries)
+                {
+                    Pawn pawn = FindPawnById(pawnId);
+                    if (pawn == null || pawn.Destroyed || pawn.Dead || !pawn.Spawned)
+                    {
+                        GetAndClearBuffer(pawnId);
+                        SLog.Warning(string.Format("[SocialInteractions] Skipping memory processing for missing/dead pawn {0}; cleaned buffer.", pawnId));
+                        continue;
+                    }
+
+                    List<string> todaysEvents = GetAndClearBuffer(pawnId);
+                    if (todaysEvents.Count == 0)
+                    {
+                        continue;
+                    }
+
+                    string prompt = BuildMemoryPrompt(pawn, GetMemory(pawnId), todaysEvents);
+
+                    try
+                    {
+                        string responseText = await client.GenerateText(prompt);
+                        if (string.IsNullOrWhiteSpace(responseText))
+                        {
+                            RestoreBufferEntries(pawnId, todaysEvents);
+                            SLog.Warning(string.Format("[SocialInteractions] Memory write failed for {0}: empty LLM response", pawn.Name != null ? pawn.Name.ToStringShort : pawn.LabelShort));
+                            continue;
+                        }
+
+                        SetMemory(pawnId, responseText.Trim());
+                        SLog.Message(string.Format("[SocialInteractions] Memory updated for {0}", pawn.Name != null ? pawn.Name.ToStringShort : pawn.LabelShort));
+                    }
+                    catch (Exception ex)
+                    {
+                        RestoreBufferEntries(pawnId, todaysEvents);
+                        SLog.Warning(string.Format("[SocialInteractions] Memory write failed for {0}: {1}", pawn.Name != null ? pawn.Name.ToStringShort : pawn.LabelShort, ex.Message));
+                    }
+                }
+            }
+        }
+
+        private static Pawn FindPawnById(int pawnId)
+        {
+            if (PawnsFinder.AllMapsWorldAndTemporary_AliveOrDead == null)
+            {
+                return null;
+            }
+
+            for (int i = 0; i < PawnsFinder.AllMapsWorldAndTemporary_AliveOrDead.Count; i++)
+            {
+                Pawn pawn = PawnsFinder.AllMapsWorldAndTemporary_AliveOrDead[i];
+                if (pawn != null && pawn.thingIDNumber == pawnId)
+                {
+                    return pawn;
+                }
+            }
+
+            return null;
+        }
+
+        private static string BuildMemoryPrompt(Pawn pawn, string existingMemory, List<string> todaysEvents)
+        {
+            string pawnName = pawn.Name != null ? pawn.Name.ToStringShort : pawn.LabelShort;
+            string traitsText = GetTraitsText(pawn);
+            string moodText = GetMoodText(pawn);
+            int charLimit = SocialInteractions.Settings.Memory.memoryCharacterLimit;
+
+            return SocialInteractions.Settings.Memory.memoryPromptTemplate
+                .Replace("[pawn_name]", pawnName)
+                .Replace("[existing_memories]", string.IsNullOrEmpty(existingMemory) ? "None" : existingMemory)
+                .Replace("[todays_events]", string.Join("\n", todaysEvents.ToArray()))
+                .Replace("[pawn_traits]", traitsText)
+                .Replace("[pawn_mood]", moodText)
+                .Replace("[char_limit]", charLimit.ToString());
+        }
+
+        private static string GetTraitsText(Pawn pawn)
+        {
+            if (pawn == null || pawn.story == null || pawn.story.traits == null)
+            {
+                return "None";
+            }
+
+            List<string> traits = new List<string>();
+            foreach (Trait trait in pawn.story.traits.allTraits)
+            {
+                if (trait != null)
+                {
+                    traits.Add(trait.Label);
+                }
+            }
+
+            return traits.Count > 0 ? string.Join(", ", traits.ToArray()) : "None";
+        }
+
+        private static string GetMoodText(Pawn pawn)
+        {
+            if (pawn == null || pawn.needs == null || pawn.needs.mood == null)
+            {
+                return "N/A";
+            }
+
+            float level = pawn.needs.mood.CurLevelPercentage;
+            return string.Format("{0}% ({1})", (level * 100f).ToString("F0"), GetMoodLabel(level));
+        }
+
+        private static string GetMoodLabel(float level)
+        {
+            if (level < 0.15f) return "Deeply Upset";
+            if (level < 0.35f) return "Upset";
+            if (level < 0.60f) return "Neutral";
+            if (level < 0.80f) return "Content";
+            return "Happy";
+        }
+
+        private void RestoreBufferEntries(int pawnId, List<string> entries)
+        {
+            if (entries == null || entries.Count == 0)
+            {
+                return;
+            }
+
+            foreach (string entry in entries)
+            {
+                AddBufferEntry(pawnId, entry);
             }
         }
 

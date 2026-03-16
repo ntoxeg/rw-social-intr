@@ -1,0 +1,8 @@
+22:        private bool showingMemoryTab = false;
+45:            if (SocialInteractions.Settings.Memory.enableMemorySystem)
+69:            if (SocialInteractions.Settings.Memory.enableMemorySystem)
+75:                GUI.color = !showingMemoryTab ? Color.white : Color.grey;
+78:                    showingMemoryTab = false;
+81:                GUI.color = showingMemoryTab ? Color.white : Color.grey;
+84:                    showingMemoryTab = true;
+91:            if (!showingMemoryTab)

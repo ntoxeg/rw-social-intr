@@ -1,0 +1,18 @@
+28:        // Daily processing cadence (60000 ticks = 1 in-game day)
+29:        private const int DailyMemoryProcessingIntervalTicks = 60000;
+32:        private int lastDailyMemoryProcessingTick;
+33:        private bool isProcessingDailyMemories;
+44:            lastDailyMemoryProcessingTick = Find.TickManager != null
+45:                ? Find.TickManager.TicksGame
+47:            isProcessingDailyMemories = false;
+120:            Scribe_Values.Look(ref lastDailyMemoryProcessingTick, "lastDailyMemoryProcessingTick", 0);
+121:            Scribe_Values.Look(ref isProcessingDailyMemories, "isProcessingDailyMemories", false);
+126:                isProcessingDailyMemories = false;
+130:        public override void GameComponentTick()
+132:            base.GameComponentTick();
+139:            if (isProcessingDailyMemories || Find.TickManager == null)
+144:            int currentTick = Find.TickManager.TicksGame;
+145:            if (currentTick - lastDailyMemoryProcessingTick < DailyMemoryProcessingIntervalTicks)
+150:            lastDailyMemoryProcessingTick = currentTick;
+151:            isProcessingDailyMemories = true;
+165:                    isProcessingDailyMemories = false;
