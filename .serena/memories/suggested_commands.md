@@ -1,0 +1,1 @@
+Useful commands on Windows/Git Bash in this repo: git status, git diff, git log --oneline, dotnet test SocialInteractions.Tests, ls, pwd. For PowerShell use pwsh.exe -c "<command>" or pwsh.exe -ExecutionPolicy Bypass -File "script.ps1". Use quoted paths on Windows when needed.

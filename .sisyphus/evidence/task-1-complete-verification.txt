@@ -1,0 +1,72 @@
+=== TASK 1: PawnMemory_GameComponent - COMPLETE VERIFICATION ===
+
+FILE CREATED: SocialInteractions/Memory/PawnMemory_GameComponent.cs
+- Size: 6.5KB
+- Namespace: SocialInteractions.Memory
+- Base Class: GameComponent
+
+BUILD STATUS:
+✅ Build succeeded with 0 errors, 0 warnings
+✅ dotnet build SocialInteractions/SocialInteractions.csproj passed
+
+STORAGE IMPLEMENTATION:
+✅ Dictionary<int, string> memories - for persistent memory storage
+✅ Dictionary<int, List<string>> buffer - for daily event accumulation
+✅ Uses pawn.thingIDNumber as key (not Pawn reference)
+
+THREAD SAFETY:
+✅ private readonly object bufferLock = new object()
+✅ All buffer operations wrapped in lock statements:
+   - AddBufferEntry (line 139)
+   - GetAndClearBuffer (line 161)
+   - GetAllPawnsWithBufferEntries (line 179)
+   - ClearMemory buffer access (line 199)
+
+BUFFER CAPACITY:
+✅ private const int BufferCapacity = 50
+✅ Enforcement: RemoveRange(0, buffer[pawnId].Count - BufferCapacity)
+✅ Drops oldest entries when exceeded
+
+API METHODS (All Present):
+✅ GetMemory(int pawnId) - line 110
+✅ SetMemory(int pawnId, string memory) - line 122
+✅ AddBufferEntry(int pawnId, string entry) - line 137
+✅ GetAndClearBuffer(int pawnId) - line 159
+✅ GetAllPawnsWithBufferEntries() - line 177
+✅ ClearMemory(int pawnId) - line 196
+
+PERSISTENCE (ExposeData):
+✅ Scribe_Collections.Look for memories dictionary (line 41)
+✅ Manual serialization for buffer (lines 44-99):
+   - Saving mode: Convert dictionary to separate key/value lists
+   - PostLoadInit mode: Reconstruct dictionary from lists
+   - Follows VoiceAssignmentManager pattern exactly
+
+SERVICE REGISTRATION:
+✅ Services.Memory = this; in constructor (line 33)
+✅ Services.cs updated with Memory property (line 19)
+✅ Services.Reset() updated to clear Memory (line 31)
+
+CONSTRUCTORS:
+✅ PawnMemory_GameComponent() - parameterless
+✅ PawnMemory_GameComponent(Game game) - with registration
+
+EVIDENCE FILES CREATED:
+✅ .sisyphus/evidence/task-1-gamecomponent-api.txt - API methods verification
+✅ .sisyphus/evidence/task-1-buffer-cap.txt - Buffer capacity verification
+✅ .sisyphus/evidence/task-1-complete-verification.txt - This file
+
+ACCEPTANCE CRITERIA MET:
+✅ File created: SocialInteractions/Memory/PawnMemory_GameComponent.cs
+✅ Class extends GameComponent
+✅ Storage: Dictionary<int, string> for memories
+✅ Buffer: Dictionary<int, List<string>> for daily events
+✅ Public methods: All 6 required methods implemented
+✅ ExposeData() with Scribe_Collections.Look for persistence
+✅ Thread-safe buffer access with locks
+✅ Buffer cap: max 50 entries per pawn
+✅ Component registers itself for global access
+✅ Build passes: dotnet build SocialInteractions/SocialInteractions.csproj
+✅ Evidence files created
+
+TASK STATUS: ✅ COMPLETE

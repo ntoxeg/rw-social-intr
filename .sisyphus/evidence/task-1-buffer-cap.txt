@@ -1,0 +1,3 @@
+24:        private const int BufferCapacity = 50;
+149:                if (buffer[pawnId].Count > BufferCapacity)
+151:                    buffer[pawnId].RemoveRange(0, buffer[pawnId].Count - BufferCapacity);

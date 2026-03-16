@@ -1,0 +1,1 @@
+RimWorld mod repository for Social Interactions. Main mod code is in SocialInteractions/ and tests are in SocialInteractions.Tests/. Tech stack is C# targeting RimWorld/Harmony modding with XML defs and localization files. Architecture guidance lives in SocialInteractions/architecture.md and should be updated after major changes.

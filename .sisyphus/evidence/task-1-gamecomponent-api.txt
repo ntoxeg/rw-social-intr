@@ -1,0 +1,6 @@
+110:        public string GetMemory(int pawnId)
+122:        public void SetMemory(int pawnId, string memory)
+137:        public void AddBufferEntry(int pawnId, string entry)
+159:        public List<string> GetAndClearBuffer(int pawnId)
+177:        public List<int> GetAllPawnsWithBufferEntries()
+196:        public void ClearMemory(int pawnId)

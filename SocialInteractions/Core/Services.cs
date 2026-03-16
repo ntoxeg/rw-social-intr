@@ -13,6 +13,12 @@ namespace SocialInteractions
         public static IChatLog ChatLog { get; set; }
 
         /// <summary>
+        /// Pawn memory system for storing and managing pawn memories and daily event buffers.
+        /// Set by the PawnMemory_GameComponent during initialization.
+        /// </summary>
+        public static Memory.PawnMemory_GameComponent Memory { get; set; }
+
+        /// <summary>
         /// Resolves the partner a pawn is currently on a date with, if any.
         /// Set by the Dating subsystem during initialization.
         /// </summary>
@@ -22,6 +28,7 @@ namespace SocialInteractions
         {
             Speech = null;
             ChatLog = null;
+            Memory = null;
             GetDatePartner = null;
         }
     }

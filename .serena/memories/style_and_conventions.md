@@ -1,0 +1,1 @@
+Use existing C# project conventions in SocialInteractions. For logging, prefer SLog.Message/Warning/Error instead of Verse.Log, per architecture notes. New .cs files must be added to compile.rsp. Keep architecture.md updated after major changes.

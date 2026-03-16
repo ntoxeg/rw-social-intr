@@ -1,0 +1,1 @@
+After code changes, update SocialInteractions/architecture.md for major architectural changes, run relevant tests (at minimum dotnet test SocialInteractions.Tests when applicable), and verify git status/diff before committing.
