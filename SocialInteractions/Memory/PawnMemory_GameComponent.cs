@@ -339,7 +339,7 @@ namespace SocialInteractions.Memory
                 .Replace("[char_limit]", charLimit.ToString());
         }
 
-        private static string ApplyFifoTruncation(string memory, int charLimit)
+        internal static string ApplyFifoTruncation(string memory, int charLimit)
         {
             if (string.IsNullOrEmpty(memory) || charLimit <= 0 || memory.Length <= charLimit)
             {

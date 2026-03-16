@@ -968,7 +968,7 @@ Max Concurrent: 4 (Waves 3 & Final)
   - Message: `feat(memory): add memory settings to mod settings UI`
   - Files: `SocialInteractions/Core/SocialInteractionsSettings.cs`, `SocialInteractions/Languages/English/Keyed/Keyed.xml`
 
-- [ ] 11. Unit Tests — Compaction, Buffer, Size Limits
+- [x] 11. Unit Tests — Compaction, Buffer, Size Limits
 
   **What to do**:
   - Add unit tests in `SocialInteractions.Tests/` for the memory system's core logic
@@ -1034,7 +1034,7 @@ Max Concurrent: 4 (Waves 3 & Final)
   - Message: `test(memory): add unit tests for compaction, buffer, size limits`
   - Files: `SocialInteractions.Tests/MemoryTests.cs` (or similar)
 
-- [ ] 12. Architecture Documentation Update
+- [x] 12. Architecture Documentation Update
 
   **What to do**:
   - Update `architecture.md` with a new "Memory/" section following the existing documentation style

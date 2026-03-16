@@ -58,6 +58,7 @@ SocialInteractions/
 ├── Languages/              # Localization (English, ChineseSimplified)
 │   ├── English/Keyed/
 │   └── ChineseSimplified/Keyed/
+├── Memory/                 # Pawn memory system (storage, daily writer, compaction)
 ├── Negotiation/            # Raid negotiation system (manager, dialog, lord jobs, patches)
 ├── Patches/                # Harmony patches (30+ patch files)
 ├── Speech/                 # Speech bubble display, TTS, voice assignment, pauseable motes
@@ -530,6 +531,33 @@ A complete negotiation pipeline: detection → dialogue → outcome application 
 - **Languages**: English (`Languages/English/Keyed/Keyed.xml`), Chinese Simplified (`Languages/ChineseSimplified/Keyed/Keyed.xml`).
 - **Coverage**: All mod settings, UI elements, dialog text, and descriptions.
 
+## Memory/ — Pawn Memory System
+
+### `PawnMemory_GameComponent.cs`
+- **GameComponent** managing persistent pawn memories and daily event buffering. Registers itself as `Services.Memory` on construction.
+- **Storage Architecture**:
+  - `memories`: Dictionary mapping pawn IDs to their long-term memory strings.
+  - `buffer`: Thread-safe dictionary mapping pawn IDs to a list of recent events (max 50 entries per pawn).
+- **Daily Memory Writer**:
+  - `GameComponentTick` triggers processing every 60,000 ticks (1 in-game day).
+  - **Async Processing**: Uses `Task.Run` to call the LLM API without blocking the main game thread.
+  - **Prompt Construction**: Combines existing memories, buffered events, pawn traits, and mood into a structured prompt.
+- **Hybrid Compaction System**:
+  - **LLM Compaction**: Triggered when memory exceeds `memoryCompactionThreshold`. Uses a specialized prompt to condense memories while preserving personality-defining events. Limited to once per in-game day per pawn.
+  - **FIFO Truncation**: Fallback mechanism that removes the oldest sentences if the memory still exceeds `memoryCharacterLimit` after LLM compaction or if LLM compaction fails.
+- **Event Capture**:
+  - `BufferInteractionEvent`: Static helper in `SocialInteractions.cs` used to capture events from various hook points (interactions, monologues, job-giver interactions).
+  - **Hook Points**: All LLM-generated interactions (Chitchat, Deep Talk, etc.), monologues (Inspirations, Masterwork crafting, etc.), and special events (Caught Cheating).
+- **Placeholders**:
+  - `[pawn#_memories]`: Injected into dialogue and monologue prompts to provide long-term context for the LLM.
+- **Settings**:
+  - `enableMemorySystem`: Global toggle.
+  - `memoryCharacterLimit`: Hard limit for memory length (default 2500).
+  - `memoryCompactionThreshold`: Threshold for triggering LLM compaction (default 2000).
+  - `memoryBufferEntryCap`: Maximum entries in the daily buffer (default 50).
+  - `memoryPromptTemplate`: Template for writing new memories.
+  - `memoryCompactionPromptTemplate`: Template for condensing memories.
+
 ## Data Flow Examples
 
 ### Starting a Date
@@ -547,6 +575,15 @@ A complete negotiation pipeline: detection → dialogue → outcome application 
 8.  `JobDriver_DateLovin` runs, applying the `SI_Naked` hediff, showing the animation, and providing joy/thoughts. When it completes, it calls `DatingManager.AdvanceDateStage`.
 9.  `DatingManager` transitions the state to `DateStage.Finished` and calls `EndDate`.
 10. `DatingManager.EndDate` cleans up hediffs, ends any remaining jobs, and puts the pawns on a date cooldown.
+
+### Memory System Flow
+1.  **Event Capture**: An interaction occurs (e.g., Chitchat). `SocialInteractions.BufferInteractionEvent` is called.
+2.  **Buffering**: The event is added to the pawn's `buffer` in `PawnMemory_GameComponent`.
+3.  **Daily Trigger**: Every 60,000 ticks, `GameComponentTick` starts `ProcessDailyMemoriesAsync`.
+4.  **LLM Processing**: For each pawn with buffered events, the LLM is called with the `memoryPromptTemplate` to integrate new events into existing memories.
+5.  **Compaction**: If the new memory is too long, `CompactMemory` is called, which attempts LLM-based condensation followed by FIFO truncation.
+6.  **Persistence**: The updated memory is saved to the `memories` dictionary and persisted in the save file via `ExposeData`.
+7.  **Usage**: During the next interaction, `ExtractPawnData` retrieves the memory via `GetPawnMemory` and replaces the `[pawn#_memories]` placeholder in the prompt.
 
 ### Monologue Trigger
 1. A pawn experiences a specific event (e.g., becomes a leader, enters a mental state, crafts a masterwork).

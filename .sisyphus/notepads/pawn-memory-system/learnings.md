@@ -220,3 +220,9 @@ Memory Compaction Template uses:
 11. `Combat/CombatPatches.cs` — selective kills/downs only
 12. `Interactions/InteractionWorker_CaughtCheating.cs` — "Was caught cheating by [spouse]"
 13. `Dating/DatingManager.cs` — "Went on a date with [partner]"
+## Task 12: Architecture Documentation
+- Updated `SocialInteractions/architecture.md` with comprehensive documentation of the Pawn Memory system.
+- Documented `PawnMemory_GameComponent` storage (memories/buffer), daily async processing, and hybrid compaction (LLM + FIFO).
+- Added a detailed Data Flow section for the Memory system.
+- Verified integration points: `BufferInteractionEvent` for capture and `[pawn#_memories]` for prompt injection.
+- Matched existing documentation style and hierarchy.

@@ -1,0 +1,16 @@
+61:├── Memory/                 # Pawn memory system (storage, daily writer, compaction)
+534:## Memory/ — Pawn Memory System
+536:### `PawnMemory_GameComponent.cs`
+537:- **GameComponent** managing persistent pawn memories and daily event buffering. Registers itself as `Services.Memory` on construction.
+541:- **Daily Memory Writer**:
+554:  - `enableMemorySystem`: Global toggle.
+579:### Memory System Flow
+581:2.  **Buffering**: The event is added to the pawn's `buffer` in `PawnMemory_GameComponent`.
+584:5.  **Compaction**: If the new memory is too long, `CompactMemory` is called, which attempts LLM-based condensation followed by FIFO truncation.
+586:7.  **Usage**: During the next interaction, `ExtractPawnData` retrieves the memory via `GetPawnMemory` and replaces the `[pawn#_memories]` placeholder in the prompt.
+536:### `PawnMemory_GameComponent.cs`
+541:- **Daily Memory Writer**:
+545:- **Hybrid Compaction System**:
+581:2.  **Buffering**: The event is added to the pawn's `buffer` in `PawnMemory_GameComponent`.
+552:  - `[pawn#_memories]`: Injected into dialogue and monologue prompts to provide long-term context for the LLM.
+586:7.  **Usage**: During the next interaction, `ExtractPawnData` retrieves the memory via `GetPawnMemory` and replaces the `[pawn#_memories]` placeholder in the prompt.
