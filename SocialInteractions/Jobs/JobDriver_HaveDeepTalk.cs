@@ -170,7 +170,10 @@ namespace SocialInteractions.Jobs
 
                                 if (!string.IsNullOrEmpty(llmResponse))
                                 {
-                                    messages = llmResponse.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries).Where(s => !string.IsNullOrWhiteSpace(s)).ToList();
+                                    messages = llmResponse.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                                        .Where(s => !string.IsNullOrWhiteSpace(s))
+                                        .Take(SocialInteractions.Settings.Display.llmMaxDialogueLines)
+                                        .ToList();
                                 }
                                 else
                                 {

@@ -22,7 +22,7 @@ namespace SocialInteractions.Speech
         private int currentConversationId = 0;
         private HashSet<int> activeConversations = new HashSet<int>();
         private Dictionary<int, float> activeConversationStartTimes = new Dictionary<int, float>(); // Track start times for timeouts
-        private const float ConversationTimeoutSeconds = 30f; // Fail-safe timeout
+        private const float ConversationTimeoutSeconds = 15f; // Fail-safe timeout
 
         // --- For Job Queue ---
         private Queue<Action> pendingJobs = new Queue<Action>();

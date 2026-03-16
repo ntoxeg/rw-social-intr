@@ -294,7 +294,7 @@ Current event: [pawn1] [subject]
         {
             public int wordsPerLineLimit = 10; // Default to 10 words per line
             public float wordsPerSecond = 3.0f; // Default to 5 words per second
-            public int llmMaxDialogueLines = 10; // Default to 10 lines
+            public int llmMaxDialogueLines = 6; // Default to 6 lines
             public bool showDefaultBubbles = true; // Toggle for default interaction bubbles
             public bool showLlmBubbles = true; // Toggle for LLM dialogue bubbles
             public bool useBackgroundTextRendering = false; // False = drop shadow (current), True = background style

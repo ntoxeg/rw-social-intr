@@ -11,6 +11,12 @@ namespace SocialInteractions.Jobs
 {
     public class JobDriver_BeTalkedTo : JobDriver
     {
+        // Maximum ticks the recipient will stay locked in the BeTalkedTo job.
+        // 600 ticks = 10 seconds. This prevents pawns from being interrupted for too long
+        // while still allowing enough time for a meaningful conversation exchange.
+        private const int MaxWaitTicks = 600;
+        private int ticksWaiting = 0;
+
         public override bool TryMakePreToilReservations(bool errorOnFailed)
         {
             return true;
@@ -33,9 +39,22 @@ namespace SocialInteractions.Jobs
                 SLog.Message("[SocialInteractions] JobDriver_BeTalkedTo: Stopping and facing initiator.");
                 pawn.pather.StopDead();
                 pawn.rotationTracker.FaceCell(TargetA.Cell);
+                ticksWaiting = 0;
             };
             toil.tickAction = () =>
             {
+                ticksWaiting++;
+
+                // End the job if the recipient has waited long enough.
+                // The initiator's conversation (HaveDeepTalk) will continue independently —
+                // speech bubbles keep displaying, but the recipient can resume their normal job.
+                if (ticksWaiting >= MaxWaitTicks)
+                {
+                    SLog.Message(string.Format("[SocialInteractions] JobDriver_BeTalkedTo: {0} waited {1} ticks (max {2}), releasing from conversation.", pawn.LabelShort, ticksWaiting, MaxWaitTicks));
+                    pawn.jobs.EndCurrentJob(JobCondition.Succeeded);
+                    return;
+                }
+
                 // Check if we should still be in this job
                 Pawn initiator = (Pawn)TargetA.Thing;
                 if (initiator == null || initiator.jobs == null || initiator.jobs.curDriver == null)
