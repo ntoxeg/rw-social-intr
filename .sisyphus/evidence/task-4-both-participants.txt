@@ -1,0 +1,148 @@
+TASK 4: Both Participants Buffer Entry Verification
+===================================================
+
+OBJECTIVE: Verify that both initiator and recipient get buffer entries for dialogues
+
+DIALOGUE INTERACTIONS (HandleNonStoppingInteraction):
+====================================================
+
+Code Location: SocialInteractions/Core/SocialInteractions.cs:1792-1793
+
+Implementation:
+```csharp
+// Buffer entry for initiator
+BufferInteractionEvent(initiator, bufferEntry);
+
+// Buffer entry for recipient (with swapped perspective)
+BufferInteractionEvent(recipient, string.Format("[{0}] with {1}: {2}", 
+    interactionDef != null ? interactionDef.label : "Interaction",
+    initiator.Name.ToStringShort,
+    firstLine));
+```
+
+Verification:
+✓ Line 1792: BufferInteractionEvent(initiator, bufferEntry) - initiator gets entry
+✓ Line 1793-1796: BufferInteractionEvent(recipient, ...) - recipient gets entry
+✓ Both entries use same interaction type and first line
+✓ Each entry shows the OTHER pawn's name (perspective swap)
+✓ Both calls go through BufferInteractionEvent which checks:
+  - pawn.IsColonist (line 1697)
+  - Settings.Memory.enableMemorySystem (line 1700)
+
+Example Buffer Entries:
+- Initiator: "[Deep Talk] with Maria: I've been thinking about our friendship..."
+- Recipient: "[Deep Talk] with John: I've been thinking about our friendship..."
+
+JOB GIVER INTERACTIONS (HandleJobGiverInteraction):
+===================================================
+
+Code Location: SocialInteractions/Core/SocialInteractions.cs:1986-1987
+
+Implementation:
+```csharp
+// Buffer entry for initiator
+BufferInteractionEvent(initiator, jobGiverBufferEntry);
+
+// Buffer entry for recipient (with swapped perspective)
+BufferInteractionEvent(recipient, string.Format("[{0}] with {1}: {2}", 
+    interactionDef != null ? interactionDef.label : "Job Interaction",
+    initiator.Name.ToStringShort,
+    firstLine));
+```
+
+Verification:
+✓ Line 1986: BufferInteractionEvent(initiator, jobGiverBufferEntry) - initiator gets entry
+✓ Line 1987-1990: BufferInteractionEvent(recipient, ...) - recipient gets entry
+✓ Both entries use same interaction type and first line
+✓ Each entry shows the OTHER pawn's name (perspective swap)
+✓ Both calls go through BufferInteractionEvent which checks colonist and settings
+
+MONOLOGUE INTERACTIONS (HandleMonologue):
+=========================================
+
+Code Location: SocialInteractions/Core/SocialInteractions.cs:1575
+
+Implementation:
+```csharp
+BufferInteractionEvent(pawn, bufferEntry);
+```
+
+Verification:
+✓ Line 1575: Only single pawn gets buffer entry (monologue is solo)
+✓ This is correct behavior - monologues are internal thoughts
+
+COLONIST CHECK ENFORCEMENT:
+===========================
+
+All buffer writes go through BufferInteractionEvent helper which enforces:
+
+```csharp
+private static void BufferInteractionEvent(Pawn pawn, string eventDescription)
+{
+    if (pawn == null || !pawn.IsColonist)  // Line 1697-1698
+        return;
+
+    if (!Settings.Memory.enableMemorySystem)  // Line 1700
+        return;
+
+    try
+    {
+        var memoryComponent = Current.Game.GetComponent<PawnMemory_GameComponent>();
+        if (memoryComponent != null)
+        {
+            memoryComponent.AddBufferEntry(pawn.thingIDNumber, eventDescription);
+        }
+    }
+    catch (Exception ex)
+    {
+        Log.Error(string.Format("[SocialInteractions] Error buffering interaction event for {0}: {1}", pawn.LabelShort, ex.Message));
+    }
+}
+```
+
+Verification:
+✓ Line 1697: Null check on pawn
+✓ Line 1698: IsColonist check - non-colonists are silently skipped
+✓ Line 1700: Settings toggle check - disabled system skips buffering
+✓ Line 1704: Gets memory component safely
+✓ Line 1706: Calls AddBufferEntry with pawn ID and description
+✓ Line 1708-1710: Exception handling with logging
+
+SCENARIO VERIFICATION:
+=====================
+
+Scenario 1: Both pawns are colonists
+- Initiator: Colonist ✓ → Gets buffer entry ✓
+- Recipient: Colonist ✓ → Gets buffer entry ✓
+- Result: Both get entries with swapped perspective ✓
+
+Scenario 2: Only initiator is colonist
+- Initiator: Colonist ✓ → Gets buffer entry ✓
+- Recipient: Non-colonist ✗ → Skipped by IsColonist check ✓
+- Result: Only initiator gets entry ✓
+
+Scenario 3: Only recipient is colonist
+- Initiator: Non-colonist ✗ → Skipped by IsColonist check ✓
+- Recipient: Colonist ✓ → Gets buffer entry ✓
+- Result: Only recipient gets entry ✓
+
+Scenario 4: Neither are colonists
+- Initiator: Non-colonist ✗ → Skipped ✓
+- Recipient: Non-colonist ✗ → Skipped ✓
+- Result: No entries (correct) ✓
+
+Scenario 5: Memory system disabled
+- Both pawns: Colonists ✓
+- Settings.Memory.enableMemorySystem: false ✗
+- Result: Both calls return early at line 1700 ✓
+
+ACCEPTANCE CRITERIA MET:
+========================
+✓ Both initiator and recipient get buffer entries for dialogues
+✓ Each pawn gets their own perspective (other pawn's name in entry)
+✓ Colonist check applies independently to each pawn
+✓ Settings toggle check applies to all buffer writes
+✓ Monologue correctly buffers only single pawn
+✓ Job giver interactions buffer both participants
+✓ All scenarios handled correctly
+

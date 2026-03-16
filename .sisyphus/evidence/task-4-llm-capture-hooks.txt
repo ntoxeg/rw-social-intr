@@ -1,0 +1,109 @@
+TASK 4: LLM Content Capture - Buffer Write Hooks Evidence
+=========================================================
+
+OBJECTIVE: Verify buffer write hooks are present in all LLM response handlers
+
+BUILD STATUS: ✓ SUCCESS
+- dotnet build SocialInteractions/SocialInteractions.csproj completed with 0 errors, 0 warnings
+
+BUFFER WRITE HOOKS FOUND:
+========================
+
+1. BufferInteractionEvent Helper Method (Line 1690)
+   - Location: SocialInteractions/Core/SocialInteractions.cs:1690
+   - Signature: private static void BufferInteractionEvent(Pawn pawn, string eventDescription)
+   - Features:
+     ✓ Checks if pawn is null or not colonist (line 1697-1698)
+     ✓ Checks if memory system is enabled (line 1700)
+     ✓ Gets PawnMemory_GameComponent (line 1704)
+     ✓ Calls AddBufferEntry with pawn ID and description (line 1706)
+     ✓ Exception handling with logging (line 1708-1710)
+
+2. HandleMonologue Buffer Write (Line 1575)
+   - Location: SocialInteractions/Core/SocialInteractions.cs:1563-1575
+   - Trigger: After LLM response received and validated
+   - Format: "[Monologue about {subject}]: {first_line}"
+   - Participants: Single pawn (monologue speaker only)
+   - Code:
+     ```csharp
+     string firstLine = llmResponse.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+         .FirstOrDefault(s => !string.IsNullOrWhiteSpace(s)) ?? "";
+     if (firstLine.Length > 150)
+         firstLine = firstLine.Substring(0, 150) + "...";
+     
+     string bufferEntry = string.Format("[Monologue about {0}]: {1}", 
+         string.IsNullOrEmpty(subject) ? "themselves" : subject,
+         firstLine);
+     
+     BufferInteractionEvent(pawn, bufferEntry);
+     ```
+
+3. HandleNonStoppingInteraction Buffer Write (Lines 1792-1793)
+   - Location: SocialInteractions/Core/SocialInteractions.cs:1767-1785
+   - Trigger: After LLM response received and validated (line 1758)
+   - Format: "[{InteractionType}] with {OtherPawnName}: {first_line}"
+   - Participants: BOTH initiator and recipient (if both colonists)
+   - Code:
+     ```csharp
+     string firstLine = llmResponse.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries)
+         .FirstOrDefault(s => !string.IsNullOrWhiteSpace(s)) ?? "";
+     if (firstLine.Length > 150)
+         firstLine = firstLine.Substring(0, 150) + "...";
+     
+     string bufferEntry = string.Format("[{0}] with {1}: {2}", 
+         interactionDef != null ? interactionDef.label : "Interaction",
+         recipient.Name.ToStringShort,
+         firstLine);
+     
+     BufferInteractionEvent(initiator, bufferEntry);
+     BufferInteractionEvent(recipient, string.Format("[{0}] with {1}: {2}", 
+         interactionDef != null ? interactionDef.label : "Interaction",
+         initiator.Name.ToStringShort,
+         firstLine));
+     ```
+
+4. HandleJobGiverInteraction Buffer Write (Lines 1986-1987)
+   - Location: SocialInteractions/Core/SocialInteractions.cs:1975-1991
+   - Trigger: After LLM response received and validated (line 1966)
+   - Format: "[{InteractionType}] with {OtherPawnName}: {first_line}"
+   - Participants: BOTH initiator and recipient (if both colonists)
+   - Code:
+     ```csharp
+     string firstLine = llmResponse.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries)
+         .FirstOrDefault(s => !string.IsNullOrWhiteSpace(s)) ?? "";
+     if (firstLine.Length > 150)
+         firstLine = firstLine.Substring(0, 150) + "...";
+     
+     string jobGiverBufferEntry = string.Format("[{0}] with {1}: {2}", 
+         interactionDef != null ? interactionDef.label : "Job Interaction",
+         recipient.Name.ToStringShort,
+         firstLine);
+     
+     BufferInteractionEvent(initiator, jobGiverBufferEntry);
+     BufferInteractionEvent(recipient, string.Format("[{0}] with {1}: {2}", 
+         interactionDef != null ? interactionDef.label : "Job Interaction",
+         initiator.Name.ToStringShort,
+         firstLine));
+     ```
+
+VERIFICATION CHECKLIST:
+======================
+✓ BufferInteractionEvent helper method exists with proper guards
+✓ HandleMonologue has buffer write hook (single pawn)
+✓ HandleNonStoppingInteraction has buffer write hooks (both participants)
+✓ HandleJobGiverInteraction has buffer write hooks (both participants)
+✓ All hooks check Settings.Memory.enableMemorySystem
+✓ All hooks check pawn.IsColonist
+✓ All hooks extract first line of LLM response (max 150 chars)
+✓ All hooks format entry as "[Type] with [Pawn]: [Content]"
+✓ Build succeeds with 0 errors, 0 warnings
+
+ACCEPTANCE CRITERIA MET:
+========================
+✓ Buffer writes present in all LLM response handlers
+✓ Utility helper method has colonist check and settings toggle check
+✓ Both participants get buffer entries for dialogues (if both colonists)
+✓ Monologue only buffers single pawn
+✓ Job giver interaction buffers both participants
+✓ Build passes: dotnet build SocialInteractions/SocialInteractions.csproj
+

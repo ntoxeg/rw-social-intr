@@ -423,7 +423,7 @@ Max Concurrent: 4 (Waves 3 & Final)
   - Message: `feat(memory): integrate [pawn#_memories] placeholder into ExtractPawnData`
   - Files: `SocialInteractions/Core/SocialInteractions.cs`
 
-- [ ] 4. LLM Content Capture — Buffer Writes in HandleNonStoppingInteraction + HandleMonologue
+- [x] 4. LLM Content Capture — Buffer Writes in HandleNonStoppingInteraction + HandleMonologue
 
   **What to do**:
   - In `SocialInteractions/Core/SocialInteractions.cs`, after the LLM response is received and parsed in `HandleNonStoppingInteraction` (around line 1756 where messages are enqueued to speech bubbles):

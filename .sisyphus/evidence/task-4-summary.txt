@@ -1,0 +1,122 @@
+TASK 4: LLM Content Capture - Buffer Write Hooks
+================================================
+
+COMPLETION STATUS: ✅ COMPLETE
+
+DELIVERABLES CHECKLIST:
+=======================
+✅ Modified: SocialInteractions/Core/SocialInteractions.cs
+✅ Buffer writes added to HandleNonStoppingInteraction (lines 1780-1797)
+✅ Buffer writes added to HandleMonologue (lines 1565-1576)
+✅ Buffer writes added to HandleJobGiverInteraction (lines 1975-1991)
+✅ Utility helper BufferInteractionEvent created (lines 1690-1709)
+✅ Helper includes: settings toggle check, colonist check, AddBufferEntry call
+✅ Both initiator and recipient get buffer entries for dialogues (if both colonists)
+✅ Build passes: dotnet build SocialInteractions/SocialInteractions.csproj
+✅ Evidence files generated
+
+IMPLEMENTATION SUMMARY:
+======================
+
+1. HELPER METHOD: BufferInteractionEvent (Line 1690)
+   - Private static method for centralized buffer write logic
+   - Checks: pawn != null && pawn.IsColonist
+   - Checks: Settings.Memory.enableMemorySystem
+   - Gets PawnMemory_GameComponent and calls AddBufferEntry
+   - Exception handling with logging
+
+2. HANDLEMONOLOGUE BUFFER WRITE (Line 1575)
+   - Extracts first line of LLM response (max 150 chars)
+   - Format: "[Monologue about {subject}]: {first_line}"
+   - Single pawn only (monologue is solo)
+   - Called after LLM response received and validated
+
+3. HANDLENONSTOPPINGINTERACTION BUFFER WRITE (Lines 1792-1796)
+   - Extracts first line of LLM response (max 150 chars)
+   - Format: "[{InteractionType}] with {OtherPawn}: {first_line}"
+   - BOTH initiator and recipient get entries (if both colonists)
+   - Each entry shows the OTHER pawn's name (perspective swap)
+   - Called after LLM response received and validated
+
+4. HANDLEJOBGIVERINTERACTION BUFFER WRITE (Lines 1986-1990)
+   - Extracts first line of LLM response (max 150 chars)
+   - Format: "[{InteractionType}] with {OtherPawn}: {first_line}"
+   - BOTH initiator and recipient get entries (if both colonists)
+   - Each entry shows the OTHER pawn's name (perspective swap)
+   - Called after LLM response received and validated
+
+BUFFER ENTRY FORMAT:
+====================
+- Dialogue: "[Deep Talk] with Maria: I've been thinking about our friendship..."
+- Monologue: "[Monologue about themselves]: I wonder if I'm doing the right thing..."
+- Job Giver: "[Negotiation] with John: Let's discuss the terms of this agreement..."
+
+KEY FEATURES:
+=============
+✓ Colonist-only filtering (non-colonists silently skipped)
+✓ Settings toggle enforcement (disabled system skips all buffering)
+✓ Brief summaries (max 150 chars per entry)
+✓ Perspective swap for dialogues (each pawn sees other's name)
+✓ Exception handling with logging
+✓ Async-safe (buffer writes happen in async context)
+
+BUILD VERIFICATION:
+===================
+Command: dotnet build SocialInteractions/SocialInteractions.csproj
+Result: ✅ SUCCESS
+- 0 Errors
+- 0 Warnings
+- Build time: 0.98 seconds
+
+CODE LOCATIONS:
+===============
+File: SocialInteractions/Core/SocialInteractions.cs
+- BufferInteractionEvent helper: Line 1690
+- HandleMonologue buffer write: Line 1575
+- HandleNonStoppingInteraction buffer write: Lines 1792-1796
+- HandleJobGiverInteraction buffer write: Lines 1986-1990
+
+DEPENDENCIES:
+=============
+✓ Task 1 (PawnMemory_GameComponent) - COMPLETE
+  - Provides AddBufferEntry method
+  - Provides GetComponent access
+✓ Task 2 (Memory Settings) - COMPLETE
+  - Provides Settings.Memory.enableMemorySystem toggle
+✓ Task 3 (Memory Prompt Integration) - COMPLETE
+  - Provides GetPawnMemory for reading
+
+BLOCKS:
+=======
+→ Task 5 (Daily Memory Writer) - needs buffer writes to exist
+→ Task 7 (Drama Interaction Capture) - can use BufferInteractionEvent helper
+→ Task 8 (Game Event Capture) - can use BufferInteractionEvent helper
+
+EVIDENCE FILES:
+===============
+1. task-4-llm-capture-hooks.txt
+   - Detailed verification of all buffer write hooks
+   - Code snippets and line numbers
+   - Build status confirmation
+
+2. task-4-both-participants.txt
+   - Verification that both participants get buffer entries
+   - Scenario testing (colonist combinations)
+   - Perspective swap verification
+
+ACCEPTANCE CRITERIA MET:
+========================
+✅ Buffer writes present in all LLM response handlers
+✅ Utility helper method has colonist check and settings toggle check
+✅ Both initiator and recipient get buffer entries for dialogues
+✅ Monologue correctly buffers only single pawn
+✅ Job giver interactions buffer both participants
+✅ Build passes with 0 errors, 0 warnings
+✅ Evidence files generated and verified
+
+NEXT STEPS:
+===========
+→ Task 5: Daily Memory Writer (depends on this task)
+→ Task 7: Drama Interaction Capture (can reuse BufferInteractionEvent)
+→ Task 8: Game Event Capture (can reuse BufferInteractionEvent)
+

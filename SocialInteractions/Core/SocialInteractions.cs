@@ -1562,6 +1562,19 @@ namespace SocialInteractions
 
                         if (!string.IsNullOrEmpty(llmResponse))
                         {
+                            // --- Buffer monologue event for memory system ---
+                            string firstLine = llmResponse.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
+                                .FirstOrDefault(s => !string.IsNullOrWhiteSpace(s)) ?? "";
+                            if (firstLine.Length > 150)
+                                firstLine = firstLine.Substring(0, 150) + "...";
+                            
+                            string bufferEntry = string.Format("[Monologue about {0}]: {1}", 
+                                string.IsNullOrEmpty(subject) ? "themselves" : subject,
+                                firstLine);
+                            
+                            BufferInteractionEvent(pawn, bufferEntry);
+                            // --- End Buffer monologue event ---
+
                             // Split the response using multiple possible line break characters
                             string[] messages = llmResponse.Split(new string[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
                                 .Where(s => !string.IsNullOrWhiteSpace(s))
@@ -1670,6 +1683,32 @@ namespace SocialInteractions
             return conversationId;
         }
 
+        /// <summary>
+        /// Helper method to buffer an interaction event for a pawn's memory.
+        /// Checks if memory system is enabled and pawn is a colonist before buffering.
+        /// </summary>
+        private static void BufferInteractionEvent(Pawn pawn, string eventDescription)
+        {
+            if (pawn == null || !pawn.IsColonist)
+                return;
+
+            if (!Settings.Memory.enableMemorySystem)
+                return;
+
+            try
+            {
+                var memoryComponent = Current.Game.GetComponent<PawnMemory_GameComponent>();
+                if (memoryComponent != null)
+                {
+                    memoryComponent.AddBufferEntry(pawn.thingIDNumber, eventDescription);
+                }
+            }
+            catch (Exception ex)
+            {
+                Log.Error(string.Format("[SocialInteractions] Error buffering interaction event for {0}: {1}", pawn.LabelShort, ex.Message));
+            }
+        }
+
         public static int HandleNonStoppingInteraction(Pawn initiator, Pawn recipient, InteractionDef interactionDef, string subject, bool skipSpamProtection = false, bool clearQueueOnResponse = false)
         {
             bool isCurrentlyBusy = SpeechBubbleManager.IsLlmCurrentlyBusy();
@@ -1737,6 +1776,25 @@ namespace SocialInteractions
                             SpeechBubbleManager.EnqueueJob(() => SpeechBubbleManager.Enqueue(initiator, fallbackText, 2f, true, conversationId, null, false)); // Use standard mote for fallback
                             return;
                         }
+
+                        // --- Buffer interaction event for memory system ---
+                        // Extract first line of dialogue for buffer entry (brief summary)
+                        string firstLine = llmResponse.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries)
+                            .FirstOrDefault(s => !string.IsNullOrWhiteSpace(s)) ?? "";
+                        if (firstLine.Length > 150)
+                            firstLine = firstLine.Substring(0, 150) + "...";
+                        
+                        string bufferEntry = string.Format("[{0}] with {1}: {2}", 
+                            interactionDef != null ? interactionDef.label : "Interaction",
+                            recipient.Name.ToStringShort,
+                            firstLine);
+                        
+                        BufferInteractionEvent(initiator, bufferEntry);
+                        BufferInteractionEvent(recipient, string.Format("[{0}] with {1}: {2}", 
+                            interactionDef != null ? interactionDef.label : "Interaction",
+                            initiator.Name.ToStringShort,
+                            firstLine));
+                        // --- End Buffer interaction event ---
 
                         // --- Clear queue for high-priority response ---
                         // If this interaction requested to clear the queue upon receiving a response,
@@ -1913,6 +1971,24 @@ namespace SocialInteractions
                             SpeechBubbleManager.EnqueueInstant(initiator, fallbackText, 2f, Color.grey); // Use standard mote for fallback
                             return;
                         }
+
+                        // --- Buffer job giver interaction event for memory system ---
+                        string firstLine = llmResponse.Split(new string[] { "\r\n", "\n", "\r" }, StringSplitOptions.RemoveEmptyEntries)
+                            .FirstOrDefault(s => !string.IsNullOrWhiteSpace(s)) ?? "";
+                        if (firstLine.Length > 150)
+                            firstLine = firstLine.Substring(0, 150) + "...";
+                        
+                        string jobGiverBufferEntry = string.Format("[{0}] with {1}: {2}", 
+                            interactionDef != null ? interactionDef.label : "Job Interaction",
+                            recipient.Name.ToStringShort,
+                            firstLine);
+                        
+                        BufferInteractionEvent(initiator, jobGiverBufferEntry);
+                        BufferInteractionEvent(recipient, string.Format("[{0}] with {1}: {2}", 
+                            interactionDef != null ? interactionDef.label : "Job Interaction",
+                            initiator.Name.ToStringShort,
+                            firstLine));
+                        // --- End Buffer job giver interaction event ---
 
                         if (!string.IsNullOrEmpty(llmResponse))
                         {
