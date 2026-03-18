@@ -10,7 +10,7 @@ namespace SocialInteractions.Api
     /// </summary>
     public class LlmClientConfig
     {
-        public int MaxTokens { get; set; } = 1024;
+        public int MaxTokens { get; set; } = 4096;
         public float Temperature { get; set; } = 0.7f;
         public int TopK { get; set; } = 40;
         public float TopP { get; set; } = 1.0f;

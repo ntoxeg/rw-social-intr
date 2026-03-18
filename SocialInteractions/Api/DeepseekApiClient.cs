@@ -122,9 +122,18 @@ namespace SocialInteractions.Api
             });
             request.Messages.Add(new DeepseekApiMessage { Role = "user", Content = prompt });
 
-            request.Thinking = Config.DisableThinking
-                ? new DeepseekApiThinking { Type = "disabled" }
-                : new DeepseekApiThinking { Type = "enabled", BudgetTokens = Math.Max(1024, Config.MaxTokens) };
+            if (Config.DisableThinking)
+            {
+                request.Thinking = new DeepseekApiThinking { Type = "disabled" };
+            }
+            else
+            {
+                // budget_tokens must be >= 1024 and < max_tokens
+                int effectiveMax = request.MaxTokens ?? Config.MaxTokens;
+                int thinkingBudget = Math.Max(1024, effectiveMax - 1024);
+                request.MaxTokens = Math.Max(effectiveMax, thinkingBudget + 1);
+                request.Thinking = new DeepseekApiThinking { Type = "enabled", BudgetTokens = thinkingBudget };
+            }
 
             return request;
         }

@@ -151,7 +151,7 @@ Provide the condensed memory log in the same format as the original.";
         {
             public string llmApiKey = "1234";
             public float llmTemperature = 0.7f; // Default temperature
-            public int llmMaxTokens = 1024; // Default max tokens
+            public int llmMaxTokens = 4096; // Default max tokens
             public int llmTopK = 40; // Default Top K (0 = disabled)
             public float llmTopP = 1.0f; // Default Top P (1.0 = disabled)
             public float llmMinP = 0.05f; // Default Min P (0.0 = disabled)
@@ -189,7 +189,7 @@ Provide the condensed memory log in the same format as the original.";
                 Scribe_Values.Look(ref llmApiUrl, "llmApiUrl", "");
                 Scribe_Values.Look(ref llmApiKey, "llmApiKey", "");
                 Scribe_Values.Look(ref llmTemperature, "llmTemperature", 0.7f);
-                Scribe_Values.Look(ref llmMaxTokens, "llmMaxTokens", 300);
+                Scribe_Values.Look(ref llmMaxTokens, "llmMaxTokens", 4096);
                 Scribe_Values.Look(ref llmTopK, "llmTopK", 40);
                 Scribe_Values.Look(ref llmTopP, "llmTopP", 1.0f);
                 Scribe_Values.Look(ref llmMinP, "llmMinP", 0.05f);
@@ -344,7 +344,7 @@ Provide the condensed memory log in the same format as the original.";
         {
             public int wordsPerLineLimit = 10; // Default to 10 words per line
             public float wordsPerSecond = 3.0f; // Default to 5 words per second
-            public int llmMaxDialogueLines = 6; // Default to 6 lines
+            public int llmMaxDialogueLines = 10; // Default to 10 lines
             public bool showDefaultBubbles = true; // Toggle for default interaction bubbles
             public bool showLlmBubbles = true; // Toggle for LLM dialogue bubbles
             public bool useBackgroundTextRendering = false; // False = drop shadow (current), True = background style
@@ -644,16 +644,16 @@ public class SocialInteractionsMod : Mod
              // Memory system settings
              listingStandard.Gap();
              listingStandard.Label("SocialInteractions_MemorySystemSettings".Translate());
-             listingStandard.CheckboxLabeled("SocialInteractions_EnableMemorySystem".Translate(), ref SocialInteractions.Settings.Features.enableMemorySystem, "SocialInteractions_EnableMemorySystemDesc".Translate());
+             listingStandard.CheckboxLabeled("SocialInteractions_EnableMemorySystem".Translate(), ref SocialInteractions.Settings.Memory.enableMemorySystem, "SocialInteractions_EnableMemorySystemDesc".Translate());
              
-             listingStandard.Label(string.Format("SocialInteractions_MemoryCharacterLimit".Translate() + ": {0}", SocialInteractions.Settings.Features.memoryCharacterLimit));
-             SocialInteractions.Settings.Features.memoryCharacterLimit = (int)listingStandard.Slider(SocialInteractions.Settings.Features.memoryCharacterLimit, 500, 5000);
+             listingStandard.Label(string.Format("SocialInteractions_MemoryCharacterLimit".Translate() + ": {0}", SocialInteractions.Settings.Memory.memoryCharacterLimit));
+             SocialInteractions.Settings.Memory.memoryCharacterLimit = (int)listingStandard.Slider(SocialInteractions.Settings.Memory.memoryCharacterLimit, 500, 5000);
              
-             listingStandard.Label(string.Format("SocialInteractions_MemoryCompactionThreshold".Translate() + ": {0}", SocialInteractions.Settings.Features.memoryCompactionThreshold));
-             SocialInteractions.Settings.Features.memoryCompactionThreshold = (int)listingStandard.Slider(SocialInteractions.Settings.Features.memoryCompactionThreshold, 500, 5000);
+             listingStandard.Label(string.Format("SocialInteractions_MemoryCompactionThreshold".Translate() + ": {0}", SocialInteractions.Settings.Memory.memoryCompactionThreshold));
+             SocialInteractions.Settings.Memory.memoryCompactionThreshold = (int)listingStandard.Slider(SocialInteractions.Settings.Memory.memoryCompactionThreshold, 500, 5000);
              
-             listingStandard.Label(string.Format("SocialInteractions_MemoryBufferEntryCap".Translate() + ": {0}", SocialInteractions.Settings.Features.memoryBufferEntryCap));
-             SocialInteractions.Settings.Features.memoryBufferEntryCap = (int)listingStandard.Slider(SocialInteractions.Settings.Features.memoryBufferEntryCap, 10, 100);
+             listingStandard.Label(string.Format("SocialInteractions_MemoryBufferEntryCap".Translate() + ": {0}", SocialInteractions.Settings.Memory.memoryBufferEntryCap));
+             SocialInteractions.Settings.Memory.memoryBufferEntryCap = (int)listingStandard.Slider(SocialInteractions.Settings.Memory.memoryBufferEntryCap, 10, 100);
              
              listingStandard.Gap();
              listingStandard.Label("SocialInteractions_MemoryPromptTemplate".Translate());
@@ -1200,7 +1200,7 @@ public class SocialInteractionsMod : Mod
             listingStandard.Gap();
             listingStandard.Label("SocialInteractions_MaxTokens".Translate());
             string maxTokensBuffer = SocialInteractions.Settings.Api.llmMaxTokens.ToString();
-            Widgets.TextFieldNumeric(listingStandard.GetRect(Text.LineHeight), ref SocialInteractions.Settings.Api.llmMaxTokens, ref maxTokensBuffer, 1, 2000);
+            Widgets.TextFieldNumeric(listingStandard.GetRect(Text.LineHeight), ref SocialInteractions.Settings.Api.llmMaxTokens, ref maxTokensBuffer, 1, 16384);
 
             listingStandard.Gap();
             listingStandard.Label(string.Format("SocialInteractions_Temperature".Translate() + " {0:F3}", SocialInteractions.Settings.Api.llmTemperature));

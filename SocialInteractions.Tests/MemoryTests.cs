@@ -340,7 +340,7 @@ namespace SocialInteractions.Tests
         #region Thread Safety
 
         [Fact]
-        public void ThreadSafety_ConcurrentBufferOperationsSafe()
+        public async Task ThreadSafety_ConcurrentBufferOperationsSafe()
         {
             var comp = CreateComponent();
             int iterationsPerThread = 200;
@@ -362,7 +362,7 @@ namespace SocialInteractions.Tests
                 }));
             }
 
-            Task.WaitAll(tasks.ToArray());
+            await Task.WhenAll(tasks.ToArray());
 
             // Buffer should respect cap (50) with no data corruption
             var entries = comp.GetAndClearBuffer(sharedPawnId);
@@ -377,7 +377,7 @@ namespace SocialInteractions.Tests
         }
 
         [Fact]
-        public void ThreadSafety_ConcurrentMultiplePawns()
+        public async Task ThreadSafety_ConcurrentMultiplePawns()
         {
             var comp = CreateComponent();
             int iterationsPerThread = 100;
@@ -398,7 +398,7 @@ namespace SocialInteractions.Tests
                 }));
             }
 
-            Task.WaitAll(tasks.ToArray());
+            await Task.WhenAll(tasks.ToArray());
 
             // Each pawn should have entries (capped at 50)
             int totalEntries = 0;
@@ -416,7 +416,7 @@ namespace SocialInteractions.Tests
         }
 
         [Fact]
-        public void ThreadSafety_ConcurrentReadWrite()
+        public async Task ThreadSafety_ConcurrentReadWrite()
         {
             var comp = CreateComponent();
             int writeIterations = 500;
@@ -453,8 +453,8 @@ namespace SocialInteractions.Tests
                 }));
             }
 
-            writer.Wait();
-            Task.WaitAll(readers.ToArray());
+            await writer;
+            await Task.WhenAll(readers.ToArray());
 
             Assert.Equal(0, errors);
         }

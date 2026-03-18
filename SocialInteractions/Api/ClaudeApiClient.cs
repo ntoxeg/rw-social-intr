@@ -133,9 +133,17 @@ namespace SocialInteractions.Api
             };
 
             request.Messages.Add(new ClaudeApiMessage { Role = "user", Content = prompt });
-            request.Thinking = Config.DisableThinking
-                ? new ClaudeApiThinking { Type = "disabled" }
-                : new ClaudeApiThinking { Type = "enabled", BudgetTokens = Math.Max(1024, Config.MaxTokens) };
+            if (Config.DisableThinking)
+            {
+                request.Thinking = new ClaudeApiThinking { Type = "disabled" };
+            }
+            else
+            {
+                // budget_tokens must be >= 1024 and < max_tokens per Claude API requirements
+                int thinkingBudget = Math.Max(1024, request.MaxTokens - 1024);
+                request.MaxTokens = Math.Max(request.MaxTokens, thinkingBudget + 1);
+                request.Thinking = new ClaudeApiThinking { Type = "enabled", BudgetTokens = thinkingBudget };
+            }
 
             return request;
         }

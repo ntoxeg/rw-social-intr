@@ -5,6 +5,37 @@ All notable changes to this project will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [2.1.0] - 2026-03-17
+
+### Added
+- **Pawn Memory System** — colony pawns now accumulate persistent memories that evolve over time
+  - Daily LLM-powered memory writing: events buffer throughout the day, then a single LLM call per pawn distills them into a cohesive memory entry
+  - `[pawn1_memories]` / `[pawn2_memories]` placeholders available in all prompt templates, enabling pawns to reference their history in conversations
+  - Hybrid compaction: FIFO truncation safety net + LLM-based summarization when memory exceeds threshold, preventing unbounded growth
+  - Comprehensive event capture across 24+ hook points:
+    - LLM dialogue and monologues (both participants)
+    - Drama interactions: badmouthing, backstabbing, admiration, reconciliation, insults, lover's quarrels
+    - Life events: marriage, birth, mental breaks, inspiration, masterwork crafting, leadership, animal bonding, role assignment
+    - Combat: kills and downings (selective — not every hit)
+    - Social: caught cheating, dates
+  - Memory tab in Bio editor for viewing, editing, and clearing memories
+  - Full settings UI: enable/disable toggle, character limit slider (500–5000), compaction threshold, buffer cap, customizable prompt templates with reset button
+  - Colony-only filtering — non-colony pawns (raiders, visitors, animals) are excluded
+  - Thread-safe buffer with 50 entry cap per pawn per day
+  - Background async processing — non-blocking, one pawn at a time
+  - 70 new unit tests covering buffer management, compaction, storage, and thread safety
+
+### Changed
+- Default max tokens increased from 1024 to 4096 for better reasoning model support
+- Default max dialogue lines increased from 6 to 10
+- Max tokens UI slider range expanded to 16384
+- Memory settings moved to dedicated `MemorySettings` class (from `FeatureToggles`)
+
+### Fixed
+- Claude API thinking budget calculation — `budget_tokens` must be < `max_tokens` per API spec
+- Deepseek API thinking budget calculation — same constraint enforcement
+- Removed obsolete `compile.rsp` reference from architecture documentation
+
 ## [2.0.3] - 2026-03-16
 
 ### Changed
@@ -255,6 +286,8 @@ and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0
 ### Changed
 - Initial mod structure and architecture
 
+[2.1.0]: https://github.com/LuckyKo/rimworldmods/compare/v2.0.3...v2.1.0
+[2.0.3]: https://github.com/LuckyKo/rimworldmods/compare/v2.0.2...v2.0.3
 [2.0.2]: https://github.com/LuckyKo/rimworldmods/compare/v2.0.1...v2.0.2
 [2.0.1]: https://github.com/LuckyKo/rimworldmods/compare/v2.0.0...v2.0.1
 [2.0.0]: https://github.com/LuckyKo/rimworldmods/compare/v1.5.8...v2.0.0

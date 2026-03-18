@@ -226,3 +226,15 @@ Memory Compaction Template uses:
 - Added a detailed Data Flow section for the Memory system.
 - Verified integration points: `BufferInteractionEvent` for capture and `[pawn#_memories]` for prompt injection.
 - Matched existing documentation style and hierarchy.
+
+## Task 11 - Memory System Unit Tests
+
+- PawnMemory_GameComponent parameterless constructor works for testing (no game deps)
+- ApplyFifoTruncation changed to internal for direct testing (InternalsVisibleTo already set)
+- SocialInteractions static class has a static constructor that does Harmony patching - CANNOT reference in tests
+- SocialInteractionsModSettings.MemorySettings CAN be instantiated without game runtime
+- Colony-only guard and settings enable flag are checked at API level (GetPawnMemory), not component level
+- BufferCapacity=50, enforced per-add with RemoveRange to trim oldest
+- FIFO truncation looks for '.' and '\n' boundaries via LastIndexOfAny
+- Thread safety tests use async/await Task.WhenAll to avoid xUnit1031 warnings
+- Test framework: xUnit 2.9.3, net48, test project refs main project + Assembly-CSharp

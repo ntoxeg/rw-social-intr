@@ -12,7 +12,6 @@ When debugging RimWorld Harmony patches, if a patch isn't applying, follow these
 4.  For private methods, use `AccessTools.Method` to get the `MethodInfo` for the patch attribute.
 5.  To access private fields within a patch, use `Traverse.Create(__instance).Field("fieldName").GetValue<FieldType>()`.
 6.  Ensure the C# language version used in the mod code is compatible with the compiler version being used (the compiler only supports C# 5).
-7.  Crucially, always add any new `.cs` source files to the `compile.rsp` response file so they are included in the compilation.
 8.  Going forward, for all logging in the SocialInteractions mod, use the custom SLog class (SLog.Message, SLog.Warning, SLog.Error) instead of Verse.Log. This is to ensure consistency and allow for verbose logging control via mod settings.
 9.  Freely generate and use helper python scrips if the basic CLI tools fail
 
